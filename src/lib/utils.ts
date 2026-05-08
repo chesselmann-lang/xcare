@@ -30,11 +30,10 @@ export function formatDistance(meters: number): string {
 }
 
 export function slugify(text: string): string {
+  const umlautMap: Record<string, string> = { ä: "ae", ö: "oe", ü: "ue", ß: "ss" };
   return text
     .toLowerCase()
-    .replace(/[äöüß]/g, (c) =>
-      ({ ä: "ae", ö: "oe", ü: "ue", ß: "ss" })[c] ?? c
-    )
+    .replace(/[äöüß]/g, (c) => umlautMap[c] ?? c)
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }

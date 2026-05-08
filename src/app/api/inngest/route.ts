@@ -9,10 +9,10 @@ const sendWelcomeEmail = inngest.createFunction(
   { id: "send-welcome-email" },
   { event: "user/registered" },
   async ({ event }) => {
-    const { email, vorname, rolle } = event.data;
+    const { email, vorname, rolle } = event.data as { email: string; vorname: string; rolle: string };
     // E-Mail via Resend senden
     const { Resend } = await import("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const resend = new Resend(process.env.RESEND_API_KEY!);
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
       to: email,
@@ -29,9 +29,14 @@ const notifyAnbieter = inngest.createFunction(
   { id: "notify-anbieter-new-anfrage" },
   { event: "anfrage/created" },
   async ({ event }) => {
-    const { anbieter_email, anbieter_name, familie_name, lebenslage } = event.data;
+    const { anbieter_email, anbieter_name, familie_name, lebenslage } = event.data as {
+      anbieter_email: string;
+      anbieter_name: string;
+      familie_name: string;
+      lebenslage: string;
+    };
     const { Resend } = await import("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const resend = new Resend(process.env.RESEND_API_KEY!);
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
       to: anbieter_email,
