@@ -1,0 +1,16 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["fra1"],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@xcare_supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@xcare_supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@xcare_supabase_service_role_key",
+    "ANTHROPIC_API_KEY": "@xcare_anthropic_api_key",
+    "RESEND_API_KEY": "@xcare_resend_api_key",
+    "INNGEST_EVENT_KEY": "@xcare_inngest_event_key",
+    "INNGEST_SIGNING_KEY": "@xcare_inngest_signing_key"
+  }
+}

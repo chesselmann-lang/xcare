@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  /* xcare Brand Colors */
+  --primary: #1A5276;
+  --primary-foreground: #ffffff;
+  --primary-light: #D6EAF8;
+  --secondary: #1F618D;
+  --accent: #2980B9;
+  --accent-foreground: #ffffff;
+
+  /* Status Colors */
+  --success: #1E8449;
+  --warning: #F39C12;
+  --danger: #922B21;
+  --info: #1F618D;
+
+  /* Neutrals */
+  --background: #ffffff;
+  --foreground: #1C1C1C;
+  --card: #ffffff;
+  --card-foreground: #1C1C1C;
+  --muted: #F2F3F4;
+  --muted-foreground: #555555;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #1A5276;
+
+  /* Radius */
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f1923;
+    --foreground: #f0f4f8;
+    --card: #1a2836;
+    --card-foreground: #f0f4f8;
+    --muted: #1e3045;
+    --muted-foreground: #94a3b8;
+    --border: #2a3f55;
+    --input: #2a3f55;
+  }
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+
+/* Focus */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
