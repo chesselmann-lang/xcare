@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Compass, Search, FileText, Heart,
   Building2, Package, MessageSquare, LogOut, User,
-  Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark,
+  Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
   GitCompareArrows, SlidersHorizontal, Bell, Images
 } from "lucide-react";
 import { useState } from "react";
@@ -34,6 +34,7 @@ const FAMILIE_NAV = [
   { href: "/familie/nachrichten", label: "Nachrichten", icon: Inbox, nachrichtenBadge: true },
   { href: "/familie/benachrichtigungen", label: "Benachrichtigungen", icon: Bell },
   { href: "/familie/favoriten", label: "Favoriten", icon: Heart },
+  { href: "/familie/merkliste", label: "Merkliste", icon: BookmarkCheck },
   { href: "/familie/gespeicherte-suchen", label: "Gespeicherte Suchen", icon: Bookmark },
   { href: "/familie/vergleich", label: "Anbieter vergleichen", icon: GitCompareArrows },
   { href: "/familie/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
@@ -231,7 +232,4 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={closeMobile}
           />
-          <aside className="relative w-72 bg-[--card] h-full shadow-2xl overflow-y-auto">
-            <button
-              onClick={closeMobile}
-  
+          <aside className="relative w-72 bg-[--card] h-fu

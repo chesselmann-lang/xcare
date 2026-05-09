@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AnfrageDialog } from "@/components/anfrage/AnfrageDialog";
 import { FavoritButton } from "@/components/favoriten/FavoritButton";
+import { MerklisteToggle } from "@/components/merkliste/MerklisteToggle";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { ShareButton } from "@/components/anbieter/ShareButton";
 import { LocalBusinessJsonLd, BreadcrumbJsonLd, LeistungenJsonLd } from "@/components/seo/JsonLd";
@@ -170,6 +171,7 @@ export default async function AnbieterDetailPage({
   const { data: { user } } = await supabase.auth.getUser();
   let profile = null;
   let istFavorit = false;
+  let istMerkliste = false;
 
   if (user) {
     const { data: p } = await supabase
@@ -180,13 +182,22 @@ export default async function AnbieterDetailPage({
     profile = p;
 
     if (p?.role === "familie") {
-      const { data: fav } = await supabase
-        .from("favoriten")
-        .select("id")
-        .eq("familie_id", p.id)
-        .eq("anbieter_id", id)
-        .single();
+      const [{ data: fav }, { data: merk }] = await Promise.all([
+        supabase
+          .from("favoriten")
+          .select("id")
+          .eq("familie_id", p.id)
+          .eq("anbieter_id", id)
+          .single(),
+        supabase
+          .from("merkliste")
+          .select("id")
+          .eq("familie_id", p.id)
+          .eq("anbieter_id", id)
+          .single(),
+      ]);
       istFavorit = !!fav;
+      istMerkliste = !!merk;
     }
   }
 
@@ -432,6 +443,12 @@ export default async function AnbieterDetailPage({
                   anbieterId={id}
                   istFavorit={istFavorit}
                   profileId={profile.id}
+                />
+                <MerklisteToggle
+                  anbieterId={id}
+                  familieId={profile.id}
+                  initialSaved={istMerkliste}
+                  showLabel
                 />
                 <AnfrageDialog
                   anbieterId={id}
@@ -742,12 +759,4 @@ export default async function AnbieterDetailPage({
                         </a>
                       )}
                       {sm.linkedin && (
-                        <a href={sm.linkedin} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-blue-700 transition-colors">
-                          <Linkedin className="h-4 w-4" /> LinkedIn
-                        </a>
-                      )}
-                      {sm.xing && (
-                        <a href={sm.xing} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-[--primary] transition-colors">
-                
+                        <a href={sm.linkedin} target="_blank" rel="noopen
