@@ -230,9 +230,9 @@ export default async function AnbieterDetailPage({
               <p className="text-sm text-[--muted-foreground] mb-1">{anbieter.traeger}</p>
             )}
             {bewertungenCount > 0 && (
-              <div className="mb-2">
+              <Link href={`/anbieter/${anbieter.id}/bewertungen`} className="mb-2 inline-block hover:opacity-80 transition-opacity">
                 <SterneDisplay average={avgSterne} count={bewertungenCount} size="sm" />
-              </div>
+              </Link>
             )}
             <div className="flex flex-wrap gap-4 text-sm text-[--muted-foreground]">
               {(anbieter.plz || anbieter.ort) && (

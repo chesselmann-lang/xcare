@@ -306,6 +306,45 @@ export default function SuchePage() {
         )}
       </div>
 
+      {/* Active Filter Chips — visible even when filter panel is closed */}
+      {activeFiltersCount > 0 && !filterOpen && (
+        <div className="flex flex-wrap gap-2 mb-4 -mt-2" aria-label="Aktive Filter">
+          {kostentraeger && (
+            <button
+              onClick={() => setKostentraeger("")}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[--primary]/10 text-[--primary] border border-[--primary]/20 hover:bg-[--primary]/20 transition-colors"
+            >
+              {KOSTENTRAEGER[kostentraeger]}
+              <X className="h-3 w-3" />
+            </button>
+          )}
+          {nurVerifiziert && (
+            <button
+              onClick={() => setNurVerifiziert(false)}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+            >
+              ✓ Nur Verifizierte
+              <X className="h-3 w-3" />
+            </button>
+          )}
+          {sortBy !== "relevanz" && (
+            <button
+              onClick={() => setSortBy("relevanz")}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[--muted] text-[--foreground] border border-[--border] hover:bg-[--border] transition-colors"
+            >
+              Sortierung: {SORT_OPTIONS[sortBy]}
+              <X className="h-3 w-3" />
+            </button>
+          )}
+          <button
+            onClick={resetFilter}
+            className="flex items-center gap-1 px-2 py-1 rounded-full text-xs text-[--muted-foreground] hover:text-[--foreground] transition-colors underline-offset-2 hover:underline"
+          >
+            Alle zurücksetzen
+          </button>
+        </div>
+      )}
+
       {/* Kategorie-Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide" role="tablist" aria-label="Leistungskategorien">
         {KATEGORIE_TABS.map((tab) => (

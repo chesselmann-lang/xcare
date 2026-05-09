@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Loader2, Archive, ArchiveRestore, Pencil, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -53,6 +54,16 @@ export function LeistungAktionen({ leistungId, aktiv, onToggle, onDelete }: Prop
 
   return (
     <div className="flex items-center gap-1.5 shrink-0">
+      <Link href={`/anbieter/leistungen/${leistungId}/bearbeiten`}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-[--muted-foreground] hover:text-[--foreground]"
+          title="Bearbeiten"
+        >
+          <Pencil className="h-3 w-3" />
+        </Button>
+      </Link>
       <Button
         variant="outline"
         size="sm"

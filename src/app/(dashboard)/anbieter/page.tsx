@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Package, MessageSquare, Building2, TrendingUp, ArrowRight,
-  CheckCircle2, Clock, Star, AlertCircle, BarChart2, Zap
+  CheckCircle2, Clock, Star, AlertCircle, BarChart2, Zap,
+  FileText, PlusCircle, Eye, Receipt,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -135,8 +136,73 @@ export default async function AnbieterDashboard() {
             )}
           </div>
         </div>
-        <Link href="/anbieter/profil">
-          <Button variant="outline" size="sm">Profil bearbeiten</Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {anbieter?.id && (
+            <Link href={`/anbieter/${anbieter.id}`} target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="sm" className="gap-1.5">
+                <Eye className="h-3.5 w-3.5" /> Vorschau
+              </Button>
+            </Link>
+          )}
+          <Link href="/anbieter/profil">
+            <Button variant="outline" size="sm">Profil bearbeiten</Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Profil-Vollständigkeit Banner */}
+      {profilScore < 80 && profilTipps.length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800">
+              Ihr Profil ist zu {profilScore}% vollständig
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Vervollständigen Sie Ihr Profil, um mehr Anfragen zu erhalten. Noch fehlend:{" "}
+              {profilTipps.join(", ")}.
+            </p>
+          </div>
+          <Link href="/anbieter/profil" className="shrink-0">
+            <Button size="sm" variant="outline" className="text-xs border-amber-300 text-amber-800 hover:bg-amber-100">
+              Jetzt vervollständigen
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* Schnellaktionen */}
+      <div className="flex flex-wrap gap-2 mb-8">
+        {(offeneAnfragen ?? 0) > 0 && (
+          <Link href="/anbieter/anfragen?status=offen">
+            <Button size="sm" className="gap-1.5 relative">
+              <MessageSquare className="h-3.5 w-3.5" />
+              Anfragen bearbeiten
+              <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-white text-[--primary] text-xs font-bold h-4.5 min-w-[1.1rem] px-1 leading-none">
+                {offeneAnfragen}
+              </span>
+            </Button>
+          </Link>
+        )}
+        <Link href="/anbieter/leistungen">
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <PlusCircle className="h-3.5 w-3.5" /> Leistung hinzufügen
+          </Button>
+        </Link>
+        <Link href={`/anbieter/${anbieter?.id}`} target="_blank">
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <Eye className="h-3.5 w-3.5" /> Öffentliches Profil
+          </Button>
+        </Link>
+        <Link href="/anbieter/anfragen">
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <Receipt className="h-3.5 w-3.5" /> Rechnungen
+          </Button>
+        </Link>
+        <Link href="/anbieter/statistiken">
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <BarChart2 className="h-3.5 w-3.5" /> Statistiken
+          </Button>
         </Link>
       </div>
 
@@ -306,8 +372,10 @@ export default async function AnbieterDashboard() {
             <CardContent>
               {bewCount > 0 ? (
                 <div>
-                  <SterneDisplay average={avgSterne} count={bewCount} size="md" />
-                  <div className="mt-3 space-y-1">
+                  <Link href={`/anbieter/${anbieter?.id}/bewertungen`} target="_blank" className="inline-block mb-2 hover:opacity-80">
+                    <SterneDisplay average={avgSterne} count={bewCount} size="md" />
+                  </Link>
+                  <div className="mt-1 space-y-1">
                     {[5, 4, 3, 2, 1].map((s) => {
                       const cnt = bewertungen?.filter((b) => b.sterne === s).length ?? 0;
                       const pct = bewCount > 0 ? (cnt / bewCount) * 100 : 0;

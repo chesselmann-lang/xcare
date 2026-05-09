@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Compass, Search, FileText, Heart, ArrowRight, Clock,
-  Sparkles, MapPin, Star, Bell, CheckCircle2
+  Sparkles, MapPin, Bell, CheckCircle2, MessageSquare,
+  Star, TrendingUp, Users
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +22,10 @@ const statusLabel: Record<AnfrageStatus, string> = {
   abgeschlossen: "Abgeschlossen",
 };
 
-const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
+const statusVariant: Record<
+  AnfrageStatus,
+  "default" | "success" | "warning" | "destructive" | "secondary"
+> = {
   offen: "secondary",
   in_bearbeitung: "warning",
   angeboten: "default",
@@ -30,7 +34,6 @@ const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "
   abgeschlossen: "secondary",
 };
 
-// Greeting by time of day
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Guten Morgen";
@@ -40,7 +43,9 @@ function getGreeting() {
 
 export default async function FamilieDashboard() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase
@@ -57,18 +62,51 @@ export default async function FamilieDashboard() {
     { data: favoriten },
     { count: offeneAnfragen },
     { count: angeboteCount },
+    { count: abgeschlosseneCount },
+    { count: bewertungenGegeben },
   ] = await Promise.all([
-    supabase.from("anfragen").select("*, anbieter(id, name, plz, ort)").eq("familie_id", profile?.id).order("updated_at", { ascending: false }).limit(5),
-    supabase.from("favoriten").select("anbieter(id, name, plz, ort, verifiziert, beschreibung)").eq("familie_id", profile?.id).limit(3),
-    supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("familie_id", profile?.id).in("status", ["offen", "in_bearbeitung", "angeboten"]),
-    supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("familie_id", profile?.id).eq("status", "angeboten"),
+    supabase
+      .from("anfragen")
+      .select("*, anbieter(id, name, plz, ort)")
+      .eq("familie_id", profile?.id)
+      .order("updated_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("favoriten")
+      .select("anbieter(id, name, plz, ort, verifiziert, beschreibung)")
+      .eq("familie_id", profile?.id)
+      .limit(3),
+    supabase
+      .from("anfragen")
+      .select("*", { count: "exact", head: true })
+      .eq("familie_id", profile?.id)
+      .in("status", ["offen", "in_bearbeitung", "angeboten"]),
+    supabase
+      .from("anfragen")
+      .select("*", { count: "exact", head: true })
+      .eq("familie_id", profile?.id)
+      .eq("status", "angeboten"),
+    supabase
+      .from("anfragen")
+      .select("*", { count: "exact", head: true })
+      .eq("familie_id", profile?.id)
+      .eq("status", "abgeschlossen"),
+    supabase
+      .from("bewertungen")
+      .select("*", { count: "exact", head: true })
+      .eq("familie_id", profile?.id),
   ]);
 
-  // Top rated anbieter in PLZ area (if user has PLZ)
+  // Top rated anbieter in PLZ area
   let empfohleneAnbieter: Array<{
-    id: string; name: string; plz: string | null; ort: string | null;
-    verifiziert: boolean; beschreibung: string | null;
-    avgSterne: number; bewCount: number;
+    id: string;
+    name: string;
+    plz: string | null;
+    ort: string | null;
+    verifiziert: boolean;
+    beschreibung: string | null;
+    avgSterne: number;
+    bewCount: number;
   }> = [];
 
   if (profile?.plz) {
@@ -82,7 +120,9 @@ export default async function FamilieDashboard() {
     if (nearbyAnbieter && nearbyAnbieter.length > 0) {
       const ids = nearbyAnbieter.map((a) => a.id);
       const { data: bew } = await supabase
-        .from("bewertungen").select("anbieter_id, sterne").in("anbieter_id", ids);
+        .from("bewertungen")
+        .select("anbieter_id, sterne")
+        .in("anbieter_id", ids);
 
       const bewMap: Record<string, { sum: number; count: number }> = {};
       (bew ?? []).forEach((b) => {
@@ -110,7 +150,7 @@ export default async function FamilieDashboard() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
-      {/* Aktions-Banner: Angebote warten auf Antwort */}
+      {/* Angebote-Banner */}
       {angeboteCount != null && angeboteCount > 0 && (
         <div className="mb-6 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800">
           <Bell className="h-5 w-5 shrink-0 animate-pulse" aria-hidden="true" />
@@ -130,83 +170,147 @@ export default async function FamilieDashboard() {
         </div>
       )}
 
-      {/* Begrüßung */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">
-          {greeting}, {profile?.vorname ?? "Willkommen"}! 👋
-        </h1>
-        <p className="text-[--muted-foreground] mt-1">
-          {offeneAnfragen && offeneAnfragen > 0
-            ? `Sie haben ${offeneAnfragen} aktive Anfrage${offeneAnfragen > 1 ? "n" : ""}.`
-            : "Was kann xcare heute für Sie tun?"}
-        </p>
+      {/* Begrüßung + Aktionen */}
+      <div className="flex items-start justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">
+            {greeting}, {profile?.vorname ?? "Willkommen"}! 👋
+          </h1>
+          <p className="text-[--muted-foreground] mt-1">
+            {offeneAnfragen && offeneAnfragen > 0
+              ? `Sie haben ${offeneAnfragen} aktive ${offeneAnfragen === 1 ? "Anfrage" : "Anfragen"}.`
+              : "Wie können wir Ihnen heute helfen?"}
+          </p>
+        </div>
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
+          <Link href="/lotse">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Compass className="h-4 w-4" />
+              KI-Lotse
+            </Button>
+          </Link>
+          <Link href="/suche">
+            <Button size="sm" className="gap-1.5">
+              <Search className="h-4 w-4" />
+              Anbieter suchen
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Schnellaktionen */}
+      {/* KPI-Karten */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-        {[
-          { href: "/lotse",           icon: Compass,  titel: "KI-Lotse",       desc: "Beratung starten",        farbe: "#D6EAF8" },
-          { href: "/suche",           icon: Search,   titel: "Suche",           desc: "Anbieter finden",         farbe: "#D5F5E3" },
-          { href: "/familie/anfragen",icon: FileText, titel: "Anfragen",        desc: `${anfragen?.length ?? 0} gesamt`, farbe: "#FEF9E7" },
-          { href: "/familie/favoriten",icon: Heart,   titel: "Favoriten",       desc: "Gespeicherte Anbieter",   farbe: "#FDEDEC" },
-        ].map((a) => (
-          <Link key={a.href} href={a.href}>
-            <Card className="hover:shadow-md transition-all cursor-pointer h-full">
-              <CardContent className="p-4">
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-lg mb-2"
-                  style={{ background: a.farbe }}
-                >
-                  <a.icon className="h-4 w-4 text-[--primary]" />
+        <Link href="/familie/anfragen" className="block">
+          <Card className="hover:shadow-sm transition-all hover:border-[--primary]/20 cursor-pointer">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-blue-600" />
                 </div>
-                <p className="font-semibold text-sm">{a.titel}</p>
-                <p className="text-xs text-[--muted-foreground] mt-0.5">{a.desc}</p>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+                {(offeneAnfragen ?? 0) > 0 && (
+                  <Badge variant="warning" className="text-xs">
+                    {offeneAnfragen} aktiv
+                  </Badge>
+                )}
+              </div>
+              <p className="text-2xl font-bold">{anfragen?.length ?? 0}</p>
+              <p className="text-xs text-[--muted-foreground] mt-0.5">Anfragen gesamt</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/familie/anfragen" className="block">
+          <Card className="hover:shadow-sm transition-all hover:border-[--primary]/20 cursor-pointer">
+            <CardContent className="p-4">
+              <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center mb-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+              </div>
+              <p className="text-2xl font-bold">{abgeschlosseneCount ?? 0}</p>
+              <p className="text-xs text-[--muted-foreground] mt-0.5">Abgeschlossen</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/familie/favoriten" className="block">
+          <Card className="hover:shadow-sm transition-all hover:border-[--primary]/20 cursor-pointer">
+            <CardContent className="p-4">
+              <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center mb-2">
+                <Heart className="h-4 w-4 text-red-500" />
+              </div>
+              <p className="text-2xl font-bold">{favoriten?.length ?? 0}</p>
+              <p className="text-xs text-[--muted-foreground] mt-0.5">Favoriten</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center mb-2">
+              <Star className="h-4 w-4 text-amber-500" />
+            </div>
+            <p className="text-2xl font-bold">{bewertungenGegeben ?? 0}</p>
+            <p className="text-xs text-[--muted-foreground] mt-0.5">Bewertungen</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Mobile Schnellaktionen */}
+      <div className="flex sm:hidden gap-2 mb-6 flex-wrap">
+        <Link href="/lotse" className="flex-1">
+          <Button variant="outline" size="sm" className="gap-1.5 w-full">
+            <Compass className="h-4 w-4" /> KI-Lotse
+          </Button>
+        </Link>
+        <Link href="/suche" className="flex-1">
+          <Button size="sm" className="gap-1.5 w-full">
+            <Search className="h-4 w-4" /> Anbieter suchen
+          </Button>
+        </Link>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Letzte Anfragen */}
-        <div className="lg:col-span-2">
+        {/* Letzte Anfragen + Empfehlungen */}
+        <div className="lg:col-span-2 space-y-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4" /> Aktuelle Anfragen
+                <Clock className="h-4 w-4" /> Meine Anfragen
               </CardTitle>
               <Link href="/familie/anfragen">
                 <Button variant="ghost" size="sm" className="gap-1 text-xs h-7">
-                  Alle <ArrowRight className="h-3 w-3" />
+                  Alle <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {anfragen && anfragen.length > 0 ? (
                 <div className="space-y-2">
                   {anfragen.map((a) => {
-                    const anbieter = a.anbieter as { id: string; name: string; plz: string | null; ort: string | null } | null;
+                    const anbieter = a.anbieter as {
+                      id: string;
+                      name: string;
+                      plz: string | null;
+                      ort: string | null;
+                    } | null;
                     return (
-                      <Link key={a.id} href={`/familie/anfragen/${a.id}`}>
-                        <div className="flex items-center justify-between p-3 rounded-lg border border-[--border] hover:bg-[--muted] transition-colors cursor-pointer">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[--primary-light] text-[--primary] font-semibold text-sm">
-                              {(anbieter?.name?.charAt(0) ?? "?").toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">
-                                {anbieter?.name ?? "Unbekannter Anbieter"}
-                              </p>
-                              <p className="text-xs text-[--muted-foreground] capitalize truncate">
-                                {a.lebenslage.replace(/_/g, " ")} · {formatRelative(a.updated_at)}
-                              </p>
-                            </div>
+                      <Link key={a.id} href={`/familie/anfragen/${a.id}`} className="block group">
+                        <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-[--border] hover:border-[--primary]/25 hover:bg-[--muted]/40 transition-all">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {anbieter?.name ?? "Unbekannter Anbieter"}
+                            </p>
+                            <p className="text-xs text-[--muted-foreground]">
+                              {a.lebenslage.replace(/_/g, " ")} · {formatRelative(a.updated_at)}
+                            </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <Badge variant={statusVariant[a.status as AnfrageStatus] ?? "secondary"}>
+                            <Badge
+                              variant={statusVariant[a.status as AnfrageStatus] ?? "secondary"}
+                              className="text-xs"
+                            >
                               {statusLabel[a.status as AnfrageStatus] ?? a.status}
                             </Badge>
-                            <ArrowRight className="h-3.5 w-3.5 text-[--muted-foreground]" />
+                            <ArrowRight className="h-3.5 w-3.5 text-[--muted-foreground] group-hover:text-[--primary] transition-colors" />
                           </div>
                         </div>
                       </Link>
@@ -214,122 +318,154 @@ export default async function FamilieDashboard() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-10 text-[--muted-foreground]">
-                  <FileText className="h-8 w-8 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm font-medium mb-3">Noch keine Anfragen</p>
-                  <Link href="/lotse">
-                    <Button size="sm" className="gap-1.5">
-                      <Compass className="h-4 w-4" /> Lotse starten
+                <div className="text-center py-8 text-[--muted-foreground]">
+                  <FileText className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm">Noch keine Anfragen</p>
+                  <Link href="/suche" className="mt-3 inline-block">
+                    <Button size="sm" variant="outline" className="gap-1.5">
+                      <Search className="h-4 w-4" /> Anbieter finden
                     </Button>
                   </Link>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {empfohleneAnbieter.length > 0 && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-amber-500" /> Empfohlen in Ihrer Nähe
+                </CardTitle>
+                <Link href="/suche">
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs h-7">
+                    Alle <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-2">
+                {empfohleneAnbieter.map((a) => (
+                  <Link key={a.id} href={`/anbieter/${a.id}`} className="group block">
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-[--border] hover:border-[--primary]/25 hover:bg-[--muted]/40 transition-all">
+                      <div className="w-8 h-8 rounded-lg bg-[--primary]/10 flex items-center justify-center shrink-0">
+                        <Users className="h-4 w-4 text-[--primary]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-medium truncate group-hover:text-[--primary] transition-colors">
+                            {a.name}
+                          </p>
+                          {a.verifiziert && (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                          )}
+                        </div>
+                        {(a.plz || a.ort) && (
+                          <p className="text-xs text-[--muted-foreground] flex items-center gap-0.5">
+                            <MapPin className="h-3 w-3" />
+                            {a.plz}{a.ort ? ` ${a.ort}` : ""}
+                          </p>
+                        )}
+                        {a.bewCount > 0 && (
+                          <SterneDisplay average={a.avgSterne} count={a.bewCount} size="sm" />
+                        )}
+                      </div>
+                      <ArrowRight className="h-3.5 w-3.5 text-[--muted-foreground] group-hover:text-[--primary] shrink-0 transition-colors" />
+                    </div>
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* Empfohlene Anbieter */}
-          {empfohleneAnbieter.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-amber-500" /> Empfohlen in Ihrer Nähe
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {empfohleneAnbieter.map((a) => (
-                    <Link key={a.id} href={`/anbieter/${a.id}`}>
-                      <div className="flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-[--muted] transition-colors cursor-pointer">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[--primary-light] text-[--primary] font-semibold text-sm">
-                          {a.name.charAt(0)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <p className="text-sm font-medium truncate">{a.name}</p>
-                            {a.verifiziert && (
-                              <span className="text-green-600 text-[10px] shrink-0">✓</span>
-                            )}
-                          </div>
-                          {(a.plz || a.ort) && (
-                            <p className="text-xs text-[--muted-foreground] flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-2.5 w-2.5" />{a.plz} {a.ort}
-                            </p>
-                          )}
-                          {a.bewCount > 0 && (
-                            <div className="mt-0.5">
-                              <SterneDisplay average={a.avgSterne} count={a.bewCount} size="sm" />
-                            </div>
-                          )}
-                        </div>
-                        <ArrowRight className="h-3.5 w-3.5 text-[--muted-foreground] mt-1 shrink-0" />
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-                <Link href="/suche">
-                  <Button variant="outline" size="sm" className="w-full mt-2 text-xs h-7 gap-1">
-                    Alle Anbieter <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Favoriten Quick Access */}
-          {favoriten && favoriten.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Heart className="h-4 w-4 text-red-400 fill-red-400" /> Meine Favoriten
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {favoriten.map((f) => {
-                    const a = f.anbieter as { id: string; name: string; plz: string | null; ort: string | null } | null;
+          {/* Favoriten */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Heart className="h-4 w-4 text-red-500" /> Favoriten
+              </CardTitle>
+              <Link href="/familie/favoriten">
+                <Button variant="ghost" size="sm" className="gap-1 text-xs h-7">
+                  Alle <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {favoriten && favoriten.length > 0 ? (
+                <div className="space-y-1">
+                  {favoriten.map((f, i) => {
+                    const a = f.anbieter as {
+                      id: string;
+                      name: string;
+                      plz: string | null;
+                      ort: string | null;
+                      verifiziert: boolean;
+                    } | null;
                     if (!a) return null;
                     return (
-                      <Link key={a.id} href={`/anbieter/${a.id}`}>
-                        <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-[--muted] transition-colors cursor-pointer">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[--primary-light] text-[--primary] font-semibold text-xs">
-                            {a.name.charAt(0)}
+                      <Link key={i} href={`/anbieter/${a.id}`} className="group block">
+                        <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg hover:bg-[--muted] transition-colors">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate group-hover:text-[--primary] transition-colors">
+                              {a.name}
+                            </p>
+                            {(a.plz || a.ort) && (
+                              <p className="text-xs text-[--muted-foreground]">
+                                {a.plz}{a.ort ? ` ${a.ort}` : ""}
+                              </p>
+                            )}
                           </div>
-                          <p className="text-sm font-medium truncate flex-1">{a.name}</p>
-                          <ArrowRight className="h-3 w-3 text-[--muted-foreground] shrink-0" />
+                          {a.verifiziert && (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                          )}
                         </div>
                       </Link>
                     );
                   })}
                 </div>
-                <Link href="/familie/favoriten">
-                  <Button variant="outline" size="sm" className="w-full mt-2 text-xs h-7">
-                    Alle Favoriten
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <div className="text-center py-6 text-[--muted-foreground]">
+                  <Heart className="h-6 w-6 mx-auto mb-2 opacity-20" />
+                  <p className="text-xs">Noch keine Favoriten</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-          {/* No recommendations, no favorites → prompt */}
-          {empfohleneAnbieter.length === 0 && (!favoriten || favoriten.length === 0) && (
-            <Card>
-              <CardContent className="p-5 text-center">
-                <Search className="h-8 w-8 mx-auto mb-3 opacity-30 text-[--primary]" />
-                <p className="text-sm font-medium mb-1">Anbieter entdecken</p>
-                <p className="text-xs text-[--muted-foreground] mb-3">
-                  Finden Sie passende Dienste in Ihrer Nähe.
-                </p>
-                <Link href="/suche">
-                  <Button size="sm" className="gap-1.5 w-full">
-                    <Search className="h-3.5 w-3.5" /> Jetzt suchen
-                  </Button>
+          {/* Schnellzugriff */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" /> Schnellzugriff
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-1">
+              {[
+                { href: "/lotse", icon: Compass, label: "KI-Lotse starten", desc: "Unterstützung finden" },
+                { href: "/suche", icon: Search, label: "Anbieter suchen", desc: "Nach PLZ & Kategorie" },
+                { href: "/familie/nachrichten", icon: MessageSquare, label: "Nachrichten", desc: "Alle Gespräche" },
+                { href: "/familie/anfragen", icon: FileText, label: "Meine Anfragen", desc: "Status verwalten" },
+                { href: "/familie/favoriten", icon: Heart, label: "Favoriten", desc: "Gespeicherte Anbieter" },
+              ].map((item) => (
+                <Link key={item.href} href={item.href} className="block group">
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-[--muted] transition-colors">
+                    <div className="w-7 h-7 rounded-lg bg-[--primary]/8 flex items-center justify-center shrink-0">
+                      <item.icon className="h-3.5 w-3.5 text-[--primary]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium group-hover:text-[--primary] transition-colors">
+                        {item.label}
+                      </p>
+                      <p className="text-xs text-[--muted-foreground]">{item.desc}</p>
+                    </div>
+                    <ArrowRight className="h-3 w-3 text-[--muted-foreground] group-hover:text-[--primary] transition-colors shrink-0" />
+                  </div>
                 </Link>
-              </CardContent>
-            </Card>
-          )}
+              ))}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

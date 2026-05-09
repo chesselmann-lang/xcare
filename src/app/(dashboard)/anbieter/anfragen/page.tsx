@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatRelative } from "@/lib/utils";
 import { AnfragenFilter } from "@/components/anfragen/AnfragenFilter";
+import { AnfragenBulkAktionen } from "@/components/anfragen/AnfragenBulkAktionen";
+import { AnfrageQuickActions } from "@/components/anfragen/AnfrageQuickActions";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -38,6 +40,8 @@ type AnfrageRow = {
   profiles?: { vorname: string | null; nachname: string | null; plz: string | null } | null;
   leistungen?: { name: string } | null;
   _unreadCount?: number;
+  _profileId?: string;   // anbieter's profile id — for sending nachrichten
+  _anbieterId?: string;
 };
 
 export default async function AnbieterAnfragenPage({
@@ -96,6 +100,8 @@ export default async function AnbieterAnfragenPage({
     profiles: a.profiles as AnfrageRow["profiles"],
     leistungen: a.leistungen as AnfrageRow["leistungen"],
     _unreadCount: unreadMap[a.id] ?? 0,
+    _profileId: profile?.id ?? "",
+    _anbieterId: anbieter?.id ?? "",
   }));
 
   // Apply filter
@@ -152,6 +158,11 @@ export default async function AnbieterAnfragenPage({
       <Suspense>
         <AnfragenFilter totalCount={sorted.length} />
       </Suspense>
+
+      {/* Bulk actions */}
+      <AnfragenBulkAktionen
+        anfragen={sorted.map((a) => ({ id: a.id, status: a.status as AnfrageStatus }))}
+      />
 
       {showSections ? (
         <>
@@ -222,41 +233,52 @@ function AnfrageCard({ anfrage: a }: { anfrage: AnfrageRow }) {
     : "Familie";
 
   return (
-    <Link href={`/anbieter/anfragen/${a.id}`} className="block group">
-      <Card className="hover:shadow-sm transition-all cursor-pointer group-hover:border-[--primary]/20">
+    <div className="group">
+      <Card className="hover:shadow-sm transition-all group-hover:border-[--primary]/20">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <Clock className="h-4 w-4 text-[--muted-foreground] shrink-0" />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-medium capitalize truncate">
-                    {a.lebenslage.replace(/_/g, " ")}
-                    {a.leistungen?.name && ` · ${a.leistungen.name}`}
+          {/* Main row — clicking here navigates to detail */}
+          <Link href={`/anbieter/anfragen/${a.id}`} className="block">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <Clock className="h-4 w-4 text-[--muted-foreground] shrink-0" />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium capitalize truncate">
+                      {a.lebenslage.replace(/_/g, " ")}
+                      {a.leistungen?.name && ` · ${a.leistungen.name}`}
+                    </p>
+                    {(a._unreadCount ?? 0) > 0 && (
+                      <span className="flex items-center gap-1 bg-[--primary] text-white text-xs px-2 py-0.5 rounded-full font-semibold shrink-0">
+                        <MessageCircle className="h-3 w-3" />
+                        {a._unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-[--muted-foreground]">
+                    {familienName}
+                    {familie?.plz && ` · ${familie.plz}`}
+                    {" · "}{formatRelative(a.created_at)}
                   </p>
-                  {(a._unreadCount ?? 0) > 0 && (
-                    <span className="flex items-center gap-1 bg-[--primary] text-white text-xs px-2 py-0.5 rounded-full font-semibold shrink-0">
-                      <MessageCircle className="h-3 w-3" />
-                      {a._unreadCount}
-                    </span>
-                  )}
                 </div>
-                <p className="text-xs text-[--muted-foreground]">
-                  {familienName}
-                  {familie?.plz && ` · ${familie.plz}`}
-                  {" · "}{formatRelative(a.created_at)}
-                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge variant={statusVariant[a.status as AnfrageStatus] ?? "secondary"}>
+                  {statusLabel[a.status as AnfrageStatus] ?? a.status}
+                </Badge>
+                <ArrowRight className="h-4 w-4 text-[--muted-foreground] group-hover:text-[--primary] transition-colors" />
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Badge variant={statusVariant[a.status as AnfrageStatus] ?? "secondary"}>
-                {statusLabel[a.status as AnfrageStatus] ?? a.status}
-              </Badge>
-              <ArrowRight className="h-4 w-4 text-[--muted-foreground] group-hover:text-[--primary] transition-colors" />
-            </div>
-          </div>
+          </Link>
+
+          {/* Quick-action row — rendered outside the Link, no propagation issues */}
+          <AnfrageQuickActions
+            anfrageId={a.id}
+            status={a.status as AnfrageStatus}
+            profileId={a._profileId ?? ""}
+            anbieterId={a._anbieterId ?? ""}
+          />
         </CardContent>
       </Card>
-    </Link>
+    </div>
   );
 }

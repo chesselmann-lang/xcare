@@ -6,9 +6,34 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
+        // Allow all crawlers on public pages
         userAgent: "*",
-        allow: ["/", "/suche", "/lotse", "/anbieter/"],
-        disallow: ["/familie/", "/anbieter/profil", "/anbieter/leistungen", "/anbieter/anfragen", "/admin/", "/api/"],
+        allow: [
+          "/",
+          "/suche",
+          "/lotse",
+          "/anbieter",          // public directory listing
+          "/anbieter/",         // individual anbieter profiles (public)
+          "/impressum",
+          "/datenschutz",
+          "/login",
+          "/register",
+        ],
+        disallow: [
+          "/familie/",          // Familie dashboard (private)
+          "/anbieter/profil",   // Anbieter edit pages (private)
+          "/anbieter/leistungen",
+          "/anbieter/anfragen",
+          "/anbieter/nachrichten",
+          "/anbieter/statistiken",
+          "/anbieter/dokumente",
+          "/anbieter/team",
+          "/anbieter/abo",
+          "/admin/",            // Admin panel
+          "/api/",              // API routes
+          "/onboarding",
+          "/einstellungen",
+        ],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

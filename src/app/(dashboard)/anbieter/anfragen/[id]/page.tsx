@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import AnfrageAktionen from "./anfrage-aktionen";
 import { AnfrageNotizen } from "./anfrage-notizen";
+import { AngebotEditor } from "./angebot-editor";
 import { Chat } from "@/components/nachrichten/Chat";
 import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
 import type { AnfrageStatus } from "@/lib/types";
@@ -212,6 +213,15 @@ export default async function AnfrageDetailPage({
           anbieterName={anbieter?.name ?? undefined}
           lebenslage={anfrage.lebenslage}
         />
+
+        {/* Angebot-Editor — structured offer with price, dates, description */}
+        {profile && (
+          <AngebotEditor
+            anfrageId={anfrage.id}
+            profileId={profile.id}
+            currentStatus={anfrage.status as AnfrageStatus}
+          />
+        )}
 
         {/* Interne Notizen (CRM) */}
         {anbieter && (

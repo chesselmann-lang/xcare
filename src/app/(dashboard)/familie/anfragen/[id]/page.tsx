@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/utils";
 import { Chat } from "@/components/nachrichten/Chat";
 import { BewertungAbgeben } from "@/components/bewertungen/BewertungAbgeben";
 import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
+import { FamilieAnfrageAktionen } from "@/components/anfragen/FamilieAnfrageAktionen";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusConfig: Record<
@@ -165,6 +166,14 @@ export default async function FamilieAnfrageDetailPage({
             <p className="text-sm mt-0.5 opacity-80">{statusInfo.description}</p>
           </div>
         </div>
+
+        {/* Familie-Aktionen: Angebot annehmen/ablehnen */}
+        <FamilieAnfrageAktionen
+          anfrageId={id}
+          currentStatus={status}
+          anbieterName={anbieter?.name}
+          familieId={profile.id}
+        />
 
         {/* Anbieter-Info */}
         {anbieter && (

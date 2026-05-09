@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Compass, Search, FileText, Heart,
   Building2, Package, MessageSquare, LogOut, User,
-  Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3
+  Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -28,6 +28,7 @@ const FAMILIE_NAV = [
   { href: "/lotse", label: "KI-Lotse", icon: Compass },
   { href: "/suche", label: "Anbieter suchen", icon: Search },
   { href: "/familie/anfragen", label: "Meine Anfragen", icon: FileText },
+  { href: "/familie/nachrichten", label: "Nachrichten", icon: Inbox },
   { href: "/familie/favoriten", label: "Favoriten", icon: Heart },
 ];
 
@@ -36,6 +37,7 @@ const ANBIETER_NAV = [
   { href: "/anbieter/profil", label: "Mein Profil", icon: Building2 },
   { href: "/anbieter/leistungen", label: "Leistungen", icon: Package },
   { href: "/anbieter/anfragen", label: "Anfragen", icon: MessageSquare, badge: true },
+  { href: "/anbieter/nachrichten", label: "Nachrichten", icon: Inbox },
   { href: "/anbieter/team", label: "Team", icon: Users },
   { href: "/anbieter/dokumente", label: "Dokumente", icon: FolderOpen },
   { href: "/anbieter/statistiken", label: "Statistiken", icon: BarChart3 },

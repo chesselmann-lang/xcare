@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, Menu, X, User, LogOut, Search, Compass } from "lucide-react";
+import { Heart, Menu, X, User, LogOut, Search, Compass, Building2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -40,6 +40,13 @@ export function Navbar({ profile }: NavbarProps) {
           >
             <Compass className="h-4 w-4" />
             Lotse
+          </Link>
+          <Link
+            href="/anbieter"
+            className="flex items-center gap-1.5 text-sm text-[--muted-foreground] hover:text-[--foreground] transition-colors"
+          >
+            <Building2 className="h-4 w-4" />
+            Verzeichnis
           </Link>
           <Link
             href="/suche"
@@ -97,6 +104,9 @@ export function Navbar({ profile }: NavbarProps) {
         <nav id="mobile-menu" className="md:hidden border-t border-[--border] bg-[--background] p-4 space-y-2" aria-label="Mobile Navigation">
           <Link href="/lotse" className="flex items-center gap-2 p-2 rounded-lg hover:bg-[--muted]">
             <Compass className="h-4 w-4" /> Lotse
+          </Link>
+          <Link href="/anbieter" className="flex items-center gap-2 p-2 rounded-lg hover:bg-[--muted]">
+            <Building2 className="h-4 w-4" /> Verzeichnis
           </Link>
           <Link href="/suche" className="flex items-center gap-2 p-2 rounded-lg hover:bg-[--muted]">
             <Search className="h-4 w-4" /> Anbieter suchen
