@@ -1,5 +1,6 @@
 import { MapPin, Phone, Globe } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,20 @@ export function AnbieterKarte({ anbieter, avgSterne, bewertungenCount }: Anbiete
       <CardContent className="p-5">
         <div className="flex gap-4">
           {/* Logo/Avatar */}
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[--primary-light] text-[--primary] font-bold text-xl">
-            {anbieter.name.charAt(0)}
+          <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-[--primary-light] flex items-center justify-center">
+            {anbieter.logo_url ? (
+              <Image
+                src={anbieter.logo_url}
+                alt={`Logo ${anbieter.name}`}
+                width={56}
+                height={56}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-[--primary] font-bold text-xl">
+                {anbieter.name.charAt(0)}
+              </span>
+            )}
           </div>
 
           <div className="flex-1 min-w-0">

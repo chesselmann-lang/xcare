@@ -60,6 +60,28 @@ export default async function DashboardLayout({
     .eq("profile_id", profile.id)
     .eq("gelesen", false);
 
+  // Unread nachrichten count for sidebar badge
+  let unreadNachrichten = 0;
+  if (entityId) {
+    // Fetch anfrage IDs belonging to this user
+    const anfrageQuery = profile.role === "anbieter"
+      ? supabase.from("anfragen").select("id").eq("anbieter_id", entityId)
+      : supabase.from("anfragen").select("id").eq("familie_id", entityId);
+
+    const { data: myAnfragen } = await anfrageQuery;
+    const anfrageIds = myAnfragen?.map((a) => a.id) ?? [];
+
+    if (anfrageIds.length > 0) {
+      const { count: nachrichtenCount } = await supabase
+        .from("nachrichten")
+        .select("*", { count: "exact", head: true })
+        .in("anfrage_id", anfrageIds)
+        .eq("gelesen", false)
+        .neq("sender_id", profile.id);
+      unreadNachrichten = nachrichtenCount ?? 0;
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-[--background]">
       {/* Skip link for keyboard users */}
@@ -75,6 +97,7 @@ export default async function DashboardLayout({
         entityId={entityId}
         profileId={profile.id}
         initialUnreadCount={unreadCount ?? 0}
+        unreadNachrichten={unreadNachrichten}
       />
       <main id="dashboard-main" className="flex-1 min-w-0 overflow-auto pb-16 md:pb-0" tabIndex={-1}>
         {children}

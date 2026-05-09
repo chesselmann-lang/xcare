@@ -6,6 +6,7 @@ import {
   Package, Euro, Clock, ArrowLeft, Building2,
   Facebook, Instagram, Linkedin, Award, FileCheck
 } from "lucide-react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -248,9 +249,21 @@ export default async function AnbieterDetailPage({
       {/* Hero */}
       <div className="rounded-2xl border border-[--border] bg-gradient-to-br from-[--primary-light] to-white p-6 mb-6">
         <div className="flex items-start gap-5 flex-wrap">
-          {/* Avatar */}
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-[--primary] text-white font-bold text-3xl shadow-sm">
-            {anbieter.name.charAt(0)}
+          {/* Avatar / Logo */}
+          <div className="h-20 w-20 shrink-0 rounded-2xl overflow-hidden bg-[--primary] flex items-center justify-center shadow-sm">
+            {anbieter.logo_url ? (
+              <Image
+                src={anbieter.logo_url}
+                alt={`Logo ${anbieter.name}`}
+                width={80}
+                height={80}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-white font-bold text-3xl">
+                {anbieter.name.charAt(0)}
+              </span>
+            )}
           </div>
 
           <div className="flex-1 min-w-0">

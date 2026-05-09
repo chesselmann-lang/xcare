@@ -10,6 +10,7 @@ import { formatRelative } from "@/lib/utils";
 import { AnfragenFilter } from "@/components/anfragen/AnfragenFilter";
 import { AnfragenBulkAktionen } from "@/components/anfragen/AnfragenBulkAktionen";
 import { AnfrageQuickActions } from "@/components/anfragen/AnfrageQuickActions";
+import { WartelisteExportButton } from "@/components/anfragen/WartelisteExportButton";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -144,13 +145,16 @@ export default async function AnbieterAnfragenPage({
             {totalUnread > 0 && ` · ${totalUnread} ungelesen`}
           </p>
         </div>
-        {(enriched.length > 0) && (
-          <a href="/api/anbieter/export">
-            <Button variant="outline" size="sm" className="gap-2 text-xs">
-              <Download className="h-3.5 w-3.5" />
-              CSV Export
-            </Button>
-          </a>
+        {enriched.length > 0 && (
+          <div className="flex items-center gap-2">
+            <WartelisteExportButton />
+            <a href="/api/anbieter/export">
+              <Button variant="outline" size="sm" className="gap-2 text-xs">
+                <Download className="h-3.5 w-3.5" />
+                Alle exportieren
+              </Button>
+            </a>
+          </div>
         )}
       </div>
 

@@ -22,6 +22,8 @@ interface SidebarProps {
   /** profile.id for in-app notification bell */
   profileId?: string;
   initialUnreadCount?: number;
+  /** Unread direct-message count — shown as badge on Nachrichten nav item */
+  unreadNachrichten?: number;
 }
 
 const FAMILIE_NAV = [
@@ -29,7 +31,7 @@ const FAMILIE_NAV = [
   { href: "/lotse", label: "KI-Lotse", icon: Compass },
   { href: "/suche", label: "Anbieter suchen", icon: Search },
   { href: "/familie/anfragen", label: "Meine Anfragen", icon: FileText },
-  { href: "/familie/nachrichten", label: "Nachrichten", icon: Inbox },
+  { href: "/familie/nachrichten", label: "Nachrichten", icon: Inbox, nachrichtenBadge: true },
   { href: "/familie/favoriten", label: "Favoriten", icon: Heart },
   { href: "/familie/gespeicherte-suchen", label: "Gespeicherte Suchen", icon: Bookmark },
   { href: "/familie/vergleich", label: "Anbieter vergleichen", icon: GitCompareArrows },
@@ -40,7 +42,7 @@ const ANBIETER_NAV = [
   { href: "/anbieter/profil", label: "Mein Profil", icon: Building2 },
   { href: "/anbieter/leistungen", label: "Leistungen", icon: Package },
   { href: "/anbieter/anfragen", label: "Anfragen", icon: MessageSquare, badge: true },
-  { href: "/anbieter/nachrichten", label: "Nachrichten", icon: Inbox },
+  { href: "/anbieter/nachrichten", label: "Nachrichten", icon: Inbox, nachrichtenBadge: true },
   { href: "/anbieter/bewertungen", label: "Bewertungen", icon: Star },
   { href: "/anbieter/team", label: "Team", icon: Users },
   { href: "/anbieter/dokumente", label: "Dokumente", icon: FolderOpen },
@@ -55,6 +57,8 @@ function NavItem({
   exact,
   badge,
   badgeCount,
+  nachrichtenBadge,
+  nachrichtenCount,
   onClick,
 }: {
   href: string;
@@ -63,10 +67,15 @@ function NavItem({
   exact?: boolean;
   badge?: boolean;
   badgeCount?: number;
+  nachrichtenBadge?: boolean;
+  nachrichtenCount?: number;
   onClick?: () => void;
 }) {
   const pathname = usePathname();
   const isActive = exact ? pathname === href : pathname.startsWith(href);
+
+  const showAnfragenBadge = badge && badgeCount != null && badgeCount > 0;
+  const showNachrichtenBadge = nachrichtenBadge && nachrichtenCount != null && nachrichtenCount > 0;
 
   return (
     <Link
@@ -80,16 +89,21 @@ function NavItem({
     >
       <Icon className="h-4 w-4 shrink-0" />
       <span className="flex-1">{label}</span>
-      {badge && badgeCount != null && badgeCount > 0 && (
+      {showAnfragenBadge && (
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold">
-          {badgeCount > 9 ? "9+" : badgeCount}
+          {badgeCount! > 9 ? "9+" : badgeCount}
+        </span>
+      )}
+      {showNachrichtenBadge && (
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-bold">
+          {nachrichtenCount! > 9 ? "9+" : nachrichtenCount}
         </span>
       )}
     </Link>
   );
 }
 
-export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId, initialUnreadCount = 0 }: SidebarProps) {
+export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId, initialUnreadCount = 0, unreadNachrichten = 0 }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
 
@@ -149,6 +163,7 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
             key={item.href}
             {...item}
             badgeCount={badgeCount}
+            nachrichtenCount={unreadNachrichten}
             onClick={closeMobile}
           />
         ))}

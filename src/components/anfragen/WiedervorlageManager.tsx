@@ -1,43 +1,63 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Plus, Check, Trash2, CalendarClock, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Bell, BellRing, Check, Trash2, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-interface Wiedervorlage {
+type Wiedervorlage = {
   id: string;
   faellig_am: string;
   notiz: string | null;
   erledigt: boolean;
-}
+};
 
-interface Props {
+interface WiedervorlageManagerProps {
   anfrageId: string;
   anbieterId: string;
   initial: Wiedervorlage[];
 }
 
-export function WiedervorlageManager({ anfrageId, anbieterId, initial }: Props) {
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function isOverdue(faellig_am: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(faellig_am) < today;
+}
+
+export function WiedervorlageManager({
+  anfrageId,
+  anbieterId,
+  initial,
+}: WiedervorlageManagerProps) {
   const [items, setItems] = useState<Wiedervorlage[]>(initial);
   const [showForm, setShowForm] = useState(false);
   const [faelligAm, setFaelligAm] = useState("");
   const [notiz, setNotiz] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [saving, startSaving] = useTransition();
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const supabase = createClient();
 
-  // Today's date as min for datepicker
   const today = new Date().toISOString().split("T")[0];
 
-  async function handleAdd() {
+  async function handleCreate() {
     if (!faelligAm) {
-      toast.error("Bitte ein Datum wählen.");
+      toast.error("Bitte ein Datum auswählen.");
       return;
     }
-    startTransition(async () => {
+    startSaving(async () => {
+      const supabase = createClient();
       const { data, error } = await supabase
         .from("wiedervorlagen")
         .insert({
@@ -45,158 +65,142 @@ export function WiedervorlageManager({ anfrageId, anbieterId, initial }: Props) 
           anbieter_id: anbieterId,
           faellig_am: faelligAm,
           notiz: notiz.trim() || null,
+          erledigt: false,
         })
-        .select()
+        .select("id, faellig_am, notiz, erledigt")
         .single();
 
       if (error) {
         toast.error("Fehler beim Speichern.");
         return;
       }
-      setItems((prev) => [...prev, data]);
+
+      setItems((prev) =>
+        [...prev, data as Wiedervorlage].sort(
+          (a, b) => new Date(a.faellig_am).getTime() - new Date(b.faellig_am).getTime()
+        )
+      );
       setFaelligAm("");
       setNotiz("");
       setShowForm(false);
-      toast.success("Wiedervorlage gespeichert.");
+      toast.success("Wiedervorlage erstellt.");
     });
   }
 
-  async function handleToggle(id: string, current: boolean) {
+  async function handleToggle(item: Wiedervorlage) {
+    setTogglingId(item.id);
+    const supabase = createClient();
     const { error } = await supabase
       .from("wiedervorlagen")
-      .update({ erledigt: !current })
-      .eq("id", id);
+      .update({ erledigt: !item.erledigt })
+      .eq("id", item.id);
 
     if (error) {
       toast.error("Fehler beim Aktualisieren.");
-      return;
+    } else {
+      setItems((prev) =>
+        prev.map((w) => (w.id === item.id ? { ...w, erledigt: !w.erledigt } : w))
+      );
     }
-    setItems((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, erledigt: !current } : w))
-    );
+    setTogglingId(null);
   }
 
   async function handleDelete(id: string) {
     setDeletingId(id);
-    const { error } = await supabase
-      .from("wiedervorlagen")
-      .delete()
-      .eq("id", id);
-
-    setDeletingId(null);
+    const supabase = createClient();
+    const { error } = await supabase.from("wiedervorlagen").delete().eq("id", id);
     if (error) {
       toast.error("Fehler beim Löschen.");
-      return;
+    } else {
+      setItems((prev) => prev.filter((w) => w.id !== id));
+      toast.success("Wiedervorlage entfernt.");
     }
-    setItems((prev) => prev.filter((w) => w.id !== id));
-    toast.success("Wiedervorlage gelöscht.");
+    setDeletingId(null);
   }
 
-  const open = items.filter((w) => !w.erledigt);
+  const pending = items.filter((w) => !w.erledigt);
   const done = items.filter((w) => w.erledigt);
 
   return (
     <div className="space-y-3">
-      {/* Open items */}
-      {open.length === 0 && !showForm && (
-        <p className="text-sm text-gray-400">Keine offenen Wiedervorlagen.</p>
-      )}
-      {open.map((w) => {
-        const isOverdue = w.faellig_am < today;
-        return (
-          <div
-            key={w.id}
-            className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-              isOverdue
-                ? "bg-red-50 border-red-100"
-                : "bg-amber-50 border-amber-100"
-            }`}
-          >
-            <BellRing
-              className={`h-4 w-4 mt-0.5 shrink-0 ${
-                isOverdue ? "text-red-500" : "text-amber-500"
-              }`}
+      {pending.length > 0 && (
+        <ul className="space-y-2">
+          {pending.map((w) => (
+            <WiedervorlageItem
+              key={w.id}
+              item={w}
+              onToggle={handleToggle}
+              onDelete={handleDelete}
+              toggling={togglingId === w.id}
+              deleting={deletingId === w.id}
             />
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium ${isOverdue ? "text-red-700" : "text-amber-700"}`}>
-                {new Date(w.faellig_am).toLocaleDateString("de-DE", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                })}
-                {isOverdue && (
-                  <span className="ml-2 text-xs font-normal text-red-500">
-                    überfällig
-                  </span>
-                )}
-              </p>
-              {w.notiz && (
-                <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{w.notiz}</p>
-              )}
-            </div>
-            <div className="flex gap-1 shrink-0">
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 text-green-600 hover:bg-green-100"
-                onClick={() => handleToggle(w.id, false)}
-                title="Als erledigt markieren"
-              >
-                <Check className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                onClick={() => handleDelete(w.id)}
-                disabled={deletingId === w.id}
-              >
-                {deletingId === w.id ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5" />
-                )}
-              </Button>
-            </div>
-          </div>
-        );
-      })}
+          ))}
+        </ul>
+      )}
 
-      {/* Add form */}
+      {pending.length === 0 && !showForm && (
+        <p className="text-sm text-[--muted-foreground]">Keine offenen Wiedervorlagen.</p>
+      )}
+
+      {done.length > 0 && (
+        <details className="group">
+          <summary className="cursor-pointer text-xs text-[--muted-foreground] hover:text-[--foreground] list-none flex items-center gap-1 select-none">
+            <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
+            {done.length} erledigt
+          </summary>
+          <ul className="mt-2 space-y-2 opacity-60">
+            {done.map((w) => (
+              <WiedervorlageItem
+                key={w.id}
+                item={w}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+                toggling={togglingId === w.id}
+                deleting={deletingId === w.id}
+              />
+            ))}
+          </ul>
+        </details>
+      )}
+
       {showForm ? (
-        <div className="border border-dashed border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50">
-          <div className="flex gap-2">
+        <div className="rounded-lg border border-[--border] bg-[--muted]/20 p-3 space-y-2">
+          <div>
+            <label className="text-xs font-medium text-[--muted-foreground] mb-1 block">
+              Fällig am *
+            </label>
             <Input
               type="date"
               min={today}
               value={faelligAm}
               onChange={(e) => setFaelligAm(e.target.value)}
-              className="text-sm h-8 w-auto"
+              className="text-sm"
             />
           </div>
-          <Input
-            placeholder="Notiz (optional)"
-            value={notiz}
-            onChange={(e) => setNotiz(e.target.value)}
-            className="text-sm h-8"
-            maxLength={200}
-          />
+          <div>
+            <label className="text-xs font-medium text-[--muted-foreground] mb-1 block">
+              Notiz (optional)
+            </label>
+            <Textarea
+              rows={2}
+              placeholder="z. B. Rückruf bei Familie, Angebot nachfassen…"
+              value={notiz}
+              onChange={(e) => setNotiz(e.target.value)}
+              className="text-sm resize-none"
+            />
+          </div>
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              className="h-7 text-xs"
-              onClick={handleAdd}
-              disabled={isPending}
-            >
-              {isPending ? (
-                <Loader2 className="h-3 w-3 animate-spin mr-1" />
-              ) : null}
+            <Button size="sm" onClick={handleCreate} disabled={saving} className="gap-1.5">
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Plus className="h-3.5 w-3.5" />
+              )}
               Speichern
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 text-xs"
               onClick={() => {
                 setShowForm(false);
                 setFaelligAm("");
@@ -211,46 +215,103 @@ export function WiedervorlageManager({ anfrageId, anbieterId, initial }: Props) 
         <Button
           size="sm"
           variant="outline"
-          className="gap-1.5 h-7 text-xs w-full border-dashed"
           onClick={() => setShowForm(true)}
+          className="gap-1.5 text-xs"
         >
-          <Plus className="h-3.5 w-3.5" /> Wiedervorlage hinzufügen
+          <Plus className="h-3.5 w-3.5" />
+          Wiedervorlage hinzufügen
         </Button>
       )}
-
-      {/* Done items (collapsed) */}
-      {done.length > 0 && (
-        <div className="pt-1 border-t border-gray-100">
-          <p className="text-xs text-gray-400 mb-1.5 flex items-center gap-1">
-            <Bell className="h-3 w-3" /> {done.length} erledigt
-          </p>
-          {done.map((w) => (
-            <div
-              key={w.id}
-              className="flex items-center gap-2 py-1 opacity-50"
-            >
-              <Check className="h-3 w-3 text-green-500 shrink-0" />
-              <p className="text-xs text-gray-500 line-through flex-1">
-                {new Date(w.faellig_am).toLocaleDateString("de-DE", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                })}
-                {w.notiz && ` – ${w.notiz}`}
-              </p>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6 text-gray-300 hover:text-red-400"
-                onClick={() => handleDelete(w.id)}
-                disabled={deletingId === w.id}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
+  );
+}
+
+function WiedervorlageItem({
+  item,
+  onToggle,
+  onDelete,
+  toggling,
+  deleting,
+}: {
+  item: Wiedervorlage;
+  onToggle: (item: Wiedervorlage) => void;
+  onDelete: (id: string) => void;
+  toggling: boolean;
+  deleting: boolean;
+}) {
+  const overdue = !item.erledigt && isOverdue(item.faellig_am);
+
+  return (
+    <li className="flex items-start gap-2.5 group/item">
+      <button
+        type="button"
+        onClick={() => onToggle(item)}
+        disabled={toggling || deleting}
+        className={cn(
+          "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+          item.erledigt
+            ? "bg-emerald-500 border-emerald-500 text-white"
+            : "border-[--border] hover:border-emerald-400"
+        )}
+      >
+        {toggling ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : item.erledigt ? (
+          <Check className="h-3 w-3" />
+        ) : null}
+      </button>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <CalendarClock
+            className={cn(
+              "h-3.5 w-3.5 shrink-0",
+              overdue ? "text-red-500" : "text-[--muted-foreground]"
+            )}
+          />
+          <span
+            className={cn(
+              "text-sm font-medium",
+              item.erledigt
+                ? "line-through text-[--muted-foreground]"
+                : overdue
+                ? "text-red-600"
+                : ""
+            )}
+          >
+            {formatDate(item.faellig_am)}
+          </span>
+          {overdue && !item.erledigt && (
+            <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-medium">
+              überfällig
+            </span>
+          )}
+        </div>
+        {item.notiz && (
+          <p
+            className={cn(
+              "text-xs text-[--muted-foreground] mt-0.5",
+              item.erledigt && "line-through"
+            )}
+          >
+            {item.notiz}
+          </p>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onDelete(item.id)}
+        disabled={toggling || deleting}
+        className="opacity-0 group-hover/item:opacity-100 transition-opacity text-[--muted-foreground] hover:text-red-600 mt-0.5"
+        aria-label="Löschen"
+      >
+        {deleting ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Trash2 className="h-3.5 w-3.5" />
+        )}
+      </button>
+    </li>
   );
 }

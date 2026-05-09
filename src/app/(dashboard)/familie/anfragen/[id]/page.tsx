@@ -266,6 +266,7 @@ export default async function FamilieAnfrageDetailPage({
           </CardContent>
         </Card>
 
+
         {/* Status-spezifische Aktionen */}
         {status === "abgelehnt" && (
           <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-start justify-between gap-4">
@@ -284,70 +285,61 @@ export default async function FamilieAnfrageDetailPage({
                 </Link>
               )}
               <Link href="/suche">
-                <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-100">
-                  Andere Anbieter
+                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
+                  Neue Suche
                 </Button>
               </Link>
             </div>
           </div>
         )}
 
-        {status === "abgeschlossen" && anbieter && (
-          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex items-start justify-between gap-4">
-            <div>
-              <p className="font-medium text-gray-700 text-sm">Neue Anfrage senden?</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Stellen Sie eine neue Anfrage beim selben Anbieter.
-              </p>
-            </div>
-            <Link href={`/anbieter/${anbieter.id}`} className="shrink-0">
-              <Button size="sm" variant="outline" className="gap-1.5">
-                <FileText className="h-3.5 w-3.5" /> Erneut anfragen
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        {/* Bewertung abgeben — nur wenn abgeschlossen */}
-        {status === "abgeschlossen" && anbieter && (
-          <BewertungAbgeben
-            anbieterId={anbieter.id}
-            anbieterName={anbieter.name}
-            anfrageId={id}
-            familieId={profile.id}
-            initialSterne={existingBewertung?.sterne ?? null}
-            initialKommentar={existingBewertung?.kommentar ?? null}
-          />
-        )}
-
-        {/* Chat */}
-        {/* Status-Verlauf */}
-        {((historie && historie.length > 0) || anfrage.created_at) && (
+        {/* Status-Historie Timeline */}
+        {(historie && historie.length > 0) && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-4 w-4" /> Anfrage-Verlauf
+                <Clock className="h-4 w-4 text-[--primary]" /> Verlauf
               </CardTitle>
             </CardHeader>
             <CardContent>
               <HistorieTimeline
-                historie={historie ?? []}
-                showCreation
+                historie={historie}
+                showCreation={true}
                 erstelltAt={anfrage.created_at}
               />
             </CardContent>
           </Card>
         )}
 
-        <div>
-          <h2 className="text-base font-semibold mb-3">Nachrichten</h2>
-          <Chat
+        {/* Chat */}
+        {anbieter && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[--primary]" /> Nachrichten mit {anbieter.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Chat
+                anfrageId={id}
+                currentUserId={user!.id}
+                initialNachrichten={nachrichten ?? []}
+                profileId={profile.id}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Bewertung abgeben */}
+        {(status === "bestaetigt" || status === "abgeschlossen") && anbieter && (
+          <BewertungAbgeben
             anfrageId={id}
-            currentProfileId={profile.id}
-            currentRole="familie"
-            initialNachrichten={nachrichten ?? []}
+            anbieterId={anbieter.id}
+            familieId={profile.id}
+            anbieterName={anbieter.name}
+            existingBewertung={existingBewertung}
           />
-        </div>
+        )}
       </div>
     </div>
   );

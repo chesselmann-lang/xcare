@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import ProfilFormular from "./profil-formular";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VerfuegbarkeitPicker } from "@/components/anbieter/VerfuegbarkeitPicker";
+import { LogoUploadCard } from "@/components/anbieter/LogoUploadCard";
 import { CalendarCheck2 } from "lucide-react";
 
 export default async function AnbieterProfilPage() {
@@ -47,6 +48,15 @@ export default async function AnbieterProfilPage() {
             />
           </CardContent>
         </Card>
+      )}
+
+      {/* Logo-Upload */}
+      {anbieter && (
+        <LogoUploadCard
+          anbieterId={anbieter.id}
+          anbieterName={anbieter.name}
+          initialLogoUrl={anbieter.logo_url ?? null}
+        />
       )}
 
       {/* Profil-Formular */}
