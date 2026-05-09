@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   BarChart3, TrendingUp, TrendingDown, Minus, Star,
   Users, CheckCircle2, Clock, ArrowLeft, MessageSquare,
-  Heart, Award, Activity
+  Heart, Award, Activity, Eye
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,10 +83,12 @@ export default async function StatistikenPage() {
   if (!anbieter) redirect("/anbieter");
 
   // ── Load all anfragen ────────────────────────────────────────────────────
+  const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const [
     { data: alleAnfragen },
     { data: alleBewertungen },
     { data: alleNachrichten },
+    { data: profilAufrufe },
   ] = await Promise.all([
     supabase
       .from("anfragen")
@@ -102,6 +104,12 @@ export default async function StatistikenPage() {
       .from("nachrichten")
       .select("id, created_at, anfrage_id")
       .eq("sender_id", profile.id),
+    supabase
+      .from("anbieter_profil_aufrufe")
+      .select("created_at")
+      .eq("anbieter_id", anbieter.id)
+      .gte("created_at", since30d)
+      .order("created_at", { ascending: true }),
   ]);
 
   const anfragen = alleAnfragen ?? [];
@@ -186,6 +194,30 @@ export default async function StatistikenPage() {
   // ── Bar chart max ─────────────────────────────────────────────────────────
   const maxMonthly = Math.max(...monthlyData.map((m) => m.total), 1);
 
+  // ── Profil-Aufrufe (last 30 days, grouped by day) ─────────────────────────
+  const aufrufe = profilAufrufe ?? [];
+  const aufrufeByDay: Record<string, number> = {};
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+    aufrufeByDay[d.toISOString().slice(0, 10)] = 0;
+  }
+  aufrufe.forEach((a) => {
+    const day = a.created_at.slice(0, 10);
+    if (day in aufrufeByDay) aufrufeByDay[day] = (aufrufeByDay[day] ?? 0) + 1;
+  });
+  const aufrufeData = Object.entries(aufrufeByDay).map(([date, count]) => ({ date, count }));
+  const totalAufrufe30d = aufrufe.length;
+  const aufrufeMax = Math.max(...aufrufeData.map((d) => d.count), 1);
+
+  // Compare this-week vs last-week
+  const nowTs = Date.now();
+  const aufrufeThisWeek = aufrufe.filter((a) => new Date(a.created_at).getTime() >= nowTs - 7 * 24 * 60 * 60 * 1000).length;
+  const aufrufeLastWeek = aufrufe.filter((a) => {
+    const ts = new Date(a.created_at).getTime();
+    return ts >= nowTs - 14 * 24 * 60 * 60 * 1000 && ts < nowTs - 7 * 24 * 60 * 60 * 1000;
+  }).length;
+  const aufrufeTrend = aufrufeThisWeek - aufrufeLastWeek;
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
       {/* Header */}
@@ -257,6 +289,82 @@ export default async function StatistikenPage() {
           </Card>
         ))}
       </div>
+
+      {/* Profilaufrufe – 30-day sparkline */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Eye className="h-4 w-4 text-indigo-500" /> Profilaufrufe (letzte 30 Tage)
+            </CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-2xl font-bold">{totalAufrufe30d}</p>
+                <p className="text-xs text-[--muted-foreground]">Aufrufe gesamt</p>
+              </div>
+              <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                aufrufeTrend > 0 ? "bg-green-50 text-green-700" :
+                aufrufeTrend < 0 ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-500"
+              }`}>
+                {aufrufeTrend > 0 ? <TrendingUp className="h-3 w-3" /> :
+                 aufrufeTrend < 0 ? <TrendingDown className="h-3 w-3" /> :
+                 <Minus className="h-3 w-3" />}
+                {aufrufeTrend > 0 ? `+${aufrufeTrend}` : aufrufeTrend} vs. Vorwoche
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {totalAufrufe30d === 0 ? (
+            <p className="text-sm text-[--muted-foreground] text-center py-6">
+              Noch keine Profilaufrufe erfasst. Daten werden ab sofort gesammelt.
+            </p>
+          ) : (
+            <>
+              {/* Daily bar sparkline */}
+              <div className="flex items-end gap-px h-20 mb-2">
+                {aufrufeData.map((d) => (
+                  <div
+                    key={d.date}
+                    className="flex-1 flex flex-col justify-end group relative"
+                    title={`${d.date}: ${d.count} Aufrufe`}
+                  >
+                    <div
+                      className="w-full bg-indigo-400 hover:bg-indigo-600 rounded-t-sm transition-colors"
+                      style={{ height: `${Math.max((d.count / aufrufeMax) * 100, d.count > 0 ? 8 : 2)}%` }}
+                    />
+                    {/* Tooltip on hover */}
+                    <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-10 pointer-events-none">
+                      <div className="bg-gray-900 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap">
+                        {d.count}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Date labels — first, middle, last */}
+              <div className="flex justify-between text-[10px] text-[--muted-foreground] mt-1">
+                <span>{new Date(aufrufeData[0]?.date ?? "").toLocaleDateString("de-DE", { day: "numeric", month: "short" })}</span>
+                <span>{new Date(aufrufeData[14]?.date ?? "").toLocaleDateString("de-DE", { day: "numeric", month: "short" })}</span>
+                <span>{new Date(aufrufeData[aufrufeData.length - 1]?.date ?? "").toLocaleDateString("de-DE", { day: "numeric", month: "short" })}</span>
+              </div>
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[--border] text-sm">
+                <div>
+                  <span className="text-[--muted-foreground]">Diese Woche: </span>
+                  <span className="font-semibold">{aufrufeThisWeek}</span>
+                </div>
+                <div>
+                  <span className="text-[--muted-foreground]">Letzte Woche: </span>
+                  <span className="font-semibold">{aufrufeLastWeek}</span>
+                </div>
+                <div className="ml-auto text-xs text-[--muted-foreground]">
+                  Zählt echte Profilbesuche von Familien & Gästen
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid lg:grid-cols-3 gap-6 mb-6">
         {/* Monthly Bar Chart */}
@@ -376,121 +484,4 @@ export default async function StatistikenPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium truncate">
-                          {lebenslagenLabel[ll] ?? ll.replace(/_/g, " ")}
-                        </span>
-                        <span className="text-xs text-[--muted-foreground] shrink-0 ml-2">
-                          {count}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-[--border] rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[--primary] rounded-full"
-                          style={{ width: `${(count / (llSorted[0][1] || 1)) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-[--muted-foreground] text-center py-8">Noch keine Anfragen</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Status Verteilung */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" /> Status-Übersicht
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {Object.keys(statusCounts).length > 0 ? (
-              <div className="space-y-2">
-                {(Object.entries(statusCounts) as [AnfrageStatus, number][])
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([status, count]) => (
-                    <div key={status} className="flex items-center justify-between p-2.5 rounded-lg bg-[--muted]">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[status] ?? "bg-gray-100 text-gray-700"}`}>
-                        {statusLabel[status] ?? status}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        <div className="w-24 h-2 bg-[--border] rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-[--primary] opacity-70 rounded-full"
-                            style={{ width: total > 0 ? `${(count / total) * 100}%` : "0%" }}
-                          />
-                        </div>
-                        <span className="text-sm font-semibold w-6 text-right">{count}</span>
-                      </div>
-                    </div>
-                  ))}
-                <div className="pt-1 border-t border-[--border] flex justify-between items-center">
-                  <span className="text-xs text-[--muted-foreground]">Abschlussrate</span>
-                  <span className={`text-sm font-bold ${abschlussRate >= 50 ? "text-green-600" : abschlussRate >= 25 ? "text-amber-600" : "text-red-600"}`}>
-                    {abschlussRate}%
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-[--muted-foreground] text-center py-8">Noch keine Anfragen</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Monatstabelle */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Award className="h-4 w-4 text-amber-500" /> Monatstabelle (letzte 6 Monate)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[--border]">
-                  {["Monat", "Anfragen", "Abgeschlossen", "Rate", "Trend"].map((h) => (
-                    <th key={h} className="text-left text-xs font-semibold text-[--muted-foreground] pb-2 pr-4 last:pr-0">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[--border]">
-                {[...monthlyData].reverse().map((m, i) => {
-                  const prev = monthlyData[5 - i - 1];
-                  const diff = prev !== undefined ? m.total - prev.total : 0;
-                  return (
-                    <tr key={m.label} className={i === 0 ? "font-semibold" : ""}>
-                      <td className="py-2.5 pr-4 text-sm">{m.label}</td>
-                      <td className="py-2.5 pr-4">{m.total}</td>
-                      <td className="py-2.5 pr-4">{m.abgeschlossen}</td>
-                      <td className="py-2.5 pr-4">
-                        <span className={`font-medium ${m.rate >= 50 ? "text-green-600" : m.rate >= 25 ? "text-amber-600" : m.total > 0 ? "text-red-600" : "text-[--muted-foreground]"}`}>
-                          {m.total > 0 ? `${m.rate}%` : "—"}
-                        </span>
-                      </td>
-                      <td className="py-2.5">
-                        {prev !== undefined ? (
-                          <span className={`flex items-center gap-1 text-xs ${trendColor(diff)}`}>
-                            {trendIcon(diff)}
-                            {diff !== 0 ? `${diff > 0 ? "+" : ""}${diff}` : "="}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-[--muted-foreground]">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+                          {lebe

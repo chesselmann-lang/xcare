@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { AnfrageDialog } from "@/components/anfrage/AnfrageDialog";
 import { FavoritButton } from "@/components/favoriten/FavoritButton";
 import { MerklisteToggle } from "@/components/merkliste/MerklisteToggle";
+import { ProfilAufrufTracker } from "@/components/anbieter/ProfilAufrufTracker";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { ShareButton } from "@/components/anbieter/ShareButton";
 import { LocalBusinessJsonLd, BreadcrumbJsonLd, LeistungenJsonLd } from "@/components/seo/JsonLd";
@@ -758,5 +759,4 @@ export default async function AnbieterDetailPage({
                           <Instagram className="h-4 w-4" /> Instagram
                         </a>
                       )}
-                      {sm.linkedin && (
-                        <a href={sm.linkedin} target="_blank" rel="noopen
+                      {sm.linked
