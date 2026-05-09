@@ -464,4 +464,231 @@ export default async function StatistikenPage() {
               <CardTitle className="text-base flex items-center gap-2">
                 <Activity className="h-4 w-4" /> Anfragen pro Monat
               </CardTitle>
-              <div className=
+              <div className="flex items-center gap-1.5 text-xs text-[--muted-foreground]">
+                {trendIcon(monthTrend)}
+                <span className={trendColor(monthTrend)}>
+                  {monthTrend > 0 ? "+" : ""}{monthTrend} ggü. Vormonat
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end gap-3 h-40">
+                {monthlyData.map((m) => (
+                  <div key={m.label} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-[10px] text-[--muted-foreground] font-medium">
+                      {m.total > 0 ? m.total : ""}
+                    </span>
+                    <div className="w-full flex flex-col justify-end" style={{ height: "120px" }}>
+                      {m.total > 0 ? (
+                        <div
+                          className="w-full rounded-t-md bg-[--primary] transition-all relative overflow-hidden"
+                          style={{ height: `${Math.max((m.total / maxMonthly) * 100, 8)}%` }}
+                        >
+                          {m.abgeschlossen > 0 && (
+                            <div
+                              className="absolute bottom-0 left-0 right-0 bg-green-500 opacity-60 rounded-t-md"
+                              style={{ height: `${(m.abgeschlossen / m.total) * 100}%` }}
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-full rounded-t-md bg-[--border]" style={{ height: "4px" }} />
+                      )}
+                    </div>
+                    <span className="text-[10px] text-[--muted-foreground]">{m.label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-4 mt-3 text-xs text-[--muted-foreground]">
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[--primary]" /> Anfragen
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-green-500 opacity-60" /> Abgeschlossen
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Bewertungs-Breakdown */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Star className="h-4 w-4 text-amber-500" /> Bewertungen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {bewertungen.length > 0 ? (
+              <>
+                <div className="flex items-baseline gap-2 mb-4">
+                  <span className="text-4xl font-bold">{avgSterne.toFixed(1)}</span>
+                  <div>
+                    <SterneDisplay average={avgSterne} count={bewertungen.length} size="sm" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {sterneCounts.map(({ sterne, count }) => (
+                    <div key={sterne} className="flex items-center gap-2">
+                      <span className="text-xs w-4 text-right">{sterne}</span>
+                      <Star className="h-3 w-3 text-amber-400 shrink-0" />
+                      <div className="flex-1 h-2 bg-[--border] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-amber-400 rounded-full"
+                          style={{
+                            width: bewertungen.length > 0
+                              ? `${(count / bewertungen.length) * 100}%`
+                              : "0%"
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-[--muted-foreground] w-4">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-[--muted-foreground]">
+                <Star className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">Noch keine Bewertungen</p>
+                <p className="text-xs mt-1">Bewertungen erscheinen nach abgeschlossenen Anfragen</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        {/* Lebenslage Verteilung */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Heart className="h-4 w-4 text-red-400" /> Lebenslagen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {llSorted.length > 0 ? (
+              <div className="space-y-3">
+                {llSorted.map(([ll, count]) => (
+                  <div key={ll} className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium truncate">
+                          {lebenslagenLabel[ll] ?? ll.replace(/_/g, " ")}
+                        </span>
+                        <span className="text-xs text-[--muted-foreground] shrink-0 ml-2">
+                          {count}
+                        </span>
+                      </div>
+                      <div className="h-2 bg-[--border] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[--primary] rounded-full"
+                          style={{ width: `${(count / (llSorted[0][1] || 1)) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[--muted-foreground] text-center py-8">Noch keine Anfragen</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Status Verteilung */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" /> Status-Übersicht
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Object.keys(statusCounts).length > 0 ? (
+              <div className="space-y-2">
+                {(Object.entries(statusCounts) as [AnfrageStatus, number][])
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([status, count]) => (
+                    <div key={status} className="flex items-center justify-between p-2.5 rounded-lg bg-[--muted]">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[status] ?? "bg-gray-100 text-gray-700"}`}>
+                        {statusLabel[status] ?? status}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-24 h-2 bg-[--border] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[--primary] opacity-70 rounded-full"
+                            style={{ width: total > 0 ? `${(count / total) * 100}%` : "0%" }}
+                          />
+                        </div>
+                        <span className="text-sm font-semibold w-6 text-right">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                <div className="pt-1 border-t border-[--border] flex justify-between items-center">
+                  <span className="text-xs text-[--muted-foreground]">Abschlussrate</span>
+                  <span className={`text-sm font-bold ${abschlussRate >= 50 ? "text-green-600" : abschlussRate >= 25 ? "text-amber-600" : "text-red-600"}`}>
+                    {abschlussRate}%
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-[--muted-foreground] text-center py-8">Noch keine Anfragen</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Monatstabelle */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Award className="h-4 w-4 text-amber-500" /> Monatstabelle (letzte 6 Monate)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[--border]">
+                  {["Monat", "Anfragen", "Abgeschlossen", "Rate", "Trend"].map((h) => (
+                    <th key={h} className="text-left text-xs font-semibold text-[--muted-foreground] pb-2 pr-4 last:pr-0">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[--border]">
+                {[...monthlyData].reverse().map((m, i) => {
+                  const prev = monthlyData[5 - i - 1];
+                  const diff = prev !== undefined ? m.total - prev.total : 0;
+                  return (
+                    <tr key={m.label} className={i === 0 ? "font-semibold" : ""}>
+                      <td className="py-2.5 pr-4 text-sm">{m.label}</td>
+                      <td className="py-2.5 pr-4">{m.total}</td>
+                      <td className="py-2.5 pr-4">{m.abgeschlossen}</td>
+                      <td className="py-2.5 pr-4">
+                        <span className={`font-medium ${m.rate >= 50 ? "text-green-600" : m.rate >= 25 ? "text-amber-600" : m.total > 0 ? "text-red-600" : "text-[--muted-foreground]"}`}>
+                          {m.total > 0 ? `${m.rate}%` : "—"}
+                        </span>
+                      </td>
+                      <td className="py-2.5">
+                        {prev !== undefined ? (
+                          <span className={`flex items-center gap-1 text-xs ${trendColor(diff)}`}>
+                            {trendIcon(diff)}
+                            {diff !== 0 ? `${diff > 0 ? "+" : ""}${diff}` : "="}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[--muted-foreground]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

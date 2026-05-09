@@ -231,4 +231,19 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onCli
+            onClick={closeMobile}
+          />
+          <aside className="relative w-72 bg-[--card] h-full shadow-2xl overflow-y-auto">
+            <button
+              onClick={closeMobile}
+              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[--muted]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <SidebarContent />
+          </aside>
+        </div>
+      )}
+    </>
+  );
+}

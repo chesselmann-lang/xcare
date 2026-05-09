@@ -642,4 +642,70 @@ export default async function AnbieterDashboard() {
                     const datum = new Date(w.faellig_am).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
                     return (
                       <Link key={w.id} href={`/anbieter/anfragen/${w.anfrage_id}`}>
-                        <div className={`flex item
+                        <div className={`flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-[--muted] transition-colors cursor-pointer ${overdue ? "bg-red-50 border border-red-100" : "border border-[--border]"}`}>
+                          <div className={`h-1.5 w-1.5 rounded-full mt-1.5 shrink-0 ${overdue ? "bg-red-500" : "bg-amber-400"}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-semibold ${overdue ? "text-red-700" : "text-[--foreground]"}`}>
+                              {datum}{overdue ? " · überfällig" : ""}
+                            </p>
+                            {w.notiz ? (
+                              <p className="text-xs text-[--muted-foreground] truncate">{w.notiz}</p>
+                            ) : anfrageLebenslage ? (
+                              <p className="text-xs text-[--muted-foreground] capitalize truncate">
+                                {anfrageLebenslage.replace(/_/g, " ")}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            );
+          })()}
+
+          {/* Bewertungen */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Star className="h-4 w-4 text-amber-400 fill-amber-400" /> Bewertungen
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {bewCount > 0 ? (
+                <div>
+                  <Link href={`/anbieter/${anbieter?.id}/bewertungen`} target="_blank" className="inline-block mb-2 hover:opacity-80">
+                    <SterneDisplay average={avgSterne} count={bewCount} size="md" />
+                  </Link>
+                  <div className="mt-1 space-y-1">
+                    {[5, 4, 3, 2, 1].map((s) => {
+                      const cnt = bewertungen?.filter((b) => b.sterne === s).length ?? 0;
+                      const pct = bewCount > 0 ? (cnt / bewCount) * 100 : 0;
+                      return (
+                        <div key={s} className="flex items-center gap-2 text-xs">
+                          <span className="w-3 text-right">{s}</span>
+                          <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                          <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                            <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-[--muted-foreground] w-4 text-right">{cnt}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-3 text-[--muted-foreground]">
+                  <Star className="h-6 w-6 mx-auto mb-2 opacity-30" />
+                  <p className="text-xs">Noch keine Bewertungen</p>
+                  <p className="text-xs mt-0.5 opacity-70">Abgeschlossene Anfragen generieren Bewertungen</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

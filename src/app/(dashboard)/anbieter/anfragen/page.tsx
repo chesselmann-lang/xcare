@@ -281,4 +281,45 @@ function AnfrageCard({ anfrage: a }: { anfrage: AnfrageRow }) {
               <div className="flex items-center gap-3 min-w-0">
                 <Clock className="h-4 w-4 text-[--muted-foreground] shrink-0" />
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 fl
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium capitalize truncate">
+                      {a.lebenslage.replace(/_/g, " ")}
+                      {a.leistungen?.name && ` · ${a.leistungen.name}`}
+                    </p>
+                    {(a._unreadCount ?? 0) > 0 && (
+                      <span className="flex items-center gap-1 bg-[--primary] text-white text-xs px-2 py-0.5 rounded-full font-semibold shrink-0">
+                        <MessageCircle className="h-3 w-3" />
+                        {a._unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-[--muted-foreground]">
+                    {familienName}
+                    {familie?.plz && ` · ${familie.plz}`}
+                    {" · "}{formatRelative(a.created_at)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <AnfragePrioritaetToggle anfrageId={a.id} />
+                <StatusWechselSelect
+                  anfrageId={a.id}
+                  status={a.status as AnfrageStatus}
+                />
+                <ArrowRight className="h-4 w-4 text-[--muted-foreground] group-hover:text-[--primary] transition-colors" />
+              </div>
+            </div>
+          </Link>
+
+          {/* Quick-action row — rendered outside the Link, no propagation issues */}
+          <AnfrageQuickActions
+            anfrageId={a.id}
+            status={a.status as AnfrageStatus}
+            profileId={a._profileId ?? ""}
+            anbieterId={a._anbieterId ?? ""}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
