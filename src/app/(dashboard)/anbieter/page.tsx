@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
+import { VerfuegbarkeitToggle } from "@/components/anbieter/VerfuegbarkeitToggle";
 import { formatRelative } from "@/lib/utils";
 import type { AnfrageStatus } from "@/lib/types";
 
@@ -276,6 +277,14 @@ export default async function AnbieterDashboard() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Verfügbarkeits-Toggle */}
+      {anbieter?.id && (
+        <VerfuegbarkeitToggle
+          anbieterId={anbieter.id}
+          initialVerfuegbarkeit={anbieter.verfuegbarkeit ?? null}
+        />
       )}
 
       {/* Schnellaktionen */}

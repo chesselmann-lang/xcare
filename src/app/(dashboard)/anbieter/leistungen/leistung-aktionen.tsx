@@ -3,22 +3,44 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, Archive, ArchiveRestore, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Archive, ArchiveRestore, Pencil, Trash2, Copy } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import type { Leistung } from "@/lib/types";
 
 interface Props {
   leistungId: string;
+  leistung: Leistung;
   aktiv: boolean;
   onToggle: (id: string, aktiv: boolean) => void;
   onDelete: (id: string) => void;
+  onDuplicate: (newLeistung: Leistung) => void;
 }
 
-export function LeistungAktionen({ leistungId, aktiv, onToggle, onDelete }: Props) {
+export function LeistungAktionen({ leistungId, leistung, aktiv, onToggle, onDelete, onDuplicate }: Props) {
   const supabase = createClient();
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleDuplicate = async () => {
+    setDuplicating(true);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = leistung;
+    const { data, error } = await supabase
+      .from("leistungen")
+      .insert({ ...rest, name: `${leistung.name} (Kopie)`, aktiv: false })
+      .select()
+      .single();
+    if (error) {
+      toast.error("Fehler beim Duplizieren: " + error.message);
+    } else if (data) {
+      onDuplicate(data as Leistung);
+      toast.success(`„${leistung.name}" wurde dupliziert.`);
+    }
+    setDuplicating(false);
+  };
 
   const toggleAktiv = async () => {
     setToggling(true);
@@ -64,6 +86,16 @@ export function LeistungAktionen({ leistungId, aktiv, onToggle, onDelete }: Prop
           <Pencil className="h-3 w-3" />
         </Button>
       </Link>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleDuplicate}
+        disabled={duplicating}
+        className="h-7 px-2 text-[--muted-foreground] hover:text-[--foreground]"
+        title="Duplizieren"
+      >
+        {duplicating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+      </Button>
       <Button
         variant="outline"
         size="sm"

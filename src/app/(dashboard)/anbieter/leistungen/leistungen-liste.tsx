@@ -47,6 +47,10 @@ export function LeistungenListe({ initialLeistungen }: { initialLeistungen: Leis
     setLeistungen((prev) => prev.filter((l) => l.id !== id));
   };
 
+  const handleDuplicate = (newLeistung: Leistung) => {
+    setLeistungen((prev) => [...prev, newLeistung]);
+  };
+
   const aktive = leistungen.filter((l) => l.aktiv);
   const inaktive = leistungen.filter((l) => !l.aktiv);
 
@@ -70,7 +74,7 @@ export function LeistungenListe({ initialLeistungen }: { initialLeistungen: Leis
         {aktive.length > 0 ? (
           <div className="space-y-3">
             {aktive.map((l) => (
-              <LeistungCard key={l.id} leistung={l} onToggle={handleToggle} onDelete={handleDelete} />
+              <LeistungCard key={l.id} leistung={l} onToggle={handleToggle} onDelete={handleDelete} onDuplicate={handleDuplicate} />
             ))}
           </div>
         ) : (
@@ -92,7 +96,7 @@ export function LeistungenListe({ initialLeistungen }: { initialLeistungen: Leis
           <h2 className="text-base font-semibold mb-3 text-[--muted-foreground]">Archiviert</h2>
           <div className="space-y-3 opacity-60">
             {inaktive.map((l) => (
-              <LeistungCard key={l.id} leistung={l} onToggle={handleToggle} onDelete={handleDelete} />
+              <LeistungCard key={l.id} leistung={l} onToggle={handleToggle} onDelete={handleDelete} onDuplicate={handleDuplicate} />
             ))}
           </div>
         </section>
@@ -105,10 +109,12 @@ function LeistungCard({
   leistung: l,
   onToggle,
   onDelete,
+  onDuplicate,
 }: {
   leistung: Leistung;
   onToggle: (id: string, aktiv: boolean) => void;
   onDelete: (id: string) => void;
+  onDuplicate: (newLeistung: Leistung) => void;
 }) {
   return (
     <Card>
@@ -163,9 +169,11 @@ function LeistungCard({
           </div>
           <LeistungAktionen
             leistungId={l.id}
+            leistung={l}
             aktiv={l.aktiv}
             onToggle={onToggle}
             onDelete={onDelete}
+            onDuplicate={onDuplicate}
           />
         </div>
       </CardContent>

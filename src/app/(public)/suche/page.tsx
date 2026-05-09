@@ -55,6 +55,7 @@ export default function SuchePage() {
     (searchParams.get("kategorie") as LeistungsKategorie | null) ?? ""
   );
   const [kostentraeger, setKostentraeger] = useState<Kostentraeger | "">("");
+  const [maxPreis, setMaxPreis] = useState<string>("");
   const [nurVerifiziert, setNurVerifiziert] = useState(false);
   const [nurVerfuegbar, setNurVerfuegbar] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>("relevanz");
@@ -178,6 +179,7 @@ export default function SuchePage() {
 
   const activeFiltersCount = [
     kostentraeger !== "",
+    maxPreis !== "",
     nurVerifiziert,
     !nurVerfuegbar,
     sortBy !== "relevanz",
@@ -225,6 +227,13 @@ export default function SuchePage() {
       if (kostentraeger) {
         gefiltert = gefiltert.filter((a) =>
           a.leistungen?.some((l) => (l.kostentraeger as string[])?.includes(kostentraeger))
+        );
+      }
+
+      if (maxPreis && !isNaN(parseFloat(maxPreis))) {
+        const maxVal = parseFloat(maxPreis);
+        gefiltert = gefiltert.filter((a) =>
+          a.leistungen?.some((l) => l.preis_von != null && l.preis_von <= maxVal)
         );
       }
 
@@ -286,7 +295,7 @@ export default function SuchePage() {
       }
     }
     setLoading(false);
-  }, [plz, suchtext, kategorie, kostentraeger, nurVerifiziert, nurVerfuegbar, sortBy, supabase, pushUrl]);
+  }, [plz, suchtext, kategorie, kostentraeger, maxPreis, nurVerifiziert, nurVerfuegbar, sortBy, supabase, pushUrl]);
 
   // Auto-search when valid URL params are present on first load
   useEffect(() => {
@@ -305,6 +314,7 @@ export default function SuchePage() {
 
   const resetFilter = () => {
     setKostentraeger("");
+    setMaxPreis("");
     setNurVerifiziert(false);
     setNurVerfuegbar(true);
     setSortBy("relevanz");
@@ -584,6 +594,32 @@ export default function SuchePage() {
               </select>
             </div>
 
+            {/* Max. Preis */}
+            <div>
+              <label className="text-xs font-medium text-[--muted-foreground] mb-1.5 block">
+                Max. Preis pro Leistung (€)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  step="5"
+                  value={maxPreis}
+                  onChange={(e) => setMaxPreis(e.target.value)}
+                  placeholder="z.B. 50"
+                  className="flex h-9 w-full rounded-lg border border-[--input] bg-[--background] px-3 pr-8 text-sm"
+                />
+                {maxPreis && (
+                  <button
+                    onClick={() => setMaxPreis("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[--muted-foreground] hover:text-[--foreground]"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Sortierung */}
             <div>
               <label className="text-xs font-medium text-[--muted-foreground] mb-1.5 block">Sortierung</label>
@@ -634,6 +670,11 @@ export default function SuchePage() {
                 {kostentraeger && (
                   <Badge variant="secondary" className="gap-1 cursor-pointer" onClick={() => setKostentraeger("")}>
                     {KOSTENTRAEGER[kostentraeger]} <X className="h-3 w-3" />
+                  </Badge>
+                )}
+                {maxPreis && (
+                  <Badge variant="secondary" className="gap-1 cursor-pointer" onClick={() => setMaxPreis("")}>
+                    Max. {maxPreis} € <X className="h-3 w-3" />
                   </Badge>
                 )}
                 {nurVerifiziert && (

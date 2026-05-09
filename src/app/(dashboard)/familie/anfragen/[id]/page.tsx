@@ -17,6 +17,7 @@ import { PostCompletionReviewPrompt } from "@/components/bewertungen/PostComplet
 import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
 import { FamilieAnfrageAktionen } from "@/components/anfragen/FamilieAnfrageAktionen";
 import { FamilieAnfrageDokumente } from "@/components/anfragen/FamilieAnfrageDokumente";
+import { AnfrageStatusStepper } from "@/components/anfragen/AnfrageStatusStepper";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusConfig: Record<
@@ -186,6 +187,9 @@ export default async function FamilieAnfrageDetailPage({
             anbieterName={anbieter.name}
           />
         )}
+
+        {/* Status-Workflow-Stepper */}
+        <AnfrageStatusStepper status={status} />
 
         {/* Status-Banner */}
         <div className={`flex items-start gap-3 rounded-xl border p-4 ${statusInfo.color}`}>
