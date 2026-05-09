@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Compass, Search, FileText, Heart, ArrowRight, Clock,
-  Sparkles, MapPin, Star
+  Sparkles, MapPin, Star, Bell, CheckCircle2
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,10 +56,12 @@ export default async function FamilieDashboard() {
     { data: anfragen },
     { data: favoriten },
     { count: offeneAnfragen },
+    { count: angeboteCount },
   ] = await Promise.all([
     supabase.from("anfragen").select("*, anbieter(id, name, plz, ort)").eq("familie_id", profile?.id).order("updated_at", { ascending: false }).limit(5),
     supabase.from("favoriten").select("anbieter(id, name, plz, ort, verifiziert, beschreibung)").eq("familie_id", profile?.id).limit(3),
     supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("familie_id", profile?.id).in("status", ["offen", "in_bearbeitung", "angeboten"]),
+    supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("familie_id", profile?.id).eq("status", "angeboten"),
   ]);
 
   // Top rated anbieter in PLZ area (if user has PLZ)
@@ -108,6 +110,26 @@ export default async function FamilieDashboard() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
+      {/* Aktions-Banner: Angebote warten auf Antwort */}
+      {angeboteCount != null && angeboteCount > 0 && (
+        <div className="mb-6 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800">
+          <Bell className="h-5 w-5 shrink-0 animate-pulse" aria-hidden="true" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">
+              {angeboteCount === 1
+                ? "1 Anbieter hat Ihnen ein Angebot gemacht"
+                : `${angeboteCount} Anbieter haben Ihnen Angebote gemacht`}
+            </p>
+            <p className="text-xs mt-0.5">Schauen Sie sich die Angebote an und antworten Sie.</p>
+          </div>
+          <Link href="/familie/anfragen">
+            <button className="shrink-0 flex items-center gap-1.5 text-xs font-semibold bg-amber-800 text-white px-3 py-1.5 rounded-lg hover:bg-amber-900 transition-colors">
+              Ansehen <ArrowRight className="h-3 w-3" />
+            </button>
+          </Link>
+        </div>
+      )}
+
       {/* Begrüßung */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold">

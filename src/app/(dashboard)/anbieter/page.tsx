@@ -71,18 +71,29 @@ export default async function AnbieterDashboard() {
     .eq("profile_id", profile?.id)
     .single();
 
+  const now = new Date();
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString();
+
   const [
     { data: leistungen },
     { data: anfragen },
     { count: offeneAnfragen },
     { count: anfragenGesamt },
     { data: bewertungen },
+    { count: anfragenDieseWoche },
+    { count: anfragenDieserMonat },
+    { count: anfragenLetzterMonat },
   ] = await Promise.all([
     supabase.from("leistungen").select("id, name, aktiv").eq("anbieter_id", anbieter?.id ?? "").eq("aktiv", true),
     supabase.from("anfragen").select("id, lebenslage, status, created_at").eq("anbieter_id", anbieter?.id ?? "").order("created_at", { ascending: false }).limit(5),
     supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").eq("status", "offen"),
     supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? ""),
     supabase.from("bewertungen").select("sterne").eq("anbieter_id", anbieter?.id ?? ""),
+    supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").gte("created_at", oneWeekAgo),
+    supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").gte("created_at", oneMonthAgo),
+    supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").gte("created_at", twoMonthsAgo).lt("created_at", oneMonthAgo),
   ]);
 
   const avgSterne = bewertungen && bewertungen.length > 0
@@ -95,6 +106,14 @@ export default async function AnbieterDashboard() {
   const gesamt = anfragenGesamt ?? 0;
   const bearbeitet = Math.max(0, gesamt - (offeneAnfragen ?? 0));
   const antwortrate = gesamt > 0 ? Math.round((bearbeitet / gesamt) * 100) : 100;
+
+  // Trend: this month vs last month
+  const dieserMonat = anfragenDieserMonat ?? 0;
+  const letzterMonat = anfragenLetzterMonat ?? 0;
+  const trendProzent = letzterMonat > 0
+    ? Math.round(((dieserMonat - letzterMonat) / letzterMonat) * 100)
+    : dieserMonat > 0 ? 100 : 0;
+  const trendPositiv = trendProzent >= 0;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
@@ -144,6 +163,41 @@ export default async function AnbieterDashboard() {
             </Card>
           </Link>
         ))}
+      </div>
+
+      {/* Trend-Zeile */}
+      <div className="grid sm:grid-cols-3 gap-3 mb-8">
+        <div className="bg-[--card] border border-[--border] rounded-xl p-4 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-[--muted-foreground]">Diese Woche</p>
+            <p className="text-xl font-bold text-[--foreground]">{anfragenDieseWoche ?? 0}</p>
+            <p className="text-xs text-[--muted-foreground]">Neue Anfragen</p>
+          </div>
+          <Zap className="h-8 w-8 text-amber-400 opacity-60 shrink-0" />
+        </div>
+        <div className="bg-[--card] border border-[--border] rounded-xl p-4 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-[--muted-foreground]">Dieser Monat</p>
+            <p className="text-xl font-bold text-[--foreground]">{dieserMonat}</p>
+            <p className={`text-xs font-medium ${trendPositiv ? "text-green-600" : "text-red-500"}`}>
+              {trendProzent > 0 ? "+" : ""}{trendProzent}% ggü. Vormonat
+            </p>
+          </div>
+          <TrendingUp className={`h-8 w-8 shrink-0 opacity-60 ${trendPositiv ? "text-green-500" : "text-red-400"}`} />
+        </div>
+        <div className="bg-[--card] border border-[--border] rounded-xl p-4 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-[--muted-foreground]">Antwortrate</p>
+            <p className="text-xl font-bold text-[--foreground]">{antwortrate}%</p>
+            <div className="mt-1 w-full bg-[--muted] rounded-full h-1.5 overflow-hidden">
+              <div
+                className={`h-1.5 rounded-full transition-all ${antwortrate >= 80 ? "bg-green-500" : antwortrate >= 50 ? "bg-amber-400" : "bg-red-400"}`}
+                style={{ width: `${antwortrate}%` }}
+              />
+            </div>
+          </div>
+          <BarChart2 className="h-8 w-8 text-blue-400 opacity-60 shrink-0" />
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
