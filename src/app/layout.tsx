@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { CookieBanner } from "@/components/cookie/CookieBanner";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
@@ -52,6 +53,7 @@ export default function RootLayout({
             style: { fontFamily: "var(--font-geist-sans)" },
           }}
         />
+        <CookieBanner />
       </body>
     </html>
   );

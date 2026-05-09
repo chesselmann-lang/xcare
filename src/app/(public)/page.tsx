@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LEBENSLAGEN } from "@/lib/constants";
 import type { LebenslageTyp } from "@/lib/types";
 import { AutocompleteSearch } from "@/components/suche/AutocompleteSearch";
+import { WebSiteJsonLd } from "@/components/seo/JsonLd";
 
 export default function HomePage() {
   const topLebenslagen = (
@@ -13,6 +14,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col">
+      <WebSiteJsonLd />
       {/* Hero */}
       <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #1A5276 0%, #1F618D 100%)", color: "white" }}>
         <div className="absolute inset-0 opacity-10">

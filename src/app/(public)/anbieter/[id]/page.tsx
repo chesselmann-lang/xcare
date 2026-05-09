@@ -13,6 +13,7 @@ import { AnfrageDialog } from "@/components/anfrage/AnfrageDialog";
 import { FavoritButton } from "@/components/favoriten/FavoritButton";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { ShareButton } from "@/components/anbieter/ShareButton";
+import { LocalBusinessJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { LEISTUNGSKATEGORIEN, KOSTENTRAEGER } from "@/lib/constants";
 import type { Leistung, LeistungsKategorie } from "@/lib/types";
 
@@ -102,8 +103,44 @@ export default async function AnbieterDetailPage({
     return acc;
   }, {});
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
+      {/* Structured Data */}
+      <LocalBusinessJsonLd
+        id={anbieter.id}
+        name={anbieter.name}
+        description={anbieter.beschreibung}
+        url={`${baseUrl}/anbieter/${anbieter.id}`}
+        telephone={anbieter.telefon}
+        email={anbieter.email}
+        image={anbieter.logo_url}
+        address={{
+          street: anbieter.strasse,
+          city: anbieter.ort,
+          postalCode: anbieter.plz,
+        }}
+        geo={
+          anbieter.lat && anbieter.lng
+            ? { lat: anbieter.lat, lng: anbieter.lng }
+            : undefined
+        }
+        aggregateRating={
+          bewertungenCount > 0
+            ? { ratingValue: avgSterne, reviewCount: bewertungenCount }
+            : undefined
+        }
+        serviceType={leistungen.slice(0, 5).map((l) => l.name)}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Startseite", href: "/" },
+          { name: "Anbieter suchen", href: "/suche" },
+          { name: anbieter.name, href: `/anbieter/${anbieter.id}` },
+        ]}
+      />
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6 text-sm text-[--muted-foreground]">
         <Link href="/suche" className="hover:text-[--foreground] flex items-center gap-1">

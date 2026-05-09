@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Compass, Search, FileText, Heart,
   Building2, Package, MessageSquare, LogOut, User,
-  Menu, X, Settings, Users, CreditCard
+  Menu, X, Settings, Users, CreditCard, FolderOpen
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -37,6 +37,7 @@ const ANBIETER_NAV = [
   { href: "/anbieter/leistungen", label: "Leistungen", icon: Package },
   { href: "/anbieter/anfragen", label: "Anfragen", icon: MessageSquare, badge: true },
   { href: "/anbieter/team", label: "Team", icon: Users },
+  { href: "/anbieter/dokumente", label: "Dokumente", icon: FolderOpen },
   { href: "/anbieter/abo", label: "Abo & Pläne", icon: CreditCard },
 ];
 
