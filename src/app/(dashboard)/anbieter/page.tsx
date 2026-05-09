@@ -105,6 +105,27 @@ export default async function AnbieterDashboard() {
   const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString();
 
+  // Profil-Aufrufe der letzten 7 Tage (raw rows, grouped client-side)
+  const { data: roheAufrufe7d } = await supabase
+    .from("anbieter_profil_aufrufe")
+    .select("created_at")
+    .eq("anbieter_id", anbieter?.id ?? "")
+    .gte("created_at", oneWeekAgo);
+
+  // Build daily counts: label Mon-Sun, count per day
+  const aufrufeSparkline: { day: string; count: number }[] = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toISOString().slice(0, 10);
+    const count = (roheAufrufe7d ?? []).filter((r) => r.created_at.slice(0, 10) === dateStr).length;
+    return {
+      day: d.toLocaleDateString("de-DE", { weekday: "short" }),
+      count,
+    };
+  });
+  const maxAufruf = Math.max(...aufrufeSparkline.map((d) => d.count), 1);
+  const aufrufeGesamt7d = aufrufeSparkline.reduce((s, d) => s + d.count, 0);
+
   const [
     { data: leistungen },
     { data: anfragen },
@@ -349,6 +370,36 @@ export default async function AnbieterDashboard() {
             </div>
           </div>
           <BarChart2 className="h-8 w-8 text-blue-400 opacity-60 shrink-0" />
+        </div>
+      </div>
+
+      {/* Profil-Aufruf Sparkline */}
+      <div className="mb-8 rounded-xl border border-[--border] bg-[--card] p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="font-semibold text-sm flex items-center gap-1.5">
+              <Eye className="h-4 w-4 text-[--muted-foreground]" />
+              Profilbesuche – letzte 7 Tage
+            </p>
+            <p className="text-xs text-[--muted-foreground]">{aufrufeGesamt7d} Aufrufe gesamt</p>
+          </div>
+          <Link href="/anbieter/statistiken">
+            <Button variant="outline" size="sm" className="text-xs gap-1">
+              Details <ArrowRight className="h-3 w-3" />
+            </Button>
+          </Link>
+        </div>
+        <div className="flex items-end gap-1.5 h-14">
+          {aufrufeSparkline.map((d, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div
+                className="w-full rounded-t-sm bg-[--primary] opacity-80 transition-all min-h-[3px]"
+                style={{ height: `${Math.max((d.count / maxAufruf) * 48, d.count > 0 ? 3 : 0)}px` }}
+                title={`${d.day}: ${d.count} Aufrufe`}
+              />
+              <span className="text-[10px] text-[--muted-foreground] leading-none">{d.day}</span>
+            </div>
+          ))}
         </div>
       </div>
 

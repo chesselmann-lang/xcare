@@ -64,12 +64,17 @@ export default function SuchePage() {
   const [saving, setSaving] = useState(false);
   const [gespeichert, setGespeichert] = useState(false);
   const [suchVerlauf, setSuchVerlauf] = useState<Array<{ label: string; plz: string; suchtext: string; kategorie: string }>>([]);
-  // Autocomplete
+  // Stichwort-Autocomplete
   const [acSuggestions, setAcSuggestions] = useState<Array<{ id: string; name: string; ort: string }>>([]);
   const [acLoading, setAcLoading] = useState(false);
   const [showAc, setShowAc] = useState(false);
   const [acIndex, setAcIndex] = useState(-1);
   const acContainerRef = useRef<HTMLDivElement>(null);
+  // PLZ/Ort-Autocomplete
+  const [plzSuggestions, setPlzSuggestions] = useState<Array<{ plz: string; ort: string }>>([]);
+  const [showPlzAc, setShowPlzAc] = useState(false);
+  const [plzAcIndex, setPlzAcIndex] = useState(-1);
+  const plzContainerRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
   // Load Suchverlauf from localStorage on mount
@@ -104,11 +109,41 @@ export default function SuchePage() {
     return () => clearTimeout(timer);
   }, [suchtext, supabase]);
 
-  // Close autocomplete on click outside
+  // Close stichwort autocomplete on click outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (acContainerRef.current && !acContainerRef.current.contains(e.target as Node)) {
         setShowAc(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Debounced PLZ/Ort-Autocomplete
+  useEffect(() => {
+    if (plz.trim().length < 2) {
+      setPlzSuggestions([]);
+      setShowPlzAc(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const res = await fetch(`/api/plz-suggest?q=${encodeURIComponent(plz.trim())}`);
+      if (res.ok) {
+        const data: Array<{ plz: string; ort: string }> = await res.json();
+        setPlzSuggestions(data);
+        setShowPlzAc(data.length > 0);
+        setPlzAcIndex(-1);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [plz]);
+
+  // Close PLZ autocomplete on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (plzContainerRef.current && !plzContainerRef.current.contains(e.target as Node)) {
+        setShowPlzAc(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -391,23 +426,54 @@ export default function SuchePage() {
             </div>
           </div>
 
-          {/* PLZ */}
-          <div className="flex-1 min-w-36">
+          {/* PLZ / Ort Autocomplete */}
+          <div className="flex-1 min-w-36" ref={plzContainerRef}>
             <label className="text-xs font-medium text-[--muted-foreground] mb-1.5 block">
-              Postleitzahl
+              PLZ oder Ort
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground]" aria-hidden="true" />
               <Input
                 value={plz}
-                onChange={(e) => setPlz(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                onKeyDown={(e) => e.key === "Enter" && suchen()}
-                placeholder="z.B. 80331"
+                onChange={(e) => setPlz(e.target.value.slice(0, 20))}
+                onKeyDown={(e) => {
+                  if (!showPlzAc || plzSuggestions.length === 0) {
+                    if (e.key === "Enter") suchen();
+                    return;
+                  }
+                  if (e.key === "ArrowDown") { e.preventDefault(); setPlzAcIndex((i) => Math.min(i + 1, plzSuggestions.length - 1)); }
+                  else if (e.key === "ArrowUp") { e.preventDefault(); setPlzAcIndex((i) => Math.max(i - 1, 0)); }
+                  else if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (plzAcIndex >= 0 && plzSuggestions[plzAcIndex]) {
+                      const s = plzSuggestions[plzAcIndex];
+                      setPlz(s.plz);
+                      setShowPlzAc(false);
+                    } else { suchen(); }
+                  } else if (e.key === "Escape") { setShowPlzAc(false); }
+                }}
+                placeholder="PLZ oder Ort"
                 className="pl-9"
-                maxLength={5}
-                inputMode="numeric"
-                aria-label="Postleitzahl eingeben"
+                maxLength={20}
+                aria-label="Postleitzahl oder Ort eingeben"
               />
+              {showPlzAc && plzSuggestions.length > 0 && (
+                <div className="absolute z-50 top-full mt-1 w-full rounded-lg border border-[--border] bg-[--background] shadow-lg overflow-hidden">
+                  {plzSuggestions.map((s, i) => (
+                    <button
+                      key={s.plz}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { setPlz(s.plz); setShowPlzAc(false); }}
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${i === plzAcIndex ? "bg-[--accent]" : "hover:bg-[--accent]/60"}`}
+                    >
+                      <MapPin className="h-3.5 w-3.5 text-[--muted-foreground] shrink-0" aria-hidden="true" />
+                      <span className="font-medium">{s.plz}</span>
+                      <span className="text-[--muted-foreground] truncate">{s.ort}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

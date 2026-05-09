@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { Users, Building2, Heart, ArrowRight } from "lucide-react";
+import { Users, Building2, Heart, ArrowRight, Download } from "lucide-react";
 
 export default async function AdminNutzerPage() {
   const supabase = await createClient();
@@ -16,9 +16,19 @@ export default async function AdminNutzerPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Nutzer</h1>
-        <p className="text-gray-500 text-sm mt-0.5">{profiles?.length ?? 0} registrierte Nutzer</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Nutzer</h1>
+          <p className="text-gray-500 text-sm mt-0.5">{profiles?.length ?? 0} registrierte Nutzer</p>
+        </div>
+        <a
+          href="/api/admin/nutzer-export"
+          download
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+        >
+          <Download className="h-4 w-4 text-gray-500" />
+          CSV exportieren
+        </a>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6">

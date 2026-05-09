@@ -129,6 +129,17 @@ export default async function FamilieDashboard() {
       .limit(6),
   ]);
 
+  // Stale anfragen: offen/in_bearbeitung with no update for >7 days
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: staleAnfragen } = await supabase
+    .from("anfragen")
+    .select("id, lebenslage, status, updated_at, anbieter(name)")
+    .eq("familie_id", profile?.id)
+    .in("status", ["offen", "in_bearbeitung"])
+    .lt("updated_at", sevenDaysAgo)
+    .order("updated_at", { ascending: true })
+    .limit(3);
+
   // Lebenslage → Leistungskategorie mapping for personalized recommendations
   const LEBENSLAGE_ZU_KATEGORIE: Record<string, string> = {
     geburt_fruehe_kindheit: "kinderbetreuung",
@@ -252,6 +263,37 @@ export default async function FamilieDashboard() {
           <Link href="/familie/anfragen">
             <button className="shrink-0 flex items-center gap-1.5 text-xs font-semibold bg-amber-800 text-white px-3 py-1.5 rounded-lg hover:bg-amber-900 transition-colors">
               Ansehen <ArrowRight className="h-3 w-3" />
+            </button>
+          </Link>
+        </div>
+      )}
+
+      {/* Erinnerungs-Banner: Anfragen ohne Update seit >7 Tagen */}
+      {staleAnfragen && staleAnfragen.length > 0 && (
+        <div className="mb-6 flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-800">
+          <Clock className="h-5 w-5 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">
+              {staleAnfragen.length === 1
+                ? "1 Anfrage wartet seit über einer Woche auf eine Antwort"
+                : `${staleAnfragen.length} Anfragen warten seit über einer Woche`}
+            </p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {staleAnfragen.map((a) => (
+                <Link key={a.id} href={`/familie/anfragen/${a.id}`}>
+                  <span className="inline-flex items-center gap-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full transition-colors capitalize">
+                    {a.lebenslage?.replace(/_/g, " ")}
+                    {(a.anbieter as { name?: string } | null)?.name && (
+                      <> · {(a.anbieter as { name: string }).name}</>
+                    )}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+          <Link href="/familie/anfragen" className="shrink-0">
+            <button className="flex items-center gap-1.5 text-xs font-semibold bg-blue-700 text-white px-3 py-1.5 rounded-lg hover:bg-blue-800 transition-colors">
+              Alle Anfragen <ArrowRight className="h-3 w-3" />
             </button>
           </Link>
         </div>
