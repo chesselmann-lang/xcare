@@ -77,6 +77,58 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Fire email notification to the other party (non-blocking)
+    if (process.env.INNGEST_EVENT_KEY) {
+      try {
+        // Determine the recipient (the other party in the anfrage)
+        let empfaengerEmail: string | null = null;
+        let empfaengerName: string | null = null;
+
+        const senderName = `${(profile as { vorname?: string; nachname?: string }).vorname ?? ""} ${(profile as { nachname?: string }).nachname ?? ""}`.trim() || "xcare-Nutzer";
+
+        if (profile.role === "familie") {
+          // Sender is familie → notify anbieter
+          const { data: anbieterData } = await supabase
+            .from("anbieter")
+            .select("email, name")
+            .eq("id", anfrage.anbieter_id)
+            .single();
+          empfaengerEmail = anbieterData?.email ?? null;
+          empfaengerName = anbieterData?.name ?? null;
+        } else if (profile.role === "anbieter") {
+          // Sender is anbieter → notify familie
+          const { data: familieProfile } = await supabase
+            .from("profiles")
+            .select("email, vorname, nachname")
+            .eq("id", anfrage.familie_id)
+            .single();
+          empfaengerEmail = (familieProfile as { email?: string })?.email ?? null;
+          empfaengerName = familieProfile
+            ? `${familieProfile.vorname ?? ""} ${familieProfile.nachname ?? ""}`.trim() || "Familie"
+            : null;
+        }
+
+        if (empfaengerEmail && empfaengerName) {
+          fetch("https://inn.gs/e/" + process.env.INNGEST_EVENT_KEY, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: "nachricht/created",
+              data: {
+                anfrage_id,
+                empfaenger_email: empfaengerEmail,
+                empfaenger_name: empfaengerName,
+                sender_name: senderName,
+                vorschau: inhalt.trim(),
+              },
+            }),
+          }).catch(() => {});
+        }
+      } catch {
+        // Non-critical — notification failure doesn't block message delivery
+      }
+    }
+
     return NextResponse.json({ data }, { status: 201 });
   } catch (err) {
     console.error("[nachrichten POST] unexpected:", err);
