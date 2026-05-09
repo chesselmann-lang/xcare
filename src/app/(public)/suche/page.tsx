@@ -54,6 +54,7 @@ export default function SuchePage() {
   );
   const [kostentraeger, setKostentraeger] = useState<Kostentraeger | "">("");
   const [nurVerifiziert, setNurVerifiziert] = useState(false);
+  const [nurVerfuegbar, setNurVerfuegbar] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>("relevanz");
   const [ergebnisse, setErgebnisse] = useState<ErgebnisAnbieter[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,6 +68,7 @@ export default function SuchePage() {
   const activeFiltersCount = [
     kostentraeger !== "",
     nurVerifiziert,
+    !nurVerfuegbar,
     sortBy !== "relevanz",
   ].filter(Boolean).length;
 
@@ -115,6 +117,10 @@ export default function SuchePage() {
         );
       }
 
+      if (nurVerfuegbar) {
+        gefiltert = gefiltert.filter((a) => !(a as { abwesend?: boolean }).abwesend);
+      }
+
       if (gefiltert.length > 0) {
         const ids = gefiltert.map((a) => a.id);
         const { data: bew } = await supabase
@@ -150,7 +156,7 @@ export default function SuchePage() {
       setErgebnisse(gefiltert.slice(0, 20));
     }
     setLoading(false);
-  }, [plz, suchtext, kategorie, kostentraeger, nurVerifiziert, sortBy, supabase, pushUrl]);
+  }, [plz, suchtext, kategorie, kostentraeger, nurVerifiziert, nurVerfuegbar, sortBy, supabase, pushUrl]);
 
   // Auto-search when valid URL params are present on first load
   useEffect(() => {
@@ -170,6 +176,7 @@ export default function SuchePage() {
   const resetFilter = () => {
     setKostentraeger("");
     setNurVerifiziert(false);
+    setNurVerfuegbar(true);
     setSortBy("relevanz");
   };
 
@@ -364,6 +371,19 @@ export default function SuchePage() {
               <span className="text-sm">Nur Verifizierte</span>
             </div>
 
+            {/* Nur Verfügbare */}
+            <div className="flex items-center gap-3 pt-5">
+              <button
+                role="switch"
+                aria-checked={nurVerfuegbar}
+                onClick={() => setNurVerfuegbar((v) => !v)}
+                className={`relative h-5 w-9 rounded-full transition-colors shrink-0 ${nurVerfuegbar ? "bg-[--primary]" : "bg-gray-200"}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 h-4 w-4 bg-white rounded-full shadow transition-transform ${nurVerfuegbar ? "translate-x-4" : ""}`} />
+              </button>
+              <span className="text-sm">Nur Verfügbare</span>
+            </div>
+
             {activeFiltersCount > 0 && (
               <div className="sm:col-span-3 flex gap-2 flex-wrap">
                 {kostentraeger && (
@@ -374,6 +394,11 @@ export default function SuchePage() {
                 {nurVerifiziert && (
                   <Badge variant="secondary" className="gap-1 cursor-pointer" onClick={() => setNurVerifiziert(false)}>
                     Verifiziert <X className="h-3 w-3" />
+                  </Badge>
+                )}
+                {!nurVerfuegbar && (
+                  <Badge variant="secondary" className="gap-1 cursor-pointer" onClick={() => setNurVerfuegbar(true)}>
+                    Inkl. Abwesende <X className="h-3 w-3" />
                   </Badge>
                 )}
                 <button onClick={resetFilter} className="text-xs text-[--muted-foreground] hover:text-[--foreground]">
@@ -403,6 +428,15 @@ export default function SuchePage() {
               className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
             >
               ✓ Nur Verifizierte
+              <X className="h-3 w-3" />
+            </button>
+          )}
+          {!nurVerfuegbar && (
+            <button
+              onClick={() => setNurVerfuegbar(true)}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+            >
+              Inkl. Abwesende
               <X className="h-3 w-3" />
             </button>
           )}

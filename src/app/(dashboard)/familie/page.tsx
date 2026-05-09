@@ -307,6 +307,42 @@ export default async function FamilieDashboard() {
         </div>
       )}
 
+      {/* Schnell-Anfrage stellen */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4 mb-6 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+            <Sparkles className="h-4 w-4 text-[--primary]" /> Neue Anfrage stellen
+          </p>
+          <span className="text-xs text-[--muted-foreground]">Wählen Sie Ihre Situation</span>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
+          {[
+            { emoji: "👴", label: "Alter & Pflege", kat: "pflege_ambulant" },
+            { emoji: "👶", label: "Geburt & Kind", kat: "kinderbetreuung" },
+            { emoji: "🎒", label: "Kind & Schule", kat: "jugendhilfe" },
+            { emoji: "♿", label: "Eingliederung", kat: "eingliederungshilfe" },
+            { emoji: "🩺", label: "Krankheit", kat: "therapie" },
+            { emoji: "🕊️", label: "Hospiz", kat: "hospizdienst" },
+            { emoji: "💬", label: "Beratung", kat: "beratung" },
+          ].map((item) => {
+            const params = new URLSearchParams({ kategorie: item.kat });
+            if (profile?.plz) params.set("plz", profile.plz);
+            return (
+              <Link
+                key={item.kat}
+                href={`/suche?${params.toString()}`}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-[--border] hover:border-[--primary]/40 hover:bg-[--primary]/5 transition-all text-center group"
+              >
+                <span className="text-xl leading-none">{item.emoji}</span>
+                <span className="text-[10px] font-medium text-[--muted-foreground] group-hover:text-[--primary] leading-tight transition-colors">
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Mobile Schnellaktionen */}
       <div className="flex sm:hidden gap-2 mb-6 flex-wrap">
         <Link href="/lotse" className="flex-1">
