@@ -24,6 +24,7 @@ import { FamilieAnbieterNotiz } from "@/components/anbieter/FamilieAnbieterNotiz
 import { VerfuegbarkeitBadge } from "@/components/anbieter/VerfuegbarkeitBadge";
 import { KontaktFormular } from "@/components/anbieter/KontaktFormular";
 import { StickyMobileCTA } from "@/components/anbieter/StickyMobileCTA";
+import { LeistungsBadgeGroup } from "@/components/anbieter/LeistungsBadge";
 
 // ── Lebenslage-Mapping: Leistungskategorie → Lebenslage-Slug ─────────────────
 const KATEGORIE_TO_LEBENSLAGE: Record<string, string[]> = {
@@ -378,6 +379,16 @@ export default async function AnbieterDetailPage({
                     {LEBENSLAGE_LABELS[slug]}
                   </Link>
                 ))}
+              </div>
+            )}
+            {/* Leistungs-Badges */}
+            {leistungen.length > 0 && (
+              <div className="mb-2">
+                <LeistungsBadgeGroup
+                  kategorien={leistungen.map((l) => l.kategorie)}
+                  max={5}
+                  size="sm"
+                />
               </div>
             )}
             <div className="flex flex-wrap gap-4 text-sm text-[--muted-foreground]">
@@ -739,15 +750,4 @@ export default async function AnbieterDetailPage({
                       {sm.xing && (
                         <a href={sm.xing} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-[--primary] transition-colors">
-                          <Globe className="h-3.5 w-3.5" /> XING
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Öffnungszeiten */}
-              {(() => {
-                const oz = (anbieter as { oeffnungszeiten?: OeffnungszeitenMap }).oeffnungszeiten;
-                if (!oz || Object.keys(oz).len
+                

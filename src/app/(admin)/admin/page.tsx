@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Building2, Users, FileText, TrendingUp, Clock, CheckCircle2, AlertCircle, Star, BellRing } from "lucide-react";
+import { Building2, Users, FileText, TrendingUp, Clock, CheckCircle2, AlertCircle, Star, BellRing, Images } from "lucide-react";
 import Link from "next/link";
 
 async function StatCard({
@@ -128,6 +128,14 @@ export default async function AdminDashboard() {
           href="/admin/wiedervorlagen"
           color="orange"
         />
+        <StatCard
+          label="Galerie"
+          value="→"
+          icon={Images}
+          sub="Bilder moderieren"
+          href="/admin/galerie"
+          color="blue"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -175,14 +183,4 @@ export default async function AdminDashboard() {
                     {new Date(a.created_at).toLocaleDateString("de-DE")}
                   </p>
                 </div>
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${statusColors[a.status] ?? "bg-gray-100 text-gray-600"}`}>
-                  {a.status.replace(/_/g, " ")}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${statusColors[a.status] ?? "bg-gr

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { Chat } from "@/components/nachrichten/Chat";
 import { BewertungAbgeben } from "@/components/bewertungen/BewertungAbgeben";
+import { PostCompletionReviewPrompt } from "@/components/bewertungen/PostCompletionReviewPrompt";
 import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
 import { FamilieAnfrageAktionen } from "@/components/anfragen/FamilieAnfrageAktionen";
 import { FamilieAnfrageDokumente } from "@/components/anfragen/FamilieAnfrageDokumente";
@@ -177,6 +178,15 @@ export default async function FamilieAnfrageDetailPage({
       </div>
 
       <div className="space-y-4">
+        {/* Post-Completion Review Prompt (shown once, before status banner) */}
+        {status === "abgeschlossen" && anbieter && !existingBewertung && (
+          <PostCompletionReviewPrompt
+            anfrageId={id}
+            anbieterId={anbieter.id}
+            anbieterName={anbieter.name}
+          />
+        )}
+
         {/* Status-Banner */}
         <div className={`flex items-start gap-3 rounded-xl border p-4 ${statusInfo.color}`}>
           <StatusIcon className="h-5 w-5 shrink-0 mt-0.5" />
@@ -353,17 +363,4 @@ export default async function FamilieAnfrageDetailPage({
                   </Button>
                 </Link>
               )}
-              <Link href="/suche">
-                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
-                  Neue Suche
-                </Button>
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* Status-Historie Timeline */}
-        {(historie && historie.length > 0) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"
+              <Link href=

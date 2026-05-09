@@ -14,6 +14,7 @@ import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
 import { WiedervorlageManager } from "@/components/anfragen/WiedervorlageManager";
 import { AnfragePrioritaetToggle } from "@/components/anfragen/AnfragePrioritaetToggle";
 import { AnbieterAnfrageDokumente } from "@/components/anfragen/AnbieterAnfrageDokumente";
+import { AnfrageQuickNotiz } from "@/components/anfragen/AnfrageQuickNotiz";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -170,6 +171,15 @@ export default async function AnfrageDetailPage({
       </div>
 
       <div className="space-y-4">
+        {/* Quick-Notiz */}
+        {anbieter && (
+          <AnfrageQuickNotiz
+            anfrageId={anfrage.id}
+            anbieterId={anbieter.id}
+            initialText={notizen?.[0]?.inhalt ?? ""}
+          />
+        )}
+
         {/* Familie-Daten */}
         <Card>
           <CardHeader>
@@ -270,16 +280,4 @@ export default async function AnfrageDetailPage({
         {profile && (
           <AngebotEditor
             anfrageId={anfrage.id}
-            profileId={profile.id}
-            currentStatus={anfrage.status as AnfrageStatus}
-          />
-        )}
-
-        {/* Interne Notizen (CRM) */}
-        {anbieter && (
-          <AnfrageNotizen
-            anfrageId={anfrage.id}
-            anbieterId={anbieter.id}
-            initialNotizen={notizen ?? []}
-          />
-    
+            profileId={profile.i
