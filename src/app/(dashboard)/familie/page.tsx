@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { formatRelative } from "@/lib/utils";
+import { KIEmpfehlungBanner } from "@/components/familie/KIEmpfehlungBanner";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusLabel: Record<AnfrageStatus, string> = {
@@ -475,6 +476,17 @@ export default async function FamilieDashboard() {
             </CardContent>
           </Card>
 
+          {/* KI-personalisierte Empfehlung */}
+          {empfohleneAnbieter.length > 0 && (
+            <KIEmpfehlungBanner
+              lebenslage={meistgenutzteLebenslage}
+              plz={profile?.plz ?? null}
+              ort={profile?.ort ?? null}
+              offeneAnfragen={offeneAnfragen ?? 0}
+              empfohleneAnbieterNamen={empfohleneAnbieter.map((a) => a.name)}
+            />
+          )}
+
           {empfohleneAnbieter.length > 0 && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -597,14 +609,4 @@ export default async function FamilieDashboard() {
           {(gespeicherteSuchen ?? []).length > 0 && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Bookmark className="h-4 w-4 text-[--primary]" /> Gespeicherte Suchen
-                </CardTitle>
-                <Link href="/suche">
-                  <Button variant="ghost" size="sm" className="gap-1 text-xs h-7">
-                    Neue <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-1">
-                {(gespeicherteSuchen ?? []).map((s)
+                <CardTitle className="text-base flex items-center 
