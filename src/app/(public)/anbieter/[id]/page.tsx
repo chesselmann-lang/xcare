@@ -56,28 +56,66 @@ const TAG_ORDER = ["mo","di","mi","do","fr","sa","so"] as const;
 const TAG_LABELS: Record<string, string> = { mo:"Mo", di:"Di", mi:"Mi", do:"Do", fr:"Fr", sa:"Sa", so:"So" };
 
 function OeffnungszeitenDisplay({ oeffnungszeiten }: { oeffnungszeiten: OeffnungszeitenMap }) {
-  const grouped: { tage: string[]; von: string; bis: string }[] = [];
-  TAG_ORDER.forEach((key) => {
-    const tz = oeffnungszeiten[key];
-    if (!tz?.offen) return;
-    const last = grouped[grouped.length - 1];
-    if (last && last.von === tz.von && last.bis === tz.bis) { last.tage.push(key); }
-    else { grouped.push({ tage: [key], von: tz.von, bis: tz.bis }); }
-  });
-  if (grouped.length === 0) return null;
+  // Determine current day + time in Berlin timezone (server-side)
+  const now = new Date();
+  const berlinNow = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Berlin" }));
+  const todayKey = (["so","mo","di","mi","do","fr","sa"] as const)[berlinNow.getDay()];
+  const currentTime = `${String(berlinNow.getHours()).padStart(2,"0")}:${String(berlinNow.getMinutes()).padStart(2,"0")}`;
+
+  const todayZeiten = oeffnungszeiten[todayKey];
+  const jetztOffen = !!(todayZeiten?.offen && currentTime >= todayZeiten.von && currentTime <= todayZeiten.bis);
+
+  const hasAnyOpen = TAG_ORDER.some((k) => oeffnungszeiten[k]?.offen);
+  if (!hasAnyOpen) return null;
+
   return (
-    <div className="space-y-1">
-      {grouped.map((g, i) => {
-        const tagStr = g.tage.length === 1
-          ? TAG_LABELS[g.tage[0]]
-          : `${TAG_LABELS[g.tage[0]]}–${TAG_LABELS[g.tage[g.tage.length - 1]]}`;
-        return (
-          <div key={i} className="flex justify-between text-sm">
-            <span className="font-medium text-[--foreground]">{tagStr}</span>
-            <span className="text-[--muted-foreground]">{g.von}–{g.bis} Uhr</span>
-          </div>
-        );
-      })}
+    <div className="space-y-2">
+      {/* Jetzt-Status pill */}
+      <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${
+        jetztOffen
+          ? "bg-green-50 text-green-700 border border-green-200"
+          : "bg-red-50 text-red-600 border border-red-200"
+      }`}>
+        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${jetztOffen ? "bg-green-500" : "bg-red-500"}`} />
+        {jetztOffen
+          ? `Jetzt geöffnet · bis ${todayZeiten!.bis} Uhr`
+          : todayZeiten?.offen
+            ? `Heute geschlossen ab ${todayZeiten.bis} Uhr`
+            : "Heute geschlossen"}
+      </div>
+
+      {/* Weekly grid — highlight today */}
+      <div className="space-y-0.5">
+        {TAG_ORDER.map((key) => {
+          const tz = oeffnungszeiten[key];
+          const isToday = key === todayKey;
+          const isOffen = !!tz?.offen;
+          return (
+            <div
+              key={key}
+              className={`flex justify-between items-center text-xs rounded-md px-2 py-1 transition-colors ${
+                isToday
+                  ? "bg-[--primary]/10"
+                  : ""
+              }`}
+            >
+              <span className={`font-medium ${isToday ? "text-[--primary]" : "text-[--foreground]"}`}>
+                {TAG_LABELS[key]}
+                {isToday && <span className="ml-1 text-[10px] opacity-60">(heute)</span>}
+              </span>
+              <span className={
+                isToday
+                  ? "text-[--primary] font-medium"
+                  : isOffen
+                  ? "text-[--muted-foreground]"
+                  : "text-[--muted-foreground] opacity-40"
+              }>
+                {isOffen ? `${tz!.von}–${tz!.bis} Uhr` : "Geschlossen"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

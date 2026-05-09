@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, MapPin, ChevronLeft, Building2, CheckCircle2, Search } from "lucide-react";
+import { ArrowRight, MapPin, ChevronLeft, Building2, CheckCircle2, Search, History, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,40 @@ import type { LebenslageTyp } from "@/lib/types";
 import { LEBENSLAGEN } from "@/lib/constants";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+
+const HISTORY_KEY = "lotse_history";
+const MAX_HISTORY = 5;
+
+interface LotseHistoryEntry {
+  lebenslage: LebenslageTyp;
+  plz: string;
+  label: string;
+  emoji: string;
+  timestamp: number;
+}
+
+function loadHistory(): LotseHistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveToHistory(entry: Omit<LotseHistoryEntry, "timestamp">) {
+  try {
+    const history = loadHistory().filter((h) => !(h.lebenslage === entry.lebenslage && h.plz === entry.plz));
+    const updated = [{ ...entry, timestamp: Date.now() }, ...history].slice(0, MAX_HISTORY);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  } catch {
+    // localStorage not available
+  }
+}
+
+function clearHistory() {
+  try { localStorage.removeItem(HISTORY_KEY); } catch { /* ignore */ }
+}
 
 interface NearbyAnbieter {
   id: string;
@@ -91,6 +125,11 @@ export default function LotsePage() {
   const [lebenslage, setLebenslage] = useState<LebenslageTyp | null>(initialLL);
   const [plz, setPlz] = useState("");
   const [plzError, setPlzError] = useState("");
+  const [history, setHistory] = useState<LotseHistoryEntry[]>([]);
+
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
 
   function handleLebenslagSelect(ll: LebenslageTyp) {
     setLebenslage(ll);
@@ -104,6 +143,25 @@ export default function LotsePage() {
     }
     setPlzError("");
     setSchritt("chat");
+    // Save to history when entering chat
+    if (lebenslage) {
+      const ll = LEBENSLAGEN[lebenslage];
+      saveToHistory({ lebenslage, plz, label: ll?.label ?? lebenslage, emoji: ll?.emoji ?? "💬" });
+      setHistory(loadHistory());
+    }
+  }
+
+  function handleHistoryReplay(entry: LotseHistoryEntry) {
+    setLebenslage(entry.lebenslage);
+    setPlz(entry.plz);
+    setSchritt("chat");
+    saveToHistory(entry); // bump to top
+    setHistory(loadHistory());
+  }
+
+  function handleClearHistory() {
+    clearHistory();
+    setHistory([]);
   }
 
   const ll = lebenslage ? LEBENSLAGEN[lebenslage] : null;
@@ -145,6 +203,41 @@ export default function LotsePage() {
       {/* Schritt 1: Lebenslage wählen */}
       {schritt === "lebenslage" && (
         <div>
+          {/* Recent history */}
+          {history.length > 0 && (
+            <div className="mb-8 p-4 rounded-xl bg-[--card] border border-[--border]">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-[--foreground] flex items-center gap-1.5">
+                  <History className="h-4 w-4 text-[--primary]" /> Letzte Gespräche
+                </p>
+                <button
+                  onClick={handleClearHistory}
+                  className="flex items-center gap-1 text-xs text-[--muted-foreground] hover:text-[--foreground] transition-colors"
+                >
+                  <Trash2 className="h-3 w-3" /> Löschen
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {history.map((entry, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleHistoryReplay(entry)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[--border] hover:border-[--primary]/40 hover:bg-[--primary]/5 transition-all text-left group"
+                  >
+                    <span className="text-lg leading-none">{entry.emoji}</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-[--foreground] group-hover:text-[--primary] transition-colors truncate max-w-28">
+                        {entry.label}
+                      </p>
+                      <p className="text-[10px] text-[--muted-foreground]">PLZ {entry.plz}</p>
+                    </div>
+                    <ArrowRight className="h-3 w-3 text-[--muted-foreground] group-hover:text-[--primary] shrink-0 transition-colors" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <h2 className="text-xl font-semibold mb-4">
             In welcher Lebenssituation befinden Sie sich?
           </h2>

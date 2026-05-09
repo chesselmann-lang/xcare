@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AnfrageStatus } from "@/lib/types";
+import { RollenButton } from "../rollen-button";
 
 const statusColors: Record<AnfrageStatus, string> = {
   offen: "bg-yellow-100 text-yellow-800",
@@ -292,10 +293,7 @@ export default async function AdminNutzerDetailPage({
             <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
               <Shield className="h-4 w-4 text-gray-400" /> Admin-Aktionen
             </h2>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Weitere Aktionen wie Rollenänderungen oder Kontosperrungen sind
-              über das Supabase Dashboard verfügbar.
-            </p>
+            <RollenButton profileId={id} currentRole={profile.role} />
           </div>
         </div>
 

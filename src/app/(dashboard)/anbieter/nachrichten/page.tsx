@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatRelative } from "@/lib/utils";
 import type { AnfrageStatus } from "@/lib/types";
+import { AlleGelesenButton } from "./gelesen-button";
+
+type FilterMode = "alle" | "ungelesen" | "offen";
 
 export const metadata = {
   title: "Nachrichten | xcare Anbieter",
@@ -30,7 +33,13 @@ const statusLabel: Record<AnfrageStatus, string> = {
   abgeschlossen: "Abgeschlossen",
 };
 
-export default async function AnbieterNachrichtenPage() {
+export default async function AnbieterNachrichtenPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  const sp = await searchParams;
+  const filter: FilterMode = (sp.filter as FilterMode) ?? "alle";
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -101,27 +110,42 @@ export default async function AnbieterNachrichtenPage() {
   const totalUnread = Object.values(unreadMap).reduce((s, v) => s + v, 0);
 
   // Split: with messages / without
-  const mitNachrichten = (alleAnfragen ?? [])
+  const mitNachrichtenAll = (alleAnfragen ?? [])
     .filter((a) => latestMap[a.id])
     .sort((a, b) => {
+      // Unread threads always float to top
+      const aUnread = (unreadMap[a.id] ?? 0) > 0 ? 1 : 0;
+      const bUnread = (unreadMap[b.id] ?? 0) > 0 ? 1 : 0;
+      if (bUnread !== aUnread) return bUnread - aUnread;
       const tA = latestMap[a.id]?.created_at ?? a.updated_at;
       const tB = latestMap[b.id]?.created_at ?? b.updated_at;
       return new Date(tB).getTime() - new Date(tA).getTime();
     });
 
+  // Apply filter
+  const mitNachrichten = mitNachrichtenAll.filter((a) => {
+    if (filter === "ungelesen") return (unreadMap[a.id] ?? 0) > 0;
+    if (filter === "offen") return !["abgelehnt", "abgeschlossen", "bestaetigt"].includes(a.status);
+    return true;
+  });
+
   const ohneNachrichten = (alleAnfragen ?? [])
     .filter((a) => !latestMap[a.id] && !["abgelehnt", "abgeschlossen"].includes(a.status))
     .slice(0, 5);
 
+  const unreadAnfrageIds = mitNachrichtenAll
+    .filter((a) => (unreadMap[a.id] ?? 0) > 0)
+    .map((a) => a.id);
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8 gap-4">
+      <div className="flex items-start justify-between mb-5 gap-4">
         <div>
           <h1 className="text-2xl font-bold mb-1">Nachrichten</h1>
           <p className="text-sm text-[--muted-foreground]">
-            {mitNachrichten.length > 0
-              ? `${mitNachrichten.length} Konversation${mitNachrichten.length > 1 ? "en" : ""}`
+            {mitNachrichtenAll.length > 0
+              ? `${mitNachrichtenAll.length} Konversation${mitNachrichtenAll.length > 1 ? "en" : ""}`
               : "Noch keine Nachrichten"}
             {totalUnread > 0 && (
               <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-[--primary] text-white text-xs font-semibold">
@@ -130,11 +154,46 @@ export default async function AnbieterNachrichtenPage() {
             )}
           </p>
         </div>
-        <Link href="/anbieter/nachrichten/vorlagen" className="shrink-0">
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <FileText className="h-3.5 w-3.5" /> Vorlagen
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          {totalUnread > 0 && (
+            <AlleGelesenButton anfrageIds={unreadAnfrageIds} />
+          )}
+          <Link href="/anbieter/nachrichten/vorlagen">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Vorlagen
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1 mb-6 border-b border-[--border]">
+        {[
+          { key: "alle", label: "Alle", count: mitNachrichtenAll.length },
+          { key: "ungelesen", label: "Ungelesen", count: totalUnread },
+          { key: "offen", label: "Aktive", count: mitNachrichtenAll.filter(a => !["abgelehnt","abgeschlossen","bestaetigt"].includes(a.status)).length },
+        ].map((tab) => (
+          <Link
+            key={tab.key}
+            href={tab.key === "alle" ? "/anbieter/nachrichten" : `/anbieter/nachrichten?filter=${tab.key}`}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+              filter === tab.key
+                ? "border-[--primary] text-[--primary]"
+                : "border-transparent text-[--muted-foreground] hover:text-[--foreground]"
+            }`}
+          >
+            {tab.label}
+            {tab.count > 0 && (
+              <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+                filter === tab.key
+                  ? "bg-[--primary] text-white"
+                  : "bg-[--muted] text-[--muted-foreground]"
+              }`}>
+                {tab.count}
+              </span>
+            )}
+          </Link>
+        ))}
       </div>
 
       {/* Conversations with messages */}
@@ -208,8 +267,17 @@ export default async function AnbieterNachrichtenPage() {
         <Card className="mb-8">
           <CardContent className="py-12 text-center text-[--muted-foreground]">
             <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-20" />
-            <p className="font-medium mb-1">Noch keine Nachrichten</p>
-            <p className="text-sm">Nachrichten erscheinen hier, wenn Familien Ihnen schreiben.</p>
+            <p className="font-medium mb-1">
+              {filter === "ungelesen" ? "Keine ungelesenen Nachrichten" :
+               filter === "offen" ? "Keine aktiven Konversationen" :
+               "Noch keine Nachrichten"}
+            </p>
+            <p className="text-sm">
+              {filter === "alle"
+                ? "Nachrichten erscheinen hier, wenn Familien Ihnen schreiben."
+                : <Link href="/anbieter/nachrichten" className="text-[--primary] hover:underline">Alle Nachrichten anzeigen</Link>
+              }
+            </p>
           </CardContent>
         </Card>
       )}
