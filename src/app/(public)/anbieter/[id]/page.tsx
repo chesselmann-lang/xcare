@@ -13,9 +13,41 @@ import { AnfrageDialog } from "@/components/anfrage/AnfrageDialog";
 import { FavoritButton } from "@/components/favoriten/FavoritButton";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { ShareButton } from "@/components/anbieter/ShareButton";
-import { LocalBusinessJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
+import { LocalBusinessJsonLd, BreadcrumbJsonLd, LeistungenJsonLd } from "@/components/seo/JsonLd";
 import { LEISTUNGSKATEGORIEN, KOSTENTRAEGER } from "@/lib/constants";
 import type { Leistung, LeistungsKategorie } from "@/lib/types";
+import type { OeffnungszeitenMap } from "@/components/anbieter/OeffnungszeitenEditor";
+
+// ── Öffnungszeiten display helper (server component safe) ────────────────────
+const TAG_ORDER = ["mo","di","mi","do","fr","sa","so"] as const;
+const TAG_LABELS: Record<string, string> = { mo:"Mo", di:"Di", mi:"Mi", do:"Do", fr:"Fr", sa:"Sa", so:"So" };
+
+function OeffnungszeitenDisplay({ oeffnungszeiten }: { oeffnungszeiten: OeffnungszeitenMap }) {
+  const grouped: { tage: string[]; von: string; bis: string }[] = [];
+  TAG_ORDER.forEach((key) => {
+    const tz = oeffnungszeiten[key];
+    if (!tz?.offen) return;
+    const last = grouped[grouped.length - 1];
+    if (last && last.von === tz.von && last.bis === tz.bis) { last.tage.push(key); }
+    else { grouped.push({ tage: [key], von: tz.von, bis: tz.bis }); }
+  });
+  if (grouped.length === 0) return null;
+  return (
+    <div className="space-y-1">
+      {grouped.map((g, i) => {
+        const tagStr = g.tage.length === 1
+          ? TAG_LABELS[g.tage[0]]
+          : `${TAG_LABELS[g.tage[0]]}–${TAG_LABELS[g.tage[g.tage.length - 1]]}`;
+        return (
+          <div key={i} className="flex justify-between text-sm">
+            <span className="font-medium text-[--foreground]">{tagStr}</span>
+            <span className="text-[--muted-foreground]">{g.von}–{g.bis} Uhr</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export async function generateMetadata({
   params,
@@ -106,7 +138,16 @@ export default async function AnbieterDetailPage({
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
+    <div
+      className="max-w-4xl mx-auto px-4 py-10"
+      itemScope
+      itemType="https://schema.org/LocalBusiness"
+    >
+      <meta itemProp="name" content={anbieter.name} />
+      {anbieter.beschreibung && <meta itemProp="description" content={anbieter.beschreibung} />}
+      {anbieter.telefon && <meta itemProp="telephone" content={anbieter.telefon} />}
+      {anbieter.email && <meta itemProp="email" content={anbieter.email} />}
+      {anbieter.website && <meta itemProp="url" content={anbieter.website} />}
       {/* Structured Data */}
       <LocalBusinessJsonLd
         id={anbieter.id}
@@ -140,6 +181,23 @@ export default async function AnbieterDetailPage({
           { name: anbieter.name, href: `/anbieter/${anbieter.id}` },
         ]}
       />
+      {leistungen.length > 0 && (
+        <LeistungenJsonLd
+          anbieterName={anbieter.name}
+          anbieterUrl={`${baseUrl}/anbieter/${anbieter.id}`}
+          leistungen={leistungen.map((l) => ({
+            id: l.id,
+            name: l.name,
+            beschreibung: l.beschreibung,
+            kategorie: l.kategorie,
+            sgb_paragraf: l.sgb_paragraf,
+            preis_von: l.preis_von,
+            preis_bis: l.preis_bis,
+            wartezeit_wochen: l.wartezeit_wochen,
+            kostentraeger: l.kostentraeger as string[] | null,
+          }))}
+        />
+      )}
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6 text-sm text-[--muted-foreground]">
@@ -274,23 +332,37 @@ export default async function AnbieterDetailPage({
                   </p>
                   <div className="space-y-3">
                     {gruppe.map((l) => (
-                      <Card key={l.id} className="border-[--border]">
+                      <Card
+                        key={l.id}
+                        className="border-[--border]"
+                        itemScope
+                        itemType="https://schema.org/Offer"
+                      >
+                        <meta itemProp="itemOffered" content={l.name} />
+                        <meta itemProp="priceCurrency" content="EUR" />
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
-                              <p className="font-medium mb-1">{l.name}</p>
+                              <p className="font-medium mb-1" itemProp="name">{l.name}</p>
                               {l.beschreibung && (
-                                <p className="text-sm text-[--muted-foreground] mb-2">
+                                <p className="text-sm text-[--muted-foreground] mb-2" itemProp="description">
                                   {l.beschreibung}
                                 </p>
                               )}
                               <div className="flex flex-wrap gap-3 text-xs text-[--muted-foreground]">
                                 {l.sgb_paragraf && (
-                                  <span className="font-medium text-[--primary]">{l.sgb_paragraf}</span>
+                                  <span className="font-medium text-[--primary]" itemProp="disambiguatingDescription">{l.sgb_paragraf}</span>
                                 )}
                                 {(l.preis_von != null || l.preis_bis != null) && (
-                                  <span className="flex items-center gap-1">
+                                  <span className="flex items-center gap-1" itemProp="priceSpecification" itemScope itemType="https://schema.org/PriceSpecification">
                                     <Euro className="h-3 w-3" />
+                                    {l.preis_von != null && (
+                                      <meta itemProp="minPrice" content={String(l.preis_von)} />
+                                    )}
+                                    {l.preis_bis != null && (
+                                      <meta itemProp="maxPrice" content={String(l.preis_bis)} />
+                                    )}
+                                    <meta itemProp="priceCurrency" content="EUR" />
                                     {l.preis_von != null && l.preis_bis != null
                                       ? `${l.preis_von}–${l.preis_bis} €`
                                       : l.preis_von != null
@@ -383,6 +455,20 @@ export default async function AnbieterDetailPage({
                   </Button>
                 </Link>
               ) : null}
+
+              {/* Öffnungszeiten */}
+              {(() => {
+                const oz = (anbieter as { oeffnungszeiten?: OeffnungszeitenMap }).oeffnungszeiten;
+                if (!oz || Object.keys(oz).length === 0) return null;
+                return (
+                  <div className="pt-2 border-t border-[--border]">
+                    <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5" /> Öffnungszeiten
+                    </p>
+                    <OeffnungszeitenDisplay oeffnungszeiten={oz} />
+                  </div>
+                );
+              })()}
 
               <div className="pt-2 border-t border-[--border] text-xs text-[--muted-foreground] space-y-1">
                 {anbieter.verifiziert && (

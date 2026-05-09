@@ -3,13 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { OeffnungszeitenEditor } from "@/components/anbieter/OeffnungszeitenEditor";
+import type { OeffnungszeitenMap } from "@/components/anbieter/OeffnungszeitenEditor";
 import type { Anbieter, Profile } from "@/lib/types";
 
 interface ProfilFormularProps {
@@ -38,6 +40,10 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
     nachname: profile?.nachname ?? "",
     profilTelefon: profile?.telefon ?? "",
   });
+
+  const [oeffnungszeiten, setOeffnungszeiten] = useState<OeffnungszeitenMap>(
+    (anbieter as { oeffnungszeiten?: OeffnungszeitenMap } | null)?.oeffnungszeiten ?? {}
+  );
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -69,36 +75,29 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
       }
 
       // Update or insert Anbieter
+      const anbieterPayload = {
+        name: form.name,
+        beschreibung: form.beschreibung || null,
+        traeger: form.traeger || null,
+        strasse: form.strasse || null,
+        plz: form.plz || null,
+        ort: form.ort || null,
+        telefon: form.telefon || null,
+        email: form.email || null,
+        website: form.website || null,
+        oeffnungszeiten: Object.keys(oeffnungszeiten).length > 0 ? oeffnungszeiten : null,
+      };
+
       if (anbieter?.id) {
         const { error: anbieterErr } = await supabase
           .from("anbieter")
-          .update({
-            name: form.name,
-            beschreibung: form.beschreibung || null,
-            traeger: form.traeger || null,
-            strasse: form.strasse || null,
-            plz: form.plz || null,
-            ort: form.ort || null,
-            telefon: form.telefon || null,
-            email: form.email || null,
-            website: form.website || null,
-            updated_at: new Date().toISOString(),
-          })
+          .update({ ...anbieterPayload, updated_at: new Date().toISOString() })
           .eq("id", anbieter.id);
         if (anbieterErr) throw anbieterErr;
       } else if (profile?.id) {
-        const { error: insertErr } = await supabase.from("anbieter").insert({
-          profile_id: profile.id,
-          name: form.name,
-          beschreibung: form.beschreibung || null,
-          traeger: form.traeger || null,
-          strasse: form.strasse || null,
-          plz: form.plz || null,
-          ort: form.ort || null,
-          telefon: form.telefon || null,
-          email: form.email || null,
-          website: form.website || null,
-        });
+        const { error: insertErr } = await supabase
+          .from("anbieter")
+          .insert({ profile_id: profile.id, ...anbieterPayload });
         if (insertErr) throw insertErr;
       }
 
@@ -216,6 +215,24 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
               <Label htmlFor="website">Website</Label>
               <Input id="website" name="website" value={form.website} onChange={handleChange} placeholder="https://..." />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Öffnungszeiten */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="h-4 w-4" /> Öffnungszeiten
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OeffnungszeitenEditor
+              value={oeffnungszeiten}
+              onChange={setOeffnungszeiten}
+            />
+            <p className="text-xs text-[--muted-foreground] mt-3">
+              Aktivieren Sie die Tage, an denen Sie erreichbar sind. Diese Information wird auf Ihrem öffentlichen Profil angezeigt.
+            </p>
           </CardContent>
         </Card>
 

@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowLeft, ArrowRight, Clock, FileText, MessageCircle, Package2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatRelative, formatDate } from "@/lib/utils";
+import { AnfragenFilter } from "@/components/anfragen/AnfragenFilter";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -38,7 +40,13 @@ type AnfrageRow = {
   _unreadCount?: number;
 };
 
-export default async function FamilieAnfragenPage() {
+export default async function FamilieAnfragenPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string; sort?: string }>;
+}) {
+  const { status: filterStatus, sort = "updated_desc" } = await searchParams;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -84,10 +92,25 @@ export default async function FamilieAnfragenPage() {
     _unreadCount: unreadMap[a.id] ?? 0,
   }));
 
-  const aktiv = enriched.filter((a) =>
+  // Apply filter
+  const filtered = filterStatus
+    ? enriched.filter((a) => a.status === filterStatus)
+    : enriched;
+
+  // Apply sort
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "created_asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    if (sort === "created_desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    // updated_desc (default)
+    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+  });
+
+  // Only split into sections when no filter is active
+  const showSections = !filterStatus;
+  const aktiv = sorted.filter((a) =>
     ["offen", "in_bearbeitung", "angeboten", "bestaetigt"].includes(a.status)
   );
-  const abgeschlossen = enriched.filter((a) =>
+  const abgeschlossen = sorted.filter((a) =>
     ["abgelehnt", "abgeschlossen"].includes(a.status)
   );
 
@@ -155,7 +178,7 @@ export default async function FamilieAnfragenPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-3 mb-6">
         <Link href="/familie">
           <Button variant="ghost" size="sm" className="gap-1">
             <ArrowLeft className="h-4 w-4" /> Zurück
@@ -164,42 +187,67 @@ export default async function FamilieAnfragenPage() {
         <div>
           <h1 className="text-2xl font-bold">Meine Anfragen</h1>
           <p className="text-sm text-[--muted-foreground]">
-            {anfragen?.length ?? 0} Anfragen · {Object.values(unreadMap).reduce((s, v) => s + v, 0)} ungelesene Nachrichten
+            {enriched.length} Anfragen · {Object.values(unreadMap).reduce((s, v) => s + v, 0)} ungelesene Nachrichten
           </p>
         </div>
       </div>
 
-      {/* Aktive Anfragen */}
-      <section className="mb-10">
-        <h2 className="text-base font-semibold text-[--muted-foreground] uppercase tracking-wider text-xs mb-3">
-          Aktive Anfragen ({aktiv.length})
-        </h2>
-        {aktiv.length > 0 ? (
-          <div className="space-y-3">
-            {aktiv.map((a) => <AnfrageCard key={a.id} a={a} />)}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="py-10 text-center text-[--muted-foreground]">
-              <FileText className="h-8 w-8 mx-auto mb-3 opacity-30" />
-              <p className="mb-3 text-sm">Keine aktiven Anfragen vorhanden</p>
-              <Link href="/lotse">
-                <Button size="sm">KI-Lotsen starten</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
-      </section>
+      {/* Filter bar */}
+      <Suspense>
+        <AnfragenFilter totalCount={sorted.length} />
+      </Suspense>
 
-      {/* Abgeschlossene Anfragen */}
-      {abgeschlossen.length > 0 && (
+      {showSections ? (
+        <>
+          {/* Aktive Anfragen */}
+          <section className="mb-10">
+            <h2 className="text-base font-semibold text-[--muted-foreground] uppercase tracking-wider text-xs mb-3">
+              Aktive Anfragen ({aktiv.length})
+            </h2>
+            {aktiv.length > 0 ? (
+              <div className="space-y-3">
+                {aktiv.map((a) => <AnfrageCard key={a.id} a={a} />)}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-10 text-center text-[--muted-foreground]">
+                  <FileText className="h-8 w-8 mx-auto mb-3 opacity-30" />
+                  <p className="mb-3 text-sm">Keine aktiven Anfragen vorhanden</p>
+                  <Link href="/lotse">
+                    <Button size="sm">KI-Lotsen starten</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+          </section>
+
+          {/* Abgeschlossene Anfragen */}
+          {abgeschlossen.length > 0 && (
+            <section>
+              <h2 className="text-base font-semibold text-[--muted-foreground] uppercase tracking-wider text-xs mb-3">
+                Abgeschlossen ({abgeschlossen.length})
+              </h2>
+              <div className="space-y-3 opacity-70">
+                {abgeschlossen.map((a) => <AnfrageCard key={a.id} a={a} />)}
+              </div>
+            </section>
+          )}
+        </>
+      ) : (
+        /* Flat filtered view */
         <section>
-          <h2 className="text-base font-semibold text-[--muted-foreground] uppercase tracking-wider text-xs mb-3">
-            Abgeschlossen ({abgeschlossen.length})
-          </h2>
-          <div className="space-y-3 opacity-70">
-            {abgeschlossen.map((a) => <AnfrageCard key={a.id} a={a} />)}
-          </div>
+          {sorted.length > 0 ? (
+            <div className="space-y-3">
+              {sorted.map((a) => <AnfrageCard key={a.id} a={a} />)}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-10 text-center text-[--muted-foreground]">
+                <FileText className="h-8 w-8 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">Keine Anfragen mit diesem Status</p>
+              </CardContent>
+            </Card>
+          )}
         </section>
       )}
     </div>
