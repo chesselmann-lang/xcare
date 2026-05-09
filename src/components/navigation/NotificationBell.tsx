@@ -21,6 +21,7 @@ const typIcon: Record<string, string> = {
   statusupdate: "🔄",
   neue_nachricht: "💬",
   bewertung: "⭐",
+  kontakt: "📩",
   system: "ℹ️",
 };
 

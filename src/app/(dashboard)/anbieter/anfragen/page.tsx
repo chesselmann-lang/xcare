@@ -10,6 +10,7 @@ import { formatRelative } from "@/lib/utils";
 import { AnfragenFilter } from "@/components/anfragen/AnfragenFilter";
 import { AnfragenBulkAktionen } from "@/components/anfragen/AnfragenBulkAktionen";
 import { AnfrageQuickActions } from "@/components/anfragen/AnfrageQuickActions";
+import { StatusWechselSelect } from "@/components/anfragen/StatusWechselSelect";
 import { WartelisteExportButton } from "@/components/anfragen/WartelisteExportButton";
 import type { AnfrageStatus } from "@/lib/types";
 
@@ -266,9 +267,10 @@ function AnfrageCard({ anfrage: a }: { anfrage: AnfrageRow }) {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Badge variant={statusVariant[a.status as AnfrageStatus] ?? "secondary"}>
-                  {statusLabel[a.status as AnfrageStatus] ?? a.status}
-                </Badge>
+                <StatusWechselSelect
+                  anfrageId={a.id}
+                  status={a.status as AnfrageStatus}
+                />
                 <ArrowRight className="h-4 w-4 text-[--muted-foreground] group-hover:text-[--primary] transition-colors" />
               </div>
             </div>

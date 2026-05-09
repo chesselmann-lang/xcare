@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Compass, Search, FileText, Heart,
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark,
-  GitCompareArrows, SlidersHorizontal
+  GitCompareArrows, SlidersHorizontal, Bell
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -32,6 +32,7 @@ const FAMILIE_NAV = [
   { href: "/suche", label: "Anbieter suchen", icon: Search },
   { href: "/familie/anfragen", label: "Meine Anfragen", icon: FileText },
   { href: "/familie/nachrichten", label: "Nachrichten", icon: Inbox, nachrichtenBadge: true },
+  { href: "/familie/benachrichtigungen", label: "Benachrichtigungen", icon: Bell },
   { href: "/familie/favoriten", label: "Favoriten", icon: Heart },
   { href: "/familie/gespeicherte-suchen", label: "Gespeicherte Suchen", icon: Bookmark },
   { href: "/familie/vergleich", label: "Anbieter vergleichen", icon: GitCompareArrows },

@@ -21,6 +21,7 @@ import type { Leistung, LeistungsKategorie } from "@/lib/types";
 import type { OeffnungszeitenMap } from "@/components/anbieter/OeffnungszeitenEditor";
 import { FamilieAnbieterNotiz } from "@/components/anbieter/FamilieAnbieterNotiz";
 import { VerfuegbarkeitBadge } from "@/components/anbieter/VerfuegbarkeitBadge";
+import { KontaktFormular } from "@/components/anbieter/KontaktFormular";
 
 // ── Lebenslage-Mapping: Leistungskategorie → Lebenslage-Slug ─────────────────
 const KATEGORIE_TO_LEBENSLAGE: Record<string, string[]> = {
@@ -638,13 +639,6 @@ export default async function AnbieterDetailPage({
                     </Button>
                   }
                 />
-              ) : !user ? (
-                <Link href="/register">
-                  <Button className="w-full gap-2">
-                    <Package className="h-4 w-4" />
-                    Jetzt registrieren & anfragen
-                  </Button>
-                </Link>
               ) : null}
 
               {/* Social Media */}
@@ -712,6 +706,24 @@ export default async function AnbieterDetailPage({
               </div>
             </CardContent>
           </Card>
+
+          {/* Kontaktformular für Gäste & Anbieter (nicht für eingeloggte Familien) */}
+          {profile?.role !== "familie" && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Direkt Kontakt aufnehmen</CardTitle>
+                <p className="text-xs text-[--muted-foreground]">
+                  Hinterlassen Sie eine Nachricht — {anbieter.name} meldet sich bei Ihnen.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <KontaktFormular
+                  anbieterId={id}
+                  anbieterName={anbieter.name}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
