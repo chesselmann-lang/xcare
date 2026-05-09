@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, Loader2, MapPin, X, SlidersHorizontal,
   ArrowUpDown, CheckCircle2, Map, List
@@ -10,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AnbieterKarte } from "@/components/suche/AnbieterKarte";
 import { KartenAnsicht } from "@/components/suche/KartenAnsicht";
-import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { createClient } from "@/lib/supabase/client";
 import { KOSTENTRAEGER, UMKREIS_OPTIONEN } from "@/lib/constants";
 import type { AnbieterMitLeistungen, LeistungsKategorie, Kostentraeger } from "@/lib/types";
@@ -43,9 +43,14 @@ const KATEGORIE_TABS: Array<{ key: LeistungsKategorie | ""; label: string; emoji
 ];
 
 export default function SuchePage() {
-  const [plz, setPlz] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [plz, setPlz] = useState(searchParams.get("plz") ?? "");
   const [umkreis, setUmkreis] = useState(20);
-  const [kategorie, setKategorie] = useState<LeistungsKategorie | "">("");
+  const [kategorie, setKategorie] = useState<LeistungsKategorie | "">(
+    (searchParams.get("kategorie") as LeistungsKategorie | null) ?? ""
+  );
   const [kostentraeger, setKostentraeger] = useState<Kostentraeger | "">("");
   const [nurVerifiziert, setNurVerifiziert] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("relevanz");
@@ -62,12 +67,21 @@ export default function SuchePage() {
     sortBy !== "relevanz",
   ].filter(Boolean).length;
 
+  // Push URL params so searches are shareable / SEO-linkable
+  const pushUrl = useCallback((newPlz: string, newKat: string) => {
+    const params = new URLSearchParams();
+    if (newPlz) params.set("plz", newPlz);
+    if (newKat) params.set("kategorie", newKat);
+    router.replace(`/suche${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
+  }, [router]);
+
   const suchen = useCallback(async (overrideKategorie?: LeistungsKategorie | "") => {
     if (!plz || !/^\d{5}$/.test(plz)) return;
     setLoading(true);
     setGesucht(true);
 
     const kat = overrideKategorie !== undefined ? overrideKategorie : kategorie;
+    pushUrl(plz, kat);
 
     let query = supabase
       .from("anbieter")
@@ -126,7 +140,17 @@ export default function SuchePage() {
       setErgebnisse(gefiltert.slice(0, 20));
     }
     setLoading(false);
-  }, [plz, kategorie, kostentraeger, nurVerifiziert, sortBy, supabase]);
+  }, [plz, kategorie, kostentraeger, nurVerifiziert, sortBy, supabase, pushUrl]);
+
+  // Auto-search when valid URL params are present on first load
+  useEffect(() => {
+    const urlPlz = searchParams.get("plz");
+    if (urlPlz && /^\d{5}$/.test(urlPlz)) {
+      suchen();
+    }
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleKategorieTab = (kat: LeistungsKategorie | "") => {
     setKategorie(kat);
