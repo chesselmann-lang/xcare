@@ -260,4 +260,119 @@ export default async function HomePage() {
                 desc: "Starten Sie unseren KI-Lotsen und schildern Sie Ihre Situation. Er führt Sie in wenigen Minuten zu den passenden Hilfsangeboten.",
                 color: "bg-blue-50 text-blue-600 border-blue-100",
               },
-    
+              {
+                step: "2",
+                icon: Search,
+                title: "Anbieter vergleichen",
+                desc: "Durchsuchen Sie verifizierte Anbieter in Ihrer Nähe. Lesen Sie echte Bewertungen und vergleichen Sie Leistungen direkt.",
+                color: "bg-rose-50 text-rose-600 border-rose-100",
+              },
+              {
+                step: "3",
+                icon: Headphones,
+                title: "Direkt Kontakt aufnehmen",
+                desc: "Stellen Sie eine kostenlose Anfrage — der Anbieter meldet sich direkt bei Ihnen. Kein Vermittler, keine versteckten Kosten.",
+                color: "bg-green-50 text-green-600 border-green-100",
+              },
+            ].map((s) => (
+              <div key={s.step} className="flex flex-col items-center text-center gap-4">
+                <div className={`relative h-16 w-16 rounded-2xl flex items-center justify-center border ${s.color}`}>
+                  <s.icon className="h-7 w-7" />
+                  <span className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-[--primary] text-white text-xs font-bold flex items-center justify-center">
+                    {s.step}
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold">{s.title}</h3>
+                <p className="text-sm text-[--muted-foreground] leading-relaxed max-w-xs">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Connector line (decorative, desktop only) */}
+          <div className="hidden md:flex items-center justify-center mt-4 -mt-24 pointer-events-none select-none">
+            <div className="w-full max-w-sm h-px border-t-2 border-dashed border-[--border]" />
+            <div className="w-full max-w-sm h-px border-t-2 border-dashed border-[--border]" />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Testimonials ─────────────────────────────────────────────────── */}
+      {topBewertungen && topBewertungen.length > 0 && (
+        <section className="py-16 md:py-24 border-t" style={{ background: "var(--muted)", borderColor: "var(--border)" }}>
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="text-center mb-12">
+              <p className="text-sm font-semibold uppercase tracking-widest text-[--primary] mb-2">Echte Erfahrungen</p>
+              <h2 className="text-3xl md:text-4xl font-bold">Was Familien sagen</h2>
+              <p className="text-lg text-[--muted-foreground] mt-3 max-w-xl mx-auto">
+                Tausende Familien haben bereits über xcare die richtige Hilfe gefunden.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {topBewertungen.slice(0, 6).map((b) => {
+                const anbieter = b.anbieter as { name: string; ort: string | null } | null;
+                return (
+                  <div
+                    key={b.id}
+                    className="bg-[--card] border border-[--border] rounded-2xl p-5 flex flex-col gap-3"
+                  >
+                    {/* Stars */}
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+
+                    {/* Comment */}
+                    <blockquote className="text-sm leading-relaxed text-[--foreground] flex-1 line-clamp-4">
+                      „{b.kommentar}"
+                    </blockquote>
+
+                    {/* Anbieter attribution */}
+                    {anbieter && (
+                      <p className="text-xs text-[--muted-foreground] border-t border-[--border] pt-2 mt-auto">
+                        <span className="font-medium text-[--foreground]">{anbieter.name}</span>
+                        {anbieter.ort && <span> · {anbieter.ort}</span>}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── CTA – Anbieter ───────────────────────────────────────────────── */}
+      <section className="py-16 border-t" style={{ borderColor: "var(--border)" }}>
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium bg-[--primary]/10 text-[--primary] mb-4">
+            <Building2 className="h-4 w-4" /> Für Pflegedienstleister
+          </div>
+          <h2 className="text-3xl font-bold mb-4">
+            Werden Sie Teil von xcare
+          </h2>
+          <p className="text-lg text-[--muted-foreground] mb-8 max-w-xl mx-auto">
+            Präsentieren Sie Ihre Einrichtung Tausenden von Familien. Verwalten Sie Anfragen,
+            kommunizieren Sie direkt und bauen Sie Ihre digitale Präsenz auf.
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Link href="/registrieren">
+              <Button size="lg" className="gap-2">
+                <Building2 className="h-4 w-4" />
+                Als Anbieter registrieren
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/anbieter">
+              <Button size="lg" variant="outline" className="gap-2">
+                <Users className="h-4 w-4" />
+                Alle Anbieter ansehen
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

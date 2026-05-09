@@ -1,14 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowLeft, ArrowRight, Archive, Clock, FileText, MessageCircle, Package2, Plus } from "lucide-react";
+import { ArrowLeft, Archive, FileText, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { formatRelative, formatDate } from "@/lib/utils";
 import { AnfragenFilter } from "@/components/anfragen/AnfragenFilter";
 import { FamilieAnfragenVergleich } from "@/components/anfragen/FamilieAnfragenVergleich";
+import { AnfragenListeClient } from "@/components/anfragen/AnfragenListeClient";
 import type { AnfrageStatus } from "@/lib/types";
 import type { AnfrageCompareItem } from "@/components/anfragen/FamilieAnfragenVergleich";
 
@@ -127,67 +126,6 @@ export default async function FamilieAnfragenPage({
     return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
   });
 
-  const AnfrageCard = ({ a }: { a: AnfrageRow }) => (
-    <Link href={`/familie/anfragen/${a.id}`} className="block group">
-      <Card className="hover:shadow-md transition-all border-[--border] group-hover:border-[--primary]/20">
-        <CardContent className="p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              {/* Title row */}
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <FileText className="h-4 w-4 text-[--muted-foreground] shrink-0" />
-                <p className="font-semibold capitalize">
-                  {a.lebenslage.replace(/_/g, " ")}
-                </p>
-                <Badge variant={statusVariant[a.status as AnfrageStatus] ?? "secondary"} className="text-xs">
-                  {statusLabel[a.status as AnfrageStatus] ?? a.status}
-                </Badge>
-                {(a._unreadCount ?? 0) > 0 && (
-                  <span className="flex items-center gap-1 bg-[--primary] text-white text-xs px-2 py-0.5 rounded-full font-semibold">
-                    <MessageCircle className="h-3 w-3" />
-                    {a._unreadCount} neu
-                  </span>
-                )}
-              </div>
-
-              {/* Leistung + Anbieter */}
-              {a.leistungen && (
-                <p className="text-sm text-[--muted-foreground] mb-0.5 flex items-center gap-1.5">
-                  <Package2 className="h-3.5 w-3.5" />
-                  {a.leistungen.name}
-                </p>
-              )}
-              {a.anbieter && (
-                <p className="text-sm text-[--muted-foreground]">
-                  <span className="font-medium text-[--foreground]">{a.anbieter.name}</span>
-                  {a.anbieter.ort && <span className="text-xs"> · {a.anbieter.ort}</span>}
-                </p>
-              )}
-
-              {/* Timestamps */}
-              <p className="text-xs text-[--muted-foreground] mt-2 flex items-center gap-1.5">
-                <Clock className="h-3 w-3" />
-                Gesendet {formatRelative(a.created_at)}
-                <span className="opacity-50">·</span>
-                Aktualisiert {formatDate(a.updated_at)}
-              </p>
-
-              {/* Preview */}
-              {a.beschreibung && (
-                <p className="text-sm text-[--muted-foreground] mt-2.5 pt-2.5 border-t border-[--border] line-clamp-2 leading-relaxed">
-                  {a.beschreibung}
-                </p>
-              )}
-            </div>
-
-            {/* Arrow */}
-            <ArrowRight className="h-4 w-4 text-[--muted-foreground] shrink-0 mt-1 group-hover:text-[--primary] transition-colors" />
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
-  );
-
   const totalUnread = Object.values(unreadMap).reduce((s, v) => s + v, 0);
 
   return (
@@ -276,9 +214,7 @@ export default async function FamilieAnfragenPage({
       {/* List */}
       <section>
         {sorted.length > 0 ? (
-          <div className={`space-y-3 ${isArchiv ? "opacity-80" : ""}`}>
-            {sorted.map((a) => <AnfrageCard key={a.id} a={a} />)}
-          </div>
+          <AnfragenListeClient anfragen={sorted} isArchiv={isArchiv} />
         ) : (
           <Card>
             <CardContent className="py-14 text-center text-[--muted-foreground]">

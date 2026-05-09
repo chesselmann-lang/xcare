@@ -183,4 +183,14 @@ export default async function AdminDashboard() {
                     {new Date(a.created_at).toLocaleDateString("de-DE")}
                   </p>
                 </div>
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${statusColors[a.status] ?? "bg-gr
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${statusColors[a.status] ?? "bg-gray-100 text-gray-600"}`}>
+                  {a.status.replace(/_/g, " ")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

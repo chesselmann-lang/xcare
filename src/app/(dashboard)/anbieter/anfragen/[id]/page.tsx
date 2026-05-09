@@ -280,4 +280,77 @@ export default async function AnfrageDetailPage({
         {profile && (
           <AngebotEditor
             anfrageId={anfrage.id}
-            profileId={profile.i
+            profileId={profile.id}
+            currentStatus={anfrage.status as AnfrageStatus}
+          />
+        )}
+
+        {/* Interne Notizen (CRM) */}
+        {anbieter && (
+          <AnfrageNotizen
+            anfrageId={anfrage.id}
+            anbieterId={anbieter.id}
+            initialNotizen={notizen ?? []}
+          />
+        )}
+
+        {/* Wiedervorlagen */}
+        {anbieter && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <BellRing className="h-4 w-4 text-amber-500" /> Wiedervorlagen
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <WiedervorlageManager
+                anfrageId={anfrage.id}
+                anbieterId={anbieter.id}
+                initial={wiedervorlagen ?? []}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Status-Historie */}
+        {((historie && historie.length > 0) || anfrage.created_at) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4" /> Verlauf
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <HistorieTimeline
+                historie={historie ?? []}
+                showCreation
+                erstelltAt={anfrage.created_at}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Rechnung */}
+        <div className="flex justify-end">
+          <Link href={`/anbieter/anfragen/${anfrage.id}/rechnung`}>
+            <Button variant="outline" size="sm" className="gap-2 text-xs">
+              <Receipt className="h-3.5 w-3.5" />
+              Rechnung erstellen
+            </Button>
+          </Link>
+        </div>
+
+        {/* Chat */}
+        <div>
+          <h2 className="text-base font-semibold mb-3">Direktnachrichten mit der Familie</h2>
+          <Chat
+            anfrageId={anfrage.id}
+            currentProfileId={profile?.id ?? ""}
+            currentRole="anbieter"
+            initialNachrichten={nachrichten ?? []}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

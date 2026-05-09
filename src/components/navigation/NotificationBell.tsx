@@ -158,3 +158,6 @@ export function NotificationBell({ profileId, initialCount = 0 }: { profileId: s
           </div>
         </div>
       )}
+    </div>
+  );
+}

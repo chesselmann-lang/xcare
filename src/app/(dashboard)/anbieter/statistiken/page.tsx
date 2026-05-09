@@ -122,6 +122,9 @@ export default async function StatistikenPage() {
   const abgelehnt = anfragen.filter((a) => a.status === "abgelehnt").length;
   const abschlussRate = total > 0 ? Math.round((abgeschlossen / total) * 100) : 0;
   const ablehnRate = total > 0 ? Math.round((abgelehnt / total) * 100) : 0;
+  const bestaetigt = anfragen.filter((a) => a.status === "bestaetigt").length;
+  const angenommenCount = bestaetigt + abgeschlossen;
+  const annahmeRate = total > 0 ? Math.round((angenommenCount / total) * 100) : 0;
 
   const avgSterne = bewertungen.length > 0
     ? bewertungen.reduce((s, b) => s + b.sterne, 0) / bewertungen.length
@@ -366,6 +369,93 @@ export default async function StatistikenPage() {
         </CardContent>
       </Card>
 
+      {/* Konversions-Funnel */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" /> Anfragen-Konversionsrate
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {total === 0 ? (
+            <p className="text-sm text-[--muted-foreground]">Noch keine Anfragen vorhanden.</p>
+          ) : (
+            <div className="space-y-4">
+              {/* Funnel bars */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-28 text-sm text-[--muted-foreground] shrink-0">Eingegangen</div>
+                  <div className="flex-1 bg-[--muted] rounded-full h-5 overflow-hidden">
+                    <div className="h-full bg-[--primary] rounded-full" style={{ width: "100%" }} />
+                  </div>
+                  <div className="w-12 text-sm font-semibold text-right">{total}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-28 text-sm text-[--muted-foreground] shrink-0">Angenommen</div>
+                  <div className="flex-1 bg-[--muted] rounded-full h-5 overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full transition-all"
+                      style={{ width: `${total > 0 ? (angenommenCount / total) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <div className="w-12 text-sm font-semibold text-right">{angenommenCount}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-28 text-sm text-[--muted-foreground] shrink-0">Abgeschlossen</div>
+                  <div className="flex-1 bg-[--muted] rounded-full h-5 overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-600 rounded-full transition-all"
+                      style={{ width: `${total > 0 ? (abgeschlossen / total) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <div className="w-12 text-sm font-semibold text-right">{abgeschlossen}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-28 text-sm text-[--muted-foreground] shrink-0">Abgelehnt</div>
+                  <div className="flex-1 bg-[--muted] rounded-full h-5 overflow-hidden">
+                    <div
+                      className="h-full bg-red-400 rounded-full transition-all"
+                      style={{ width: `${total > 0 ? (abgelehnt / total) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <div className="w-12 text-sm font-semibold text-right">{abgelehnt}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-28 text-sm text-[--muted-foreground] shrink-0">Offen</div>
+                  <div className="flex-1 bg-[--muted] rounded-full h-5 overflow-hidden">
+                    <div
+                      className="h-full bg-amber-400 rounded-full transition-all"
+                      style={{ width: `${total > 0 ? (offen / total) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <div className="w-12 text-sm font-semibold text-right">{offen}</div>
+                </div>
+              </div>
+              {/* KPI badges */}
+              <div className="flex flex-wrap gap-3 pt-3 border-t border-[--border]">
+                <div className="flex items-center gap-1.5 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-full px-3 py-1 text-sm font-medium">
+                  <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                  Annahmerate: {annahmeRate}%
+                </div>
+                <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 rounded-full px-3 py-1 text-sm font-medium">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" />
+                  Abschlussrate: {abschlussRate}%
+                </div>
+                <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 rounded-full px-3 py-1 text-sm font-medium">
+                  <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+                  Ablehnrate: {ablehnRate}%
+                </div>
+                {avgResponseDays > 0 && (
+                  <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 rounded-full px-3 py-1 text-sm font-medium ml-auto">
+                    Ø Reaktionszeit: {avgResponseDays} Tag{avgResponseDays !== 1 ? "e" : ""}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="grid lg:grid-cols-3 gap-6 mb-6">
         {/* Monthly Bar Chart */}
         <div className="lg:col-span-2">
@@ -484,4 +574,121 @@ export default async function StatistikenPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium truncate">
-                          {lebe
+                          {lebenslagenLabel[ll] ?? ll.replace(/_/g, " ")}
+                        </span>
+                        <span className="text-xs text-[--muted-foreground] shrink-0 ml-2">
+                          {count}
+                        </span>
+                      </div>
+                      <div className="h-2 bg-[--border] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[--primary] rounded-full"
+                          style={{ width: `${(count / (llSorted[0][1] || 1)) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[--muted-foreground] text-center py-8">Noch keine Anfragen</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Status Verteilung */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" /> Status-Übersicht
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Object.keys(statusCounts).length > 0 ? (
+              <div className="space-y-2">
+                {(Object.entries(statusCounts) as [AnfrageStatus, number][])
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([status, count]) => (
+                    <div key={status} className="flex items-center justify-between p-2.5 rounded-lg bg-[--muted]">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[status] ?? "bg-gray-100 text-gray-700"}`}>
+                        {statusLabel[status] ?? status}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-24 h-2 bg-[--border] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[--primary] opacity-70 rounded-full"
+                            style={{ width: total > 0 ? `${(count / total) * 100}%` : "0%" }}
+                          />
+                        </div>
+                        <span className="text-sm font-semibold w-6 text-right">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                <div className="pt-1 border-t border-[--border] flex justify-between items-center">
+                  <span className="text-xs text-[--muted-foreground]">Abschlussrate</span>
+                  <span className={`text-sm font-bold ${abschlussRate >= 50 ? "text-green-600" : abschlussRate >= 25 ? "text-amber-600" : "text-red-600"}`}>
+                    {abschlussRate}%
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-[--muted-foreground] text-center py-8">Noch keine Anfragen</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Monatstabelle */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Award className="h-4 w-4 text-amber-500" /> Monatstabelle (letzte 6 Monate)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[--border]">
+                  {["Monat", "Anfragen", "Abgeschlossen", "Rate", "Trend"].map((h) => (
+                    <th key={h} className="text-left text-xs font-semibold text-[--muted-foreground] pb-2 pr-4 last:pr-0">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[--border]">
+                {[...monthlyData].reverse().map((m, i) => {
+                  const prev = monthlyData[5 - i - 1];
+                  const diff = prev !== undefined ? m.total - prev.total : 0;
+                  return (
+                    <tr key={m.label} className={i === 0 ? "font-semibold" : ""}>
+                      <td className="py-2.5 pr-4 text-sm">{m.label}</td>
+                      <td className="py-2.5 pr-4">{m.total}</td>
+                      <td className="py-2.5 pr-4">{m.abgeschlossen}</td>
+                      <td className="py-2.5 pr-4">
+                        <span className={`font-medium ${m.rate >= 50 ? "text-green-600" : m.rate >= 25 ? "text-amber-600" : m.total > 0 ? "text-red-600" : "text-[--muted-foreground]"}`}>
+                          {m.total > 0 ? `${m.rate}%` : "—"}
+                        </span>
+                      </td>
+                      <td className="py-2.5">
+                        {prev !== undefined ? (
+                          <span className={`flex items-center gap-1 text-xs ${trendColor(diff)}`}>
+                            {trendIcon(diff)}
+                            {diff !== 0 ? `${diff > 0 ? "+" : ""}${diff}` : "="}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[--muted-foreground]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -413,4 +413,9 @@ export default async function AnbieterVerzeichnisPage({
                 ))}
               </div>
             </section>
-        
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

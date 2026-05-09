@@ -363,4 +363,63 @@ export default async function FamilieAnfrageDetailPage({
                   </Button>
                 </Link>
               )}
-              <Link href=
+              <Link href="/suche">
+                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
+                  Neue Suche
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Status-Historie Timeline */}
+        {(historie && historie.length > 0) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-[--primary]" /> Verlauf
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <HistorieTimeline
+                historie={historie}
+                showCreation={true}
+                erstelltAt={anfrage.created_at}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Chat */}
+        {anbieter && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[--primary]" /> Nachrichten mit {anbieter.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Chat
+                anfrageId={id}
+                currentProfileId={profile.id}
+                currentRole="familie"
+                initialNachrichten={nachrichten ?? []}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Bewertung abgeben */}
+        {(status === "bestaetigt" || status === "abgeschlossen") && anbieter && (
+          <BewertungAbgeben
+            anfrageId={id}
+            anbieterId={anbieter.id}
+            familieId={profile.id}
+            anbieterName={anbieter.name}
+            existingBewertung={existingBewertung}
+          />
+        )}
+      </div>
+    </div>
+  );
+}

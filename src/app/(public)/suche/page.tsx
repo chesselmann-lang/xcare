@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, Loader2, MapPin, X, SlidersHorizontal,
@@ -64,6 +64,12 @@ export default function SuchePage() {
   const [saving, setSaving] = useState(false);
   const [gespeichert, setGespeichert] = useState(false);
   const [suchVerlauf, setSuchVerlauf] = useState<Array<{ label: string; plz: string; suchtext: string; kategorie: string }>>([]);
+  // Autocomplete
+  const [acSuggestions, setAcSuggestions] = useState<Array<{ id: string; name: string; ort: string }>>([]);
+  const [acLoading, setAcLoading] = useState(false);
+  const [showAc, setShowAc] = useState(false);
+  const [acIndex, setAcIndex] = useState(-1);
+  const acContainerRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
   // Load Suchverlauf from localStorage on mount
@@ -72,6 +78,41 @@ export default function SuchePage() {
       const stored = localStorage.getItem("xcare_suchverlauf");
       if (stored) setSuchVerlauf(JSON.parse(stored));
     } catch { /* ignore */ }
+  }, []);
+
+  // Debounced Autocomplete: fetch matching Anbieter names
+  useEffect(() => {
+    if (suchtext.trim().length < 2) {
+      setAcSuggestions([]);
+      setShowAc(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setAcLoading(true);
+      const term = suchtext.trim();
+      const { data } = await supabase
+        .from("anbieter")
+        .select("id, name, ort")
+        .eq("aktiv", true)
+        .or(`name.ilike.%${term}%,ort.ilike.%${term}%`)
+        .limit(6);
+      setAcSuggestions(data ?? []);
+      setShowAc((data?.length ?? 0) > 0);
+      setAcLoading(false);
+      setAcIndex(-1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [suchtext, supabase]);
+
+  // Close autocomplete on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (acContainerRef.current && !acContainerRef.current.contains(e.target as Node)) {
+        setShowAc(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const activeFiltersCount = [
@@ -269,21 +310,84 @@ export default function SuchePage() {
       {/* Suchmaske */}
       <div className="rounded-2xl border border-[--border] bg-[--card] p-5 mb-6 shadow-sm">
         <div className="flex flex-wrap gap-3 items-end">
-          {/* Freitext-Suche */}
-          <div className="flex-1 min-w-48">
+          {/* Freitext-Suche mit Live-Autocomplete */}
+          <div className="flex-1 min-w-48" ref={acContainerRef}>
             <label className="text-xs font-medium text-[--muted-foreground] mb-1.5 block">
               Stichwort (optional)
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground]" aria-hidden="true" />
+              {acLoading && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[--muted-foreground] animate-spin" />
+              )}
               <Input
                 value={suchtext}
-                onChange={(e) => setSuchtext(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && suchen()}
+                onChange={(e) => { setSuchtext(e.target.value); setShowAc(true); }}
+                onFocus={() => { if (acSuggestions.length > 0) setShowAc(true); }}
+                onKeyDown={(e) => {
+                  if (!showAc || acSuggestions.length === 0) {
+                    if (e.key === "Enter") suchen();
+                    return;
+                  }
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setAcIndex((i) => Math.min(i + 1, acSuggestions.length - 1));
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setAcIndex((i) => Math.max(i - 1, -1));
+                  } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (acIndex >= 0 && acSuggestions[acIndex]) {
+                      setSuchtext(acSuggestions[acIndex].name);
+                      setShowAc(false);
+                      setAcIndex(-1);
+                    } else {
+                      setShowAc(false);
+                      suchen();
+                    }
+                  } else if (e.key === "Escape") {
+                    setShowAc(false);
+                    setAcIndex(-1);
+                  }
+                }}
                 placeholder="z.B. Demenz, Physiotherapie…"
                 className="pl-9"
                 aria-label="Stichwort eingeben"
+                aria-autocomplete="list"
+                aria-expanded={showAc}
+                autoComplete="off"
               />
+              {/* Autocomplete Dropdown */}
+              {showAc && acSuggestions.length > 0 && (
+                <div
+                  className="absolute z-50 top-full left-0 right-0 mt-1 bg-[--card] border border-[--border] rounded-xl shadow-lg overflow-hidden"
+                  role="listbox"
+                >
+                  {acSuggestions.map((s, i) => (
+                    <button
+                      key={s.id}
+                      role="option"
+                      aria-selected={i === acIndex}
+                      type="button"
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-sm transition-colors ${
+                        i === acIndex
+                          ? "bg-[--primary] text-[--primary-foreground]"
+                          : "hover:bg-[--muted]"
+                      }`}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setSuchtext(s.name);
+                        setShowAc(false);
+                        setAcIndex(-1);
+                      }}
+                    >
+                      <Search className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                      <span className="flex-1 truncate font-medium">{s.name}</span>
+                      <span className="text-xs opacity-60 shrink-0">{s.ort}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -569,4 +673,128 @@ export default function SuchePage() {
 
             <div className="flex items-center gap-2 flex-wrap">
               {/* Inline sort dropdown — always visible in results bar */}
-              {!l
+              {!loading && sortedErgebnisse.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-[--muted-foreground] shrink-0" aria-hidden="true" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => {
+                      setSortBy(e.target.value as SortOption);
+                      // Re-sort immediately without new network call
+                    }}
+                    className="h-8 rounded-lg border border-[--input] bg-[--background] px-2 text-xs font-medium text-[--foreground]"
+                    aria-label="Sortierung"
+                  >
+                    {Object.entries(SORT_OPTIONS).map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* View mode toggle */}
+              {sortedErgebnisse.length > 0 && (
+                <div className="flex rounded-lg border border-[--border] overflow-hidden" role="group" aria-label="Ansicht wechseln">
+                  <button
+                    onClick={() => setViewMode("liste")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === "liste" ? "bg-[--primary] text-white" : "bg-[--card] text-[--muted-foreground] hover:bg-[--muted]"
+                    }`}
+                    aria-pressed={viewMode === "liste"}
+                  >
+                    <List className="h-3.5 w-3.5" aria-hidden="true" /> Liste
+                  </button>
+                  <button
+                    onClick={() => setViewMode("karte")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === "karte" ? "bg-[--primary] text-white" : "bg-[--card] text-[--muted-foreground] hover:bg-[--muted]"
+                    }`}
+                    aria-pressed={viewMode === "karte"}
+                  >
+                    <Map className="h-3.5 w-3.5" aria-hidden="true" /> Karte
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {loading && (
+            <div className="flex justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-[--primary]" aria-label="Lädt…" />
+            </div>
+          )}
+
+          {!loading && ergebnisse.length === 0 && (
+            <div className="text-center py-12 text-[--muted-foreground]">
+              <Search className="h-10 w-10 mx-auto mb-3 opacity-20" aria-hidden="true" />
+              <p className="font-medium mb-1 text-[--foreground]">Keine Anbieter gefunden</p>
+              <p className="text-sm mb-6">Für PLZ {plz}{kategorie ? ` (${kategorie.replace(/_/g, " ")})` : ""} konnten wir keine Anbieter finden.</p>
+              <div className="flex flex-wrap justify-center gap-2 text-sm">
+                {umkreis < 50 && (
+                  <button
+                    onClick={() => { setUmkreis(50); suchen(); }}
+                    className="px-4 py-2 rounded-full border border-[--border] bg-[--card] hover:border-[--primary] hover:text-[--primary] transition-colors"
+                  >
+                    Umkreis auf 50 km erweitern
+                  </button>
+                )}
+                {kategorie && (
+                  <button
+                    onClick={() => handleKategorieTab("")}
+                    className="px-4 py-2 rounded-full border border-[--border] bg-[--card] hover:border-[--primary] hover:text-[--primary] transition-colors"
+                  >
+                    Alle Kategorien anzeigen
+                  </button>
+                )}
+                {(nurVerifiziert || !nurVerfuegbar) && (
+                  <button
+                    onClick={() => { resetFilter(); suchen(); }}
+                    className="px-4 py-2 rounded-full border border-[--border] bg-[--card] hover:border-[--primary] hover:text-[--primary] transition-colors"
+                  >
+                    Filter zurücksetzen
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!loading && sortedErgebnisse.length > 0 && (
+            viewMode === "liste" ? (
+              <div className="space-y-3" role="list" aria-label="Suchergebnisse">
+                {sortedErgebnisse.map((a) => (
+                  <div key={a.id} role="listitem">
+                    <AnbieterKarte
+                      anbieter={a}
+                      avgSterne={a._avgSterne}
+                      bewertungenCount={a._bewertungenCount}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <KartenAnsicht
+                anbieter={sortedErgebnisse.map((a) => ({
+                  id: a.id,
+                  name: a.name,
+                  lat: a.lat ?? null,
+                  lng: a.lng ?? null,
+                  ort: a.ort ?? null,
+                  plz: a.plz ?? null,
+                  verifiziert: a.verifiziert,
+                }))}
+              />
+            )
+          )}
+        </div>
+      )}
+
+      {!gesucht && (
+        <div className="text-center py-16 text-[--muted-foreground]">
+          <MapPin className="h-12 w-12 mx-auto mb-4 opacity-20" aria-hidden="true" />
+          <p className="font-medium mb-1">Geben Sie eine Postleitzahl ein</p>
+          <p className="text-sm">Wir zeigen Ihnen Anbieter in Ihrer Nähe.</p>
+        </div>
+      )}
+    </div>
+  );
+}

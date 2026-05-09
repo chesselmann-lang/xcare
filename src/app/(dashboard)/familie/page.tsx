@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   Compass, Search, FileText, Heart, ArrowRight, Clock, Bookmark,
   Sparkles, MapPin, Bell, CheckCircle2, MessageSquare,
-  Star, TrendingUp, Users
+  Star, TrendingUp, Users, History
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,6 +69,7 @@ export default async function FamilieDashboard() {
     { count: bestaetigteCount },
     { count: inBearbeitungCount },
     { data: gespeicherteSuchen },
+    { data: zuletztAngesehen },
   ] = await Promise.all([
     supabase
       .from("anfragen")
@@ -120,6 +121,12 @@ export default async function FamilieDashboard() {
       .eq("profile_id", profile?.id)
       .order("created_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("anbieter_zuletzt_angesehen")
+      .select("anbieter_id, gesehen_am, anbieter(id, name, plz, ort, verifiziert, logo_url)")
+      .eq("familie_id", profile?.id)
+      .order("gesehen_am", { ascending: false })
+      .limit(6),
   ]);
 
   // Lebenslage → Leistungskategorie mapping for personalized recommendations
@@ -413,6 +420,59 @@ export default async function FamilieDashboard() {
         </Link>
       </div>
 
+      {/* Zuletzt angesehen */}
+      {zuletztAngesehen && zuletztAngesehen.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+              <History className="h-4 w-4 text-[--primary]" /> Zuletzt angesehen
+            </p>
+            <Link href="/suche" className="text-xs text-blue-600 hover:underline">
+              Mehr entdecken →
+            </Link>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">
+            {zuletztAngesehen.map((entry) => {
+              const a = entry.anbieter as { id: string; name: string; plz: string | null; ort: string | null; verifiziert: boolean; logo_url: string | null } | null;
+              if (!a) return null;
+              return (
+                <Link
+                  key={entry.anbieter_id}
+                  href={`/anbieter/${a.id}`}
+                  className="flex-none w-36 group"
+                >
+                  <div className="flex flex-col items-center gap-2 p-3 rounded-xl border border-[--border] hover:border-[--primary]/40 hover:bg-[--primary]/5 transition-all text-center">
+                    {a.logo_url ? (
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={a.logo_url} alt={a.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center border border-indigo-100">
+                        <span className="text-sm font-bold text-indigo-600">
+                          {a.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="min-w-0 w-full">
+                      <p className="text-xs font-medium text-[--foreground] group-hover:text-[--primary] transition-colors leading-tight line-clamp-2">
+                        {a.name}
+                      </p>
+                      {(a.ort ?? a.plz) && (
+                        <p className="text-[10px] text-[--muted-foreground] mt-0.5 flex items-center justify-center gap-0.5">
+                          <MapPin className="h-2.5 w-2.5 shrink-0" />
+                          {a.ort ?? a.plz}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Letzte Anfragen + Empfehlungen */}
         <div className="lg:col-span-2 space-y-4">
@@ -609,4 +669,74 @@ export default async function FamilieDashboard() {
           {(gespeicherteSuchen ?? []).length > 0 && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-base flex items-center 
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Bookmark className="h-4 w-4 text-[--primary]" /> Gespeicherte Suchen
+                </CardTitle>
+                <Link href="/suche">
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs h-7">
+                    Neue <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-1">
+                {(gespeicherteSuchen ?? []).map((s) => {
+                  const params = new URLSearchParams();
+                  if (s.plz) params.set("plz", s.plz);
+                  if (s.lebenslage) params.set("kategorie", s.lebenslage);
+                  if (s.suchtext) params.set("q", s.suchtext);
+                  return (
+                    <Link
+                      key={s.id}
+                      href={`/suche?${params.toString()}`}
+                      className="group flex items-center gap-2 p-2.5 rounded-lg hover:bg-[--muted] transition-colors"
+                    >
+                      <Search className="h-3.5 w-3.5 text-[--muted-foreground] shrink-0" />
+                      <span className="flex-1 text-xs font-medium truncate group-hover:text-[--primary] transition-colors">
+                        {s.name}
+                      </span>
+                      <ArrowRight className="h-3 w-3 text-[--muted-foreground] group-hover:text-[--primary] shrink-0 transition-colors" />
+                    </Link>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Schnellzugriff */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" /> Schnellzugriff
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-1">
+              {[
+                { href: "/lotse", icon: Compass, label: "KI-Lotse starten", desc: "Unterstützung finden" },
+                { href: "/suche", icon: Search, label: "Anbieter suchen", desc: "Nach PLZ & Kategorie" },
+                { href: "/familie/nachrichten", icon: MessageSquare, label: "Nachrichten", desc: "Alle Gespräche" },
+                { href: "/familie/anfragen", icon: FileText, label: "Meine Anfragen", desc: "Status verwalten" },
+                { href: "/familie/favoriten", icon: Heart, label: "Favoriten", desc: "Gespeicherte Anbieter" },
+                { href: "/familie/gespeicherte-suchen", icon: Bookmark, label: "Gespeicherte Suchen", desc: "Suchanfragen verwalten" },
+              ].map((item) => (
+                <Link key={item.href} href={item.href} className="block group">
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-[--muted] transition-colors">
+                    <div className="w-7 h-7 rounded-lg bg-[--primary]/8 flex items-center justify-center shrink-0">
+                      <item.icon className="h-3.5 w-3.5 text-[--primary]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium group-hover:text-[--primary] transition-colors">
+                        {item.label}
+                      </p>
+                      <p className="text-xs text-[--muted-foreground]">{item.desc}</p>
+                    </div>
+                    <ArrowRight className="h-3 w-3 text-[--muted-foreground] group-hover:text-[--primary] transition-colors shrink-0" />
+                  </div>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
