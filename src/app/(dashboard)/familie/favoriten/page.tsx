@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FavoritButton } from "@/components/favoriten/FavoritButton";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
+import { VergleichPicker } from "@/components/vergleich/VergleichPicker";
 
 export const metadata = {
   title: "Meine Favoriten | xcare",
@@ -109,6 +110,22 @@ export default async function FamilieFavoritenPage() {
             </p>
             <p className="text-xs text-[--muted-foreground] mt-0.5">Noch nicht angefragt</p>
           </div>
+        </div>
+      )}
+
+      {/* Vergleich picker – shown when ≥2 favorites exist */}
+      {total >= 2 && (
+        <div className="mb-6">
+          <VergleichPicker
+            anbieterList={
+              favoriten!
+                .map((f) => {
+                  const a = f.anbieter as { id: string; name: string } | null;
+                  return a ? { id: a.id, name: a.name } : null;
+                })
+                .filter(Boolean) as { id: string; name: string }[]
+            }
+          />
         </div>
       )}
 

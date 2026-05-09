@@ -5,7 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Compass, Search, FileText, Heart,
   Building2, Package, MessageSquare, LogOut, User,
-  Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark
+  Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark,
+  GitCompareArrows
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +32,7 @@ const FAMILIE_NAV = [
   { href: "/familie/nachrichten", label: "Nachrichten", icon: Inbox },
   { href: "/familie/favoriten", label: "Favoriten", icon: Heart },
   { href: "/familie/gespeicherte-suchen", label: "Gespeicherte Suchen", icon: Bookmark },
+  { href: "/familie/vergleich", label: "Anbieter vergleichen", icon: GitCompareArrows },
 ];
 
 const ANBIETER_NAV = [

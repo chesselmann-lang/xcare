@@ -18,6 +18,8 @@ import { LocalBusinessJsonLd, BreadcrumbJsonLd, LeistungenJsonLd } from "@/compo
 import { LEISTUNGSKATEGORIEN, KOSTENTRAEGER } from "@/lib/constants";
 import type { Leistung, LeistungsKategorie } from "@/lib/types";
 import type { OeffnungszeitenMap } from "@/components/anbieter/OeffnungszeitenEditor";
+import { FamilieAnbieterNotiz } from "@/components/anbieter/FamilieAnbieterNotiz";
+import { VerfuegbarkeitBadge } from "@/components/anbieter/VerfuegbarkeitBadge";
 
 // ── Öffnungszeiten display helper (server component safe) ────────────────────
 const TAG_ORDER = ["mo","di","mi","do","fr","sa","so"] as const;
@@ -158,6 +160,18 @@ export default async function AnbieterDetailPage({
     aehnliche = (nearbyRaw ?? []).slice(0, 3);
   }
 
+  // Familie-Notiz zu diesem Anbieter laden (nur für eingeloggte Familien)
+  let familieNotiz: string | null = null;
+  if (profile?.role === "familie") {
+    const { data: notizData } = await supabase
+      .from("familie_anbieter_notizen")
+      .select("notiz")
+      .eq("familie_id", profile.id)
+      .eq("anbieter_id", id)
+      .single();
+    familieNotiz = notizData?.notiz ?? null;
+  }
+
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
 
   return (
@@ -247,6 +261,9 @@ export default async function AnbieterDetailPage({
                   <CheckCircle2 className="h-3 w-3" /> Verifiziert
                 </Badge>
               )}
+              <VerfuegbarkeitBadge
+                verfuegbarkeit={(anbieter as { verfuegbarkeit?: string }).verfuegbarkeit as "verfuegbar" | "eingeschraenkt" | "ausgebucht" | null}
+              />
             </div>
             {anbieter.traeger && (
               <p className="text-sm text-[--muted-foreground] mb-1">{anbieter.traeger}</p>
@@ -579,6 +596,17 @@ export default async function AnbieterDetailPage({
           </Card>
         </div>
       </div>
+
+      {/* Familie private Notiz zu diesem Anbieter */}
+      {profile?.role === "familie" && (
+        <div className="mt-8">
+          <FamilieAnbieterNotiz
+            anbieterId={id}
+            familieId={profile.id}
+            initialNotiz={familieNotiz}
+          />
+        </div>
+      )}
 
       {/* Ähnliche Anbieter */}
       {aehnliche.length > 0 && (

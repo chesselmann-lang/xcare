@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, MapPin, Phone, Calendar, FileText, Receipt } from "lucide-react";
+import { ArrowLeft, User, MapPin, Phone, Calendar, FileText, Receipt, BellRing } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { AnfrageNotizen } from "./anfrage-notizen";
 import { AngebotEditor } from "./angebot-editor";
 import { Chat } from "@/components/nachrichten/Chat";
 import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
+import { WiedervorlageManager } from "@/components/anfragen/WiedervorlageManager";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -98,6 +99,14 @@ export default async function AnfrageDetailPage({
     .select("id, alter_status, neuer_status, notiz, created_at")
     .eq("anfrage_id", id)
     .order("created_at", { ascending: true });
+
+  // Wiedervorlagen laden
+  const { data: wiedervorlagen } = await supabase
+    .from("wiedervorlagen")
+    .select("id, faellig_am, notiz, erledigt")
+    .eq("anfrage_id", id)
+    .eq("anbieter_id", anbieter?.id ?? "")
+    .order("faellig_am", { ascending: true });
 
   const familie = anfrage.profiles as {
     vorname: string | null;
@@ -230,6 +239,24 @@ export default async function AnfrageDetailPage({
             anbieterId={anbieter.id}
             initialNotizen={notizen ?? []}
           />
+        )}
+
+        {/* Wiedervorlagen */}
+        {anbieter && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <BellRing className="h-4 w-4 text-amber-500" /> Wiedervorlagen
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <WiedervorlageManager
+                anfrageId={anfrage.id}
+                anbieterId={anbieter.id}
+                initial={wiedervorlagen ?? []}
+              />
+            </CardContent>
+          </Card>
         )}
 
         {/* Status-Historie */}

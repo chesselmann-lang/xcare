@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ProfilFormular from "./profil-formular";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VerfuegbarkeitPicker } from "@/components/anbieter/VerfuegbarkeitPicker";
+import { CalendarCheck2 } from "lucide-react";
 
 export default async function AnbieterProfilPage() {
   const supabase = await createClient();
@@ -23,5 +26,31 @@ export default async function AnbieterProfilPage() {
     .eq("profile_id", profile?.id)
     .single();
 
-  return <ProfilFormular anbieter={anbieter} profile={profile} />;
+  return (
+    <div className="space-y-6 max-w-2xl">
+      {/* Verfügbarkeitsstatus */}
+      {anbieter && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <CalendarCheck2 className="h-4 w-4 text-[--primary]" /> Verfügbarkeit
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-500 mb-3">
+              Zeigen Sie Familien, ob Sie neue Anfragen entgegennehmen können.
+              Dieser Status erscheint auf Ihrem öffentlichen Profil.
+            </p>
+            <VerfuegbarkeitPicker
+              anbieterId={anbieter.id}
+              initial={(anbieter.verfuegbarkeit as "verfuegbar" | "eingeschraenkt" | "ausgebucht") ?? "verfuegbar"}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Profil-Formular */}
+      <ProfilFormular anbieter={anbieter} profile={profile} />
+    </div>
+  );
 }

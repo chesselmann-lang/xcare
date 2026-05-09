@@ -488,6 +488,111 @@ const weeklyDigestAnbieter = inngest.createFunction(
   }
 );
 
+// ─── 10. Tägliche Wiedervorlagen-Erinnerung (07:00 UTC) ────────────────────────
+const dailyWiedervorlagenCheck = inngest.createFunction(
+  { id: "daily-wiedervorlagen-check", concurrency: { limit: 5 } },
+  { cron: "0 7 * * *" }, // Every day at 07:00 UTC
+  async ({ step }) => {
+    const supabase = getServiceClient();
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+    // Fetch all due, unresolved Wiedervorlagen with anbieter + anfrage info
+    const dueItems = await step.run("fetch-due-wiedervorlagen", async () => {
+      const { data } = await supabase
+        .from("wiedervorlagen")
+        .select(`
+          id,
+          faellig_am,
+          notiz,
+          anfrage_id,
+          anbieter_id,
+          anbieter!inner(id, name, profile_id),
+          anfragen!inner(lebenslage)
+        `)
+        .lte("faellig_am", today)
+        .eq("erledigt", false);
+      return data ?? [];
+    });
+
+    if (dueItems.length === 0) return { sent: 0 };
+
+    // Group by anbieter
+    const byAnbieter = dueItems.reduce<Record<string, typeof dueItems>>((acc, item) => {
+      const aid = item.anbieter_id as string;
+      acc[aid] = acc[aid] ?? [];
+      acc[aid].push(item);
+      return acc;
+    }, {});
+
+    let sent = 0;
+
+    for (const [anbieterId, items] of Object.entries(byAnbieter)) {
+      await step.run(`wiedervorlage-notify-${anbieterId}`, async () => {
+        const anbieter = (items[0].anbieter as { id: string; name: string; profile_id: string });
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("id", anbieter.profile_id)
+          .single();
+
+        if (!profile?.user_id) return;
+
+        const { data: userData } = await (supabase.auth.admin.getUserById(profile.user_id)
+          .catch(() => ({ data: null })));
+
+        const email = (userData as { user?: { email?: string } })?.user?.email;
+        if (!email) return;
+
+        const rows = items
+          .map((item) => {
+            const anfrage = item.anfragen as { lebenslage: string };
+            const lebenslage = (anfrage?.lebenslage ?? "").replace(/_/g, " ");
+            const isOverdue = (item.faellig_am as string) < today;
+            const dateStr = new Date(item.faellig_am as string).toLocaleDateString("de-DE", {
+              day: "2-digit", month: "2-digit", year: "numeric",
+            });
+            return `<tr>
+              <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#333;">${dateStr}${isOverdue ? " <span style='color:#E74C3C;font-size:11px;'>überfällig</span>" : ""}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#555;text-transform:capitalize;">${lebenslage}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#777;">${item.notiz ?? "—"}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;"><a href="${appUrl}/anbieter/anfragen/${item.anfrage_id}" style="color:#1A5276;font-size:12px;text-decoration:underline;">Anfrage öffnen</a></td>
+            </tr>`;
+          })
+          .join("");
+
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: fromEmail,
+          to: email,
+          subject: `🔔 ${items.length} Wiedervorlage${items.length !== 1 ? "n" : ""} fällig – xcare`,
+          html: baseTemplate("Wiedervorlagen fällig", `
+            <h2 style="color:#1A5276;margin-top:0;">Ihre Wiedervorlagen für heute 🔔</h2>
+            <p style="color:#333;line-height:1.6;">Hallo <strong>${anbieter.name}</strong>,</p>
+            <p style="color:#333;line-height:1.6;">Heute sind <strong>${items.length} Wiedervorlage${items.length !== 1 ? "n" : ""}</strong> fällig:</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:16px 0;border:1px solid #f0f0f0;border-radius:8px;overflow:hidden;">
+              <thead>
+                <tr style="background:#f8f9fa;">
+                  <th style="padding:10px 12px;text-align:left;font-size:12px;color:#555;font-weight:600;">Datum</th>
+                  <th style="padding:10px 12px;text-align:left;font-size:12px;color:#555;font-weight:600;">Lebenslage</th>
+                  <th style="padding:10px 12px;text-align:left;font-size:12px;color:#555;font-weight:600;">Notiz</th>
+                  <th style="padding:10px 12px;text-align:left;font-size:12px;color:#555;font-weight:600;">Link</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+            ${btn("Alle Anfragen anzeigen", `${appUrl}/anbieter/anfragen`)}
+            <p style="color:#999;font-size:12px;margin-top:24px;">Wiedervorlagen setzen Sie direkt in der Anfragen-Detailseite.</p>
+          `),
+        });
+        sent++;
+      });
+    }
+
+    return { sent };
+  }
+);
+
 // ─── Export (Inngest serve handler) ────────────────────────────────────────────
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -501,5 +606,6 @@ export const { GET, POST, PUT } = serve({
     remind48hFamilieAngebot,
     remind7dAnbieterOffen,
     weeklyDigestAnbieter,
+    dailyWiedervorlagenCheck,
   ],
 });

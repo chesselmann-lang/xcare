@@ -36,6 +36,7 @@ export interface Anbieter {
   logo_url: string | null;
   verifiziert: boolean;
   aktiv: boolean;
+  verfuegbarkeit: "verfuegbar" | "eingeschraenkt" | "ausgebucht" | null;
   created_at: string;
   updated_at: string;
 }

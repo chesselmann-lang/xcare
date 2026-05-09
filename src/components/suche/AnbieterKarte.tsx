@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
+import { VerfuegbarkeitBadge } from "@/components/anbieter/VerfuegbarkeitBadge";
 import { formatDistance } from "@/lib/utils";
 import { LEISTUNGSKATEGORIEN } from "@/lib/constants";
 import type { AnbieterMitLeistungen } from "@/lib/types";
@@ -25,12 +26,13 @@ export function AnbieterKarte({ anbieter, avgSterne, bewertungenCount }: Anbiete
           </div>
 
           <div className="flex-1 min-w-0">
-            {/* Name + Verified */}
+            {/* Name + Verified + Verfügbarkeit */}
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-[--foreground] truncate">{anbieter.name}</h3>
               {anbieter.verifiziert && (
                 <Badge variant="success" className="shrink-0">✓ Verifiziert</Badge>
               )}
+              <VerfuegbarkeitBadge verfuegbarkeit={anbieter.verfuegbarkeit} size="xs" />
             </div>
 
             {/* Ort + Entfernung */}
