@@ -92,7 +92,7 @@ export function BenachrichtigungenClient({
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <Link href="/anbieter">
+          <Link href="/anbieter/dashboard">
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" /> Zurück
             </Button>

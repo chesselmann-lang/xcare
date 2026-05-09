@@ -31,7 +31,7 @@ export default async function AboPage({
     .select("id, name, plan, verifiziert")
     .eq("profile_id", profile.id)
     .single();
-  if (!anbieter) redirect("/anbieter");
+  if (!anbieter) redirect("/anbieter/dashboard");
 
   const currentPlanId: PlanId = (anbieter.plan as PlanId) ?? "free";
 

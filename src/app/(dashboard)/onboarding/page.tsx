@@ -19,7 +19,7 @@ export default async function OnboardingPage() {
 
   // Already onboarded → redirect to appropriate dashboard
   if (profile.onboarding_done) {
-    redirect(profile.role === "anbieter" ? "/anbieter" : "/familie");
+    redirect(profile.role === "anbieter" ? "/anbieter/dashboard" : "/familie");
   }
 
   const anbieter = profile.role === "anbieter"

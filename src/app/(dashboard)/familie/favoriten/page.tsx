@@ -31,7 +31,7 @@ export default async function FamilieFavoritenPage() {
     .eq("user_id", user.id)
     .single();
 
-  if (profile?.role === "anbieter") redirect("/anbieter");
+  if (profile?.role === "anbieter") redirect("/anbieter/dashboard");
 
   // Fetch favorites with anbieter details + leistungen
   const { data: favoriten } = await supabase

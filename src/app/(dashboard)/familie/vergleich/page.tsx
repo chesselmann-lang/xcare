@@ -43,7 +43,7 @@ export default async function VergleichPage({
     .eq("user_id", user.id)
     .single();
 
-  if (profile?.role === "anbieter") redirect("/anbieter");
+  if (profile?.role === "anbieter") redirect("/anbieter/dashboard");
 
   const { ids: idsParam } = await searchParams;
   const ids = (idsParam ?? "")

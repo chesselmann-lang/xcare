@@ -25,7 +25,7 @@ export default async function DokumentePage() {
     .select("id, name")
     .eq("profile_id", profile.id)
     .single();
-  if (!anbieter) redirect("/anbieter");
+  if (!anbieter) redirect("/anbieter/dashboard");
 
   // Load existing documents
   const { data: dokumente } = await supabase

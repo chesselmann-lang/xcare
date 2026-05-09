@@ -69,7 +69,7 @@ export function Navbar({ profile }: NavbarProps) {
           {profile ? (
             <>
               <Link
-                href={profile.role === "anbieter" ? "/anbieter" : "/familie"}
+                href={profile.role === "anbieter" ? "/anbieter/dashboard" : "/familie"}
               >
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="h-4 w-4" />
@@ -124,7 +124,7 @@ export function Navbar({ profile }: NavbarProps) {
           {profile ? (
             <>
               <Link
-                href={profile.role === "anbieter" ? "/anbieter" : "/familie"}
+                href={profile.role === "anbieter" ? "/anbieter/dashboard" : "/familie"}
                 className="flex items-center gap-2 p-2 rounded-lg hover:bg-[--muted]"
               >
                 <User className="h-4 w-4" /> Dashboard

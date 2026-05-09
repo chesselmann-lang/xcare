@@ -17,7 +17,7 @@ export default async function FamilieBenachrichtigungenPage() {
     .eq("user_id", user.id)
     .single();
 
-  if (!profile || profile.role === "anbieter") redirect("/anbieter");
+  if (!profile || profile.role === "anbieter") redirect("/anbieter/dashboard");
 
   const { data: benachrichtigungen } = await supabase
     .from("benachrichtigungen")

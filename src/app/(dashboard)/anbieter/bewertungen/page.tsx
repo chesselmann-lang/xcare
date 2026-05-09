@@ -30,7 +30,7 @@ export default async function AnbieterBewertungenPage() {
     .eq("user_id", user.id)
     .single();
 
-  if (!anbieter) redirect("/anbieter");
+  if (!anbieter) redirect("/anbieter/dashboard");
 
   const { data: bewertungen } = await supabase
     .from("bewertungen")

@@ -129,7 +129,7 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
     <div className="max-w-2xl mx-auto px-4 py-10">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <Link href="/anbieter">
+        <Link href="/anbieter/dashboard">
           <Button variant="ghost" size="sm" className="gap-1">
             <ArrowLeft className="h-4 w-4" /> Zurück
           </Button>

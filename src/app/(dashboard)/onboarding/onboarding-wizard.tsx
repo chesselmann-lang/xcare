@@ -108,7 +108,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
       });
 
       toast.success("Willkommen bei xcare! Ihr Profil ist eingerichtet.");
-      router.push(role === "anbieter" ? "/anbieter" : "/familie");
+      router.push(role === "anbieter" ? "/anbieter/dashboard" : "/familie");
       router.refresh();
     } catch {
       toast.error("Fehler beim Speichern. Bitte versuchen Sie es erneut.");

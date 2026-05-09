@@ -17,7 +17,7 @@ const FAMILIE_ITEMS = [
 ];
 
 const ANBIETER_ITEMS = [
-  { href: "/anbieter",            label: "Dashboard",  icon: LayoutDashboard, exact: true },
+  { href: "/anbieter/dashboard",            label: "Dashboard",  icon: LayoutDashboard, exact: true },
   { href: "/anbieter/profil",     label: "Profil",     icon: Building2 },
   { href: "/anbieter/leistungen", label: "Leistungen", icon: Package },
   { href: "/anbieter/anfragen",   label: "Anfragen",   icon: MessageSquare },

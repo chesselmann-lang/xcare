@@ -40,7 +40,7 @@ export default async function FamilieNachrichtenPage() {
     .eq("user_id", user.id)
     .single();
 
-  if (!profile || profile.role === "anbieter") redirect("/anbieter");
+  if (!profile || profile.role === "anbieter") redirect("/anbieter/dashboard");
 
   // All anfragen for this familie
   const { data: alleAnfragen } = await supabase

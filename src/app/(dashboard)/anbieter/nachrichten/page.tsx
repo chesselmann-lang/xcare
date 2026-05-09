@@ -58,7 +58,7 @@ export default async function AnbieterNachrichtenPage({
     .eq("profile_id", profile.id)
     .single();
 
-  if (!anbieter) redirect("/anbieter");
+  if (!anbieter) redirect("/anbieter/dashboard");
 
   // All anfragen for this anbieter (up to 50, sorted by latest activity)
   const { data: alleAnfragen } = await supabase

@@ -27,7 +27,7 @@ export default async function GaleriePage() {
     .eq("profile_id", profile.id)
     .single();
 
-  if (!anbieter) redirect("/anbieter");
+  if (!anbieter) redirect("/anbieter/dashboard");
 
   const { data: bilder } = await supabase
     .from("anbieter_galerie")

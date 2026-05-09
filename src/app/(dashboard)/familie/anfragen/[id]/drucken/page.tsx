@@ -40,7 +40,7 @@ export default async function DruckenPage({
     .eq("user_id", user.id)
     .single();
 
-  if (!profile || profile.role !== "familie") redirect("/anbieter");
+  if (!profile || profile.role !== "familie") redirect("/anbieter/dashboard");
 
   const { data: anfrage } = await supabase
     .from("anfragen")
