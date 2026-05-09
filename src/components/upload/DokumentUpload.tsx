@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
-import { Upload, Loader2, FileText, Trash2, Download, ShieldCheck } from "lucide-react";
+import { Upload, Loader2, Trash2, Download, ShieldCheck, Globe, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export interface Dokument {
@@ -12,6 +12,7 @@ export interface Dokument {
   size: number;
   typ: string;
   created_at: string;
+  oeffentlich?: boolean;
   url?: string;
 }
 
@@ -44,6 +45,7 @@ export function DokumentUpload({ anbieterId, initialDokumente = [] }: Props) {
   const [dokumente, setDokumente] = useState<Dokument[]>(initialDokumente);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
@@ -133,6 +135,30 @@ export function DokumentUpload({ anbieterId, initialDokumente = [] }: Props) {
     }
   }
 
+  async function handleToggleOeffentlich(dok: Dokument) {
+    setToggling(dok.id);
+    try {
+      const next = !dok.oeffentlich;
+      const { error } = await supabase
+        .from("anbieter_dokumente")
+        .update({ oeffentlich: next })
+        .eq("id", dok.id);
+      if (error) throw error;
+      setDokumente((prev) =>
+        prev.map((d) => (d.id === dok.id ? { ...d, oeffentlich: next } : d))
+      );
+      toast.success(
+        next
+          ? `"${dok.name}" ist jetzt öffentlich sichtbar`
+          : `"${dok.name}" ist jetzt nur intern sichtbar`
+      );
+    } catch (err) {
+      toast.error("Sichtbarkeit konnte nicht geändert werden");
+    } finally {
+      setToggling(null);
+    }
+  }
+
   async function handleDownload(dok: Dokument) {
     const { data } = await supabase.storage
       .from("dokumente")
@@ -206,6 +232,25 @@ export function DokumentUpload({ anbieterId, initialDokumente = [] }: Props) {
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <button
+                  onClick={() => handleToggleOeffentlich(dok)}
+                  disabled={toggling === dok.id}
+                  title={dok.oeffentlich ? "Öffentlich – klicken zum Verbergen" : "Intern – klicken zum Veröffentlichen"}
+                  aria-label={dok.oeffentlich ? `"${dok.name}" verbergen` : `"${dok.name}" öffentlich zeigen`}
+                  className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${
+                    dok.oeffentlich
+                      ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
+                      : "text-[--muted-foreground] hover:text-emerald-600 hover:bg-emerald-50"
+                  }`}
+                >
+                  {toggling === dok.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : dok.oeffentlich ? (
+                    <Globe className="h-4 w-4" />
+                  ) : (
+                    <Lock className="h-4 w-4" />
+                  )}
+                </button>
+                <button
                   onClick={() => handleDownload(dok)}
                   className="p-1.5 rounded-lg text-[--muted-foreground] hover:text-[--foreground] hover:bg-[--muted] transition-colors"
                   aria-label={`"${dok.name}" herunterladen`}
@@ -233,7 +278,7 @@ export function DokumentUpload({ anbieterId, initialDokumente = [] }: Props) {
       {dokumente.length === 0 && !uploading && (
         <div className="flex items-center gap-2 text-xs text-[--muted-foreground] bg-[--muted]/40 rounded-xl p-3">
           <ShieldCheck className="h-4 w-4 shrink-0 text-[--primary]" />
-          <p>Laden Sie Nachweise wie Qualitätszertifikate, Erlaubnisse oder Referenzen hoch. Diese sind nur für Administratoren sichtbar.</p>
+          <p>Laden Sie Nachweise wie Qualitätszertifikate, Erlaubnisse oder Referenzen hoch. Per <Globe className="inline h-3 w-3 mx-0.5 text-emerald-600" />-Symbol können Sie einzelne Dokumente auf Ihrem öffentlichen Profil anzeigen lassen.</p>
         </div>
       )}
     </div>

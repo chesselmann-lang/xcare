@@ -64,6 +64,9 @@ export default async function FamilieDashboard() {
     { count: angeboteCount },
     { count: abgeschlosseneCount },
     { count: bewertungenGegeben },
+    { count: totalAnfragen },
+    { count: bestaetigteCount },
+    { count: inBearbeitungCount },
   ] = await Promise.all([
     supabase
       .from("anfragen")
@@ -95,6 +98,20 @@ export default async function FamilieDashboard() {
       .from("bewertungen")
       .select("*", { count: "exact", head: true })
       .eq("familie_id", profile?.id),
+    supabase
+      .from("anfragen")
+      .select("*", { count: "exact", head: true })
+      .eq("familie_id", profile?.id),
+    supabase
+      .from("anfragen")
+      .select("*", { count: "exact", head: true })
+      .eq("familie_id", profile?.id)
+      .eq("status", "bestaetigt"),
+    supabase
+      .from("anfragen")
+      .select("*", { count: "exact", head: true })
+      .eq("familie_id", profile?.id)
+      .eq("status", "in_bearbeitung"),
   ]);
 
   // Top rated anbieter in PLZ area
@@ -253,6 +270,35 @@ export default async function FamilieDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Status-Übersicht (nur wenn Anfragen vorhanden) */}
+      {(totalAnfragen ?? 0) > 0 && (
+        <div className="bg-white rounded-xl border border-gray-100 p-4 mb-6 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-700">Anfragen nach Status</p>
+            <Link href="/familie/anfragen" className="text-xs text-blue-600 hover:underline">
+              Alle {totalAnfragen} ansehen →
+            </Link>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center text-xs">
+            {[
+              { label: "Offen", count: (offeneAnfragen ?? 0) - (angeboteCount ?? 0) - (inBearbeitungCount ?? 0), color: "text-yellow-600 bg-yellow-50" },
+              { label: "In Bearb.", count: inBearbeitungCount ?? 0, color: "text-blue-600 bg-blue-50" },
+              { label: "Angeboten", count: angeboteCount ?? 0, color: "text-purple-600 bg-purple-50" },
+              { label: "Bestätigt", count: bestaetigteCount ?? 0, color: "text-green-600 bg-green-50" },
+              { label: "Abgeschl.", count: abgeschlosseneCount ?? 0, color: "text-gray-600 bg-gray-50" },
+              { label: "Bewertet", count: bewertungenGegeben ?? 0, color: "text-amber-600 bg-amber-50" },
+            ].map((s) => (
+              <Link key={s.label} href="/familie/anfragen" className="block">
+                <div className={`rounded-lg py-2 px-1 ${s.color} hover:opacity-80 transition-opacity`}>
+                  <p className="text-lg font-bold">{s.count}</p>
+                  <p className="leading-tight">{s.label}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Mobile Schnellaktionen */}
       <div className="flex sm:hidden gap-2 mb-6 flex-wrap">

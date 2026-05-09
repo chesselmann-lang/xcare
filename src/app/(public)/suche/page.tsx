@@ -47,6 +47,7 @@ export default function SuchePage() {
   const searchParams = useSearchParams();
 
   const [plz, setPlz] = useState(searchParams.get("plz") ?? "");
+  const [suchtext, setSuchtext] = useState(searchParams.get("q") ?? "");
   const [umkreis, setUmkreis] = useState(20);
   const [kategorie, setKategorie] = useState<LeistungsKategorie | "">(
     (searchParams.get("kategorie") as LeistungsKategorie | null) ?? ""
@@ -68,10 +69,11 @@ export default function SuchePage() {
   ].filter(Boolean).length;
 
   // Push URL params so searches are shareable / SEO-linkable
-  const pushUrl = useCallback((newPlz: string, newKat: string) => {
+  const pushUrl = useCallback((newPlz: string, newKat: string, newQ: string) => {
     const params = new URLSearchParams();
     if (newPlz) params.set("plz", newPlz);
     if (newKat) params.set("kategorie", newKat);
+    if (newQ) params.set("q", newQ);
     router.replace(`/suche${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
   }, [router]);
 
@@ -81,13 +83,19 @@ export default function SuchePage() {
     setGesucht(true);
 
     const kat = overrideKategorie !== undefined ? overrideKategorie : kategorie;
-    pushUrl(plz, kat);
+    pushUrl(plz, kat, suchtext);
 
     let query = supabase
       .from("anbieter")
       .select("*, leistungen(*)")
       .eq("aktiv", true)
       .ilike("plz", plz.substring(0, 2) + "%");
+
+    // Full-text / trigram search on name, ort, beschreibung
+    if (suchtext.trim().length >= 2) {
+      const term = suchtext.trim();
+      query = query.or(`name.ilike.%${term}%,ort.ilike.%${term}%,beschreibung.ilike.%${term}%`);
+    }
 
     if (nurVerifiziert) query = query.eq("verifiziert", true);
 
@@ -140,7 +148,7 @@ export default function SuchePage() {
       setErgebnisse(gefiltert.slice(0, 20));
     }
     setLoading(false);
-  }, [plz, kategorie, kostentraeger, nurVerifiziert, sortBy, supabase, pushUrl]);
+  }, [plz, suchtext, kategorie, kostentraeger, nurVerifiziert, sortBy, supabase, pushUrl]);
 
   // Auto-search when valid URL params are present on first load
   useEffect(() => {
@@ -177,6 +185,24 @@ export default function SuchePage() {
       {/* Suchmaske */}
       <div className="rounded-2xl border border-[--border] bg-[--card] p-5 mb-6 shadow-sm">
         <div className="flex flex-wrap gap-3 items-end">
+          {/* Freitext-Suche */}
+          <div className="flex-1 min-w-48">
+            <label className="text-xs font-medium text-[--muted-foreground] mb-1.5 block">
+              Stichwort (optional)
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground]" aria-hidden="true" />
+              <Input
+                value={suchtext}
+                onChange={(e) => setSuchtext(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && suchen()}
+                placeholder="z.B. Demenz, Physiotherapie…"
+                className="pl-9"
+                aria-label="Stichwort eingeben"
+              />
+            </div>
+          </div>
+
           {/* PLZ */}
           <div className="flex-1 min-w-36">
             <label className="text-xs font-medium text-[--muted-foreground] mb-1.5 block">

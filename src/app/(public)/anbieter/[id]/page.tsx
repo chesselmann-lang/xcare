@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   MapPin, Phone, Globe, CheckCircle2, Mail,
   Package, Euro, Clock, ArrowLeft, Building2,
-  Facebook, Instagram, Linkedin
+  Facebook, Instagram, Linkedin, Award, FileCheck
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,6 +115,14 @@ export default async function AnbieterDetailPage({
       istFavorit = !!fav;
     }
   }
+
+  // Public documents (certificates, qualifications)
+  const { data: dokumente } = await supabase
+    .from("anbieter_dokumente")
+    .select("id, name, typ")
+    .eq("anbieter_id", id)
+    .eq("oeffentlich", true)
+    .order("created_at", { ascending: false });
 
   // Bewertungen average
   const { data: bewertungen } = await supabase
@@ -410,6 +418,36 @@ export default async function AnbieterDetailPage({
                 </div>
               ))}
             </div>
+          )}
+
+          {/* Nachweise & Zertifikate */}
+          {dokumente && dokumente.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Award className="h-4 w-4 text-amber-500" />
+                  Nachweise & Zertifikate
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {dokumente.map((doc) => (
+                    <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
+                      <FileCheck className="h-4 w-4 text-green-600 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
+                        {doc.typ && doc.typ !== "application/octet-stream" && (
+                          <p className="text-xs text-gray-400 uppercase">
+                            {doc.typ.split("/")[1] ?? doc.typ}
+                          </p>
+                        )}
+                      </div>
+                      <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
 
