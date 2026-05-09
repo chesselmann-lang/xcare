@@ -54,6 +54,8 @@ export async function statusAendern(anfrageId: string, neuerStatus: AnfrageStatu
   if (fetchError || !anfrage) return { error: "Anfrage nicht gefunden" };
   if (anfrage.status === neuerStatus) return { success: true }; // no-op
 
+  const alterStatus = anfrage.status as AnfrageStatus;
+
   // Update status
   const { error: updateError } = await supabase
     .from("anfragen")
@@ -62,6 +64,13 @@ export async function statusAendern(anfrageId: string, neuerStatus: AnfrageStatu
     .eq("anbieter_id", anbieter.id);
 
   if (updateError) return { error: updateError.message };
+
+  // Log status change into anfragen_historie
+  await supabase.from("anfragen_historie").insert({
+    anfrage_id: anfrageId,
+    alter_status: alterStatus,
+    neuer_status: neuerStatus,
+  }).then(() => {/* ignore if table missing in older deployments */}).catch(() => {});
 
   // Send in-app notification to familie if applicable
   const nachrichtText = STATUS_NACHRICHT[neuerStatus];

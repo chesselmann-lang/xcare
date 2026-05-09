@@ -31,25 +31,53 @@ const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "
   abgeschlossen: "secondary",
 };
 
-function profilStaerke(anbieter: Record<string, unknown>): { score: number; tipps: string[] } {
-  const checks: Array<{ field: keyof typeof anbieter; label: string; gewicht: number }> = [
-    { field: "name",          label: "Name eingetragen",              gewicht: 10 },
-    { field: "beschreibung",  label: "Beschreibung vorhanden",        gewicht: 20 },
-    { field: "telefon",       label: "Telefonnummer hinterlegt",      gewicht: 10 },
-    { field: "email",         label: "E-Mail-Adresse hinterlegt",     gewicht: 10 },
-    { field: "website",       label: "Website eingetragen",           gewicht: 10 },
-    { field: "logo_url",      label: "Logo hochgeladen",              gewicht: 15 },
-    { field: "plz",           label: "Adresse vollständig",           gewicht: 15 },
-    { field: "verifiziert",   label: "Profil verifiziert",            gewicht: 10 },
+type ProfilCheck = {
+  label: string;
+  gewicht: number;
+  erledigt: boolean;
+  link: string;
+  hint?: string;
+};
+
+function profilStaerke(
+  anbieter: Record<string, unknown>,
+  leistungenCount: number,
+): { score: number; tipps: string[]; checks: ProfilCheck[] } {
+  const rawChecks: Array<{
+    field?: keyof typeof anbieter;
+    label: string;
+    gewicht: number;
+    link: string;
+    hint?: string;
+    customCheck?: boolean;
+  }> = [
+    { field: "beschreibung", label: "Beschreibung vorhanden",   gewicht: 20, link: "/anbieter/profil",   hint: "Mindestens 100 Zeichen" },
+    { field: "logo_url",     label: "Logo hochgeladen",          gewicht: 15, link: "/anbieter/profil",   hint: "Erhöht Klickrate deutlich" },
+    { field: "plz",          label: "Adresse vollständig",       gewicht: 15, link: "/anbieter/profil" },
+    { field: "telefon",      label: "Telefonnummer hinterlegt",  gewicht: 10, link: "/anbieter/profil" },
+    { field: "email",        label: "E-Mail hinterlegt",         gewicht: 10, link: "/anbieter/profil" },
+    { field: "website",      label: "Website eingetragen",       gewicht: 10, link: "/anbieter/profil" },
+    {
+      label: "Mindestens eine Leistung",
+      gewicht: 15,
+      link: "/anbieter/leistungen",
+      hint: "Leistungen verbessern die Auffindbarkeit",
+      customCheck: true,
+    },
+    { field: "verifiziert",  label: "Profil verifiziert",        gewicht: 5,  link: "/anbieter/profil",  hint: "Verifizierte Profile erhalten mehr Anfragen" },
   ];
 
   let score = 0;
-  const tipps: string[] = [];
-  for (const c of checks) {
-    if (anbieter[c.field]) score += c.gewicht;
-    else tipps.push(c.label);
-  }
-  return { score, tipps: tipps.slice(0, 3) };
+  const checks: ProfilCheck[] = rawChecks.map((c) => {
+    const erledigt = c.customCheck
+      ? leistungenCount > 0
+      : Boolean(c.field && anbieter[c.field]);
+    if (erledigt) score += c.gewicht;
+    return { label: c.label, gewicht: c.gewicht, erledigt, link: c.link, hint: c.hint };
+  });
+
+  const tipps = checks.filter((c) => !c.erledigt).map((c) => c.label).slice(0, 3);
+  return { score, tipps, checks };
 }
 
 export default async function AnbieterDashboard() {
@@ -120,7 +148,9 @@ export default async function AnbieterDashboard() {
     ? bewertungen.reduce((s, b) => s + b.sterne, 0) / bewertungen.length : 0;
   const bewCount = bewertungen?.length ?? 0;
 
-  const { score: profilScore, tipps: profilTipps } = anbieter ? profilStaerke(anbieter as Record<string, unknown>) : { score: 0, tipps: [] };
+  const { score: profilScore, checks: profilChecks } = anbieter
+    ? profilStaerke(anbieter as Record<string, unknown>, leistungen?.length ?? 0)
+    : { score: 0, tipps: [], checks: [] };
 
   // Antwortrate: (nicht-offen) / gesamt
   const gesamt = anfragenGesamt ?? 0;
@@ -176,25 +206,55 @@ export default async function AnbieterDashboard() {
         </div>
       </div>
 
-      {/* Profil-Vollständigkeit Banner */}
-      {profilScore < 80 && profilTipps.length > 0 && (
-        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-amber-800">
-              Ihr Profil ist zu {profilScore}% vollständig
-            </p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              Vervollständigen Sie Ihr Profil, um mehr Anfragen zu erhalten. Noch fehlend:{" "}
-              {profilTipps.join(", ")}.
-            </p>
-          </div>
-          <Link href="/anbieter/profil" className="shrink-0">
-            <Button size="sm" variant="outline" className="text-xs border-amber-300 text-amber-800 hover:bg-amber-100">
-              Jetzt vervollständigen
-            </Button>
-          </Link>
-        </div>
+      {/* Profil-Vollständigkeit Widget */}
+      {profilScore < 100 && (
+        <Card className={`mb-6 ${profilScore >= 80 ? "border-green-200 bg-green-50/40" : "border-amber-200 bg-amber-50/40"}`}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                {profilScore >= 80
+                  ? <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  : <AlertCircle className="h-4 w-4 text-amber-600" />}
+                <p className={`text-sm font-semibold ${profilScore >= 80 ? "text-green-800" : "text-amber-800"}`}>
+                  Profil {profilScore}% vollständig
+                </p>
+              </div>
+              <Link href="/anbieter/profil">
+                <Button size="sm" variant="outline" className={`text-xs ${profilScore >= 80 ? "border-green-300 text-green-800 hover:bg-green-100" : "border-amber-300 text-amber-800 hover:bg-amber-100"}`}>
+                  Bearbeiten
+                </Button>
+              </Link>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-3 overflow-hidden">
+              <div
+                className={`h-2 rounded-full transition-all duration-500 ${profilScore >= 80 ? "bg-green-500" : profilScore >= 50 ? "bg-amber-400" : "bg-red-400"}`}
+                style={{ width: `${profilScore}%` }}
+              />
+            </div>
+
+            {/* Checklist — show only incomplete items (max 4) */}
+            {profilChecks.filter((c) => !c.erledigt).length > 0 && (
+              <div className="grid sm:grid-cols-2 gap-1.5 mt-2">
+                {profilChecks.filter((c) => !c.erledigt).slice(0, 4).map((check) => (
+                  <Link
+                    key={check.label}
+                    href={check.link}
+                    className="flex items-start gap-2 px-3 py-2 rounded-lg bg-white border border-[--border] hover:border-[--primary] hover:bg-[--primary]/5 transition-colors group"
+                  >
+                    <div className="h-4 w-4 rounded-full border-2 border-gray-300 shrink-0 mt-0.5 group-hover:border-[--primary]" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-[--foreground] leading-snug">{check.label}</p>
+                      {check.hint && <p className="text-[10px] text-[--muted-foreground] leading-snug">{check.hint}</p>}
+                    </div>
+                    <ArrowRight className="h-3 w-3 text-[--muted-foreground] shrink-0 mt-0.5 ml-auto group-hover:text-[--primary]" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Schnellaktionen */}
@@ -544,50 +604,6 @@ export default async function AnbieterDashboard() {
               </Card>
             );
           })()}
-
-          {/* Profilstärke */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Zap className="h-4 w-4 text-amber-500" /> Profilstärke
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end gap-3 mb-3">
-                <span className="text-3xl font-bold">{profilScore}%</span>
-                <span className={`text-sm mb-0.5 font-medium ${
-                  profilScore >= 80 ? "text-green-600" :
-                  profilScore >= 50 ? "text-amber-600" : "text-red-500"
-                }`}>
-                  {profilScore >= 80 ? "Stark" : profilScore >= 50 ? "Mittel" : "Ausbaufähig"}
-                </span>
-              </div>
-              <div className="h-2 rounded-full bg-gray-100 overflow-hidden mb-3">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    profilScore >= 80 ? "bg-green-500" :
-                    profilScore >= 50 ? "bg-amber-400" : "bg-red-400"
-                  }`}
-                  style={{ width: `${profilScore}%` }}
-                />
-              </div>
-              {profilTipps.length > 0 && (
-                <div className="space-y-1.5">
-                  {profilTipps.map((t) => (
-                    <div key={t} className="flex items-center gap-2 text-xs text-[--muted-foreground]">
-                      <AlertCircle className="h-3 w-3 text-amber-500 shrink-0" />
-                      {t}
-                    </div>
-                  ))}
-                  <Link href="/anbieter/profil">
-                    <Button size="sm" variant="outline" className="w-full mt-2 text-xs h-7">
-                      Profil verbessern
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Bewertungen */}
           <Card>

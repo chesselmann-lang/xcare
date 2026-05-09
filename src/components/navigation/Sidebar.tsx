@@ -45,6 +45,7 @@ const ANBIETER_NAV = [
   { href: "/anbieter/leistungen", label: "Leistungen", icon: Package },
   { href: "/anbieter/anfragen", label: "Anfragen", icon: MessageSquare, badge: true },
   { href: "/anbieter/nachrichten", label: "Nachrichten", icon: Inbox, nachrichtenBadge: true },
+  { href: "/anbieter/benachrichtigungen", label: "Benachrichtigungen", icon: Bell },
   { href: "/anbieter/bewertungen", label: "Bewertungen", icon: Star },
   { href: "/anbieter/team", label: "Team", icon: Users },
   { href: "/anbieter/dokumente", label: "Dokumente", icon: FolderOpen },

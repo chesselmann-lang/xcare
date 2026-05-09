@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { statusAendern } from "@/app/(dashboard)/anbieter/anfragen/aktionen";
 import type { AnfrageStatus } from "@/lib/types";
 
 interface AnfrageAktionenProps {
@@ -58,9 +57,8 @@ export default function AnfrageAktionen({
   anbieterName,
   lebenslage,
 }: AnfrageAktionenProps) {
-  const router = useRouter();
-  const [loading, setLoading] = useState<AnfrageStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [pendingStatus, setPendingStatus] = useState<AnfrageStatus | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const uebergaenge = statusUebergaenge[currentStatus] ?? [];
 
@@ -74,54 +72,36 @@ export default function AnfrageAktionen({
     );
   }
 
-  const handleStatusChange = async (nextStatus: AnfrageStatus) => {
-    setLoading(nextStatus);
-    setError(null);
-    const supabase = createClient();
-
-    const { error: err } = await supabase
-      .from("anfragen")
-      .update({ status: nextStatus, updated_at: new Date().toISOString() })
-      .eq("id", anfrageId);
-
-    if (err) {
-      setError(err.message);
-      toast.error("Fehler beim Statuswechsel", { description: err.message });
-      setLoading(null);
-      return;
-    }
-
-    // Log to history (non-blocking — table may not exist yet in older deployments)
-    supabase.from("anfragen_historie").insert({
-      anfrage_id: anfrageId,
-      alter_status: currentStatus,
-      neuer_status: nextStatus,
-    }).then(() => {/* ignore */}).catch(() => {/* ignore */});
-
-    // Fire Inngest event for email notification (non-blocking)
-    if (familieEmail && familieName && anbieterName) {
-      fetch("/api/inngest-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          familie_email: familieEmail,
-          familie_name: familieName,
-          anbieter_name: anbieterName,
-          new_status: nextStatus,
-          lebenslage: lebenslage ?? "",
-          anfrage_id: anfrageId,
-        }),
-      }).catch(() => {
-        // Non-critical — notification failure doesn't block workflow
-      });
-    }
-
-    toast.success(`Status geändert: ${statusLabels[nextStatus]}`, {
-      description: familieEmail ? `${familieName ?? "Die Familie"} wird per E-Mail benachrichtigt.` : undefined,
+  const handleStatusChange = (nextStatus: AnfrageStatus) => {
+    setPendingStatus(nextStatus);
+    startTransition(async () => {
+      const result = await statusAendern(anfrageId, nextStatus);
+      if (result?.error) {
+        toast.error("Fehler beim Statuswechsel", { description: result.error });
+      } else {
+        toast.success(`Status geändert: ${statusLabels[nextStatus]}`, {
+          description: familieEmail
+            ? `${familieName ?? "Die Familie"} wurde benachrichtigt.`
+            : undefined,
+        });
+        // Fire Inngest email notification (non-blocking)
+        if (familieEmail && familieName && anbieterName) {
+          fetch("/api/inngest-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              familie_email: familieEmail,
+              familie_name: familieName,
+              anbieter_name: anbieterName,
+              new_status: nextStatus,
+              lebenslage: lebenslage ?? "",
+              anfrage_id: anfrageId,
+            }),
+          }).catch(() => {});
+        }
+      }
+      setPendingStatus(null);
     });
-
-    router.refresh();
-    setLoading(null);
   };
 
   return (
@@ -130,20 +110,17 @@ export default function AnfrageAktionen({
         <CardTitle className="text-base">Aktionen</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {error && (
-          <p className="text-sm text-destructive bg-destructive/10 rounded px-3 py-2">{error}</p>
-        )}
         <div className="flex flex-wrap gap-3">
           {uebergaenge.map((u) => (
             <Button
               key={u.nextStatus}
               variant={u.variant === "success" ? "default" : u.variant}
               size="sm"
-              disabled={loading !== null}
+              disabled={isPending}
               onClick={() => handleStatusChange(u.nextStatus)}
               className={`gap-1 ${u.variant === "success" ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
             >
-              {loading === u.nextStatus ? (
+              {isPending && pendingStatus === u.nextStatus ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : u.variant === "success" ? (
                 <CheckCircle2 className="h-3.5 w-3.5" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, Loader2, MapPin, X, SlidersHorizontal,
@@ -211,6 +211,23 @@ export default function SuchePage() {
       setSaving(false);
     }
   };
+
+  // Re-sort client-side when sortBy changes (avoids refetch)
+  const sortedErgebnisse = useMemo(() => {
+    return [...ergebnisse].sort((a, b) => {
+      if (sortBy === "name_asc") return a.name.localeCompare(b.name, "de");
+      if (sortBy === "bewertung") return (b._avgSterne ?? 0) - (a._avgSterne ?? 0);
+      if (sortBy === "verifiziert") {
+        if (a.verifiziert && !b.verifiziert) return -1;
+        if (!a.verifiziert && b.verifiziert) return 1;
+        return 0;
+      }
+      // relevanz: verifiziert + rating score
+      const scoreA = (a.verifiziert ? 100 : 0) + (a._avgSterne ?? 0) * 10;
+      const scoreB = (b.verifiziert ? 100 : 0) + (b._avgSterne ?? 0) * 10;
+      return scoreB - scoreA;
+    });
+  }, [ergebnisse, sortBy]);
 
   const kostentraegerListe = Object.entries(KOSTENTRAEGER) as [Kostentraeger, string][];
 
@@ -481,42 +498,63 @@ export default function SuchePage() {
       {/* Results area */}
       {gesucht && (
         <div>
-          {/* Results header with view toggle */}
+          {/* Results header with sort + view toggle */}
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
               {loading ? (
                 <p className="text-sm text-[--muted-foreground]">Suche läuft…</p>
               ) : (
                 <p className="text-sm text-[--muted-foreground]">
-                  <span className="font-semibold text-[--foreground]">{ergebnisse.length}</span> Anbieter gefunden
-                  {sortBy !== "relevanz" && ` · ${SORT_OPTIONS[sortBy]}`}
+                  <span className="font-semibold text-[--foreground]">{sortedErgebnisse.length}</span> Anbieter gefunden
                 </p>
               )}
             </div>
 
-            {/* View mode toggle */}
-            {ergebnisse.length > 0 && (
-              <div className="flex rounded-lg border border-[--border] overflow-hidden" role="group" aria-label="Ansicht wechseln">
-                <button
-                  onClick={() => setViewMode("liste")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewMode === "liste" ? "bg-[--primary] text-white" : "bg-[--card] text-[--muted-foreground] hover:bg-[--muted]"
-                  }`}
-                  aria-pressed={viewMode === "liste"}
-                >
-                  <List className="h-3.5 w-3.5" aria-hidden="true" /> Liste
-                </button>
-                <button
-                  onClick={() => setViewMode("karte")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewMode === "karte" ? "bg-[--primary] text-white" : "bg-[--card] text-[--muted-foreground] hover:bg-[--muted]"
-                  }`}
-                  aria-pressed={viewMode === "karte"}
-                >
-                  <Map className="h-3.5 w-3.5" aria-hidden="true" /> Karte
-                </button>
-              </div>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Inline sort dropdown — always visible in results bar */}
+              {!loading && sortedErgebnisse.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-[--muted-foreground] shrink-0" aria-hidden="true" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => {
+                      setSortBy(e.target.value as SortOption);
+                      // Re-sort immediately without new network call
+                    }}
+                    className="h-8 rounded-lg border border-[--input] bg-[--background] px-2 text-xs font-medium text-[--foreground]"
+                    aria-label="Sortierung"
+                  >
+                    {Object.entries(SORT_OPTIONS).map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* View mode toggle */}
+              {sortedErgebnisse.length > 0 && (
+                <div className="flex rounded-lg border border-[--border] overflow-hidden" role="group" aria-label="Ansicht wechseln">
+                  <button
+                    onClick={() => setViewMode("liste")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === "liste" ? "bg-[--primary] text-white" : "bg-[--card] text-[--muted-foreground] hover:bg-[--muted]"
+                    }`}
+                    aria-pressed={viewMode === "liste"}
+                  >
+                    <List className="h-3.5 w-3.5" aria-hidden="true" /> Liste
+                  </button>
+                  <button
+                    onClick={() => setViewMode("karte")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === "karte" ? "bg-[--primary] text-white" : "bg-[--card] text-[--muted-foreground] hover:bg-[--muted]"
+                    }`}
+                    aria-pressed={viewMode === "karte"}
+                  >
+                    <Map className="h-3.5 w-3.5" aria-hidden="true" /> Karte
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {loading && (
@@ -526,17 +564,43 @@ export default function SuchePage() {
           )}
 
           {!loading && ergebnisse.length === 0 && (
-            <div className="text-center py-16 text-[--muted-foreground]">
+            <div className="text-center py-12 text-[--muted-foreground]">
               <Search className="h-10 w-10 mx-auto mb-3 opacity-20" aria-hidden="true" />
-              <p className="font-medium mb-1">Keine Anbieter gefunden</p>
-              <p className="text-sm">Versuchen Sie einen anderen Umkreis oder weniger Filter.</p>
+              <p className="font-medium mb-1 text-[--foreground]">Keine Anbieter gefunden</p>
+              <p className="text-sm mb-6">Für PLZ {plz}{kategorie ? ` (${kategorie.replace(/_/g, " ")})` : ""} konnten wir keine Anbieter finden.</p>
+              <div className="flex flex-wrap justify-center gap-2 text-sm">
+                {umkreis < 50 && (
+                  <button
+                    onClick={() => { setUmkreis(50); suchen(); }}
+                    className="px-4 py-2 rounded-full border border-[--border] bg-[--card] hover:border-[--primary] hover:text-[--primary] transition-colors"
+                  >
+                    Umkreis auf 50 km erweitern
+                  </button>
+                )}
+                {kategorie && (
+                  <button
+                    onClick={() => handleKategorieTab("")}
+                    className="px-4 py-2 rounded-full border border-[--border] bg-[--card] hover:border-[--primary] hover:text-[--primary] transition-colors"
+                  >
+                    Alle Kategorien anzeigen
+                  </button>
+                )}
+                {(nurVerifiziert || !nurVerfuegbar) && (
+                  <button
+                    onClick={() => { resetFilter(); suchen(); }}
+                    className="px-4 py-2 rounded-full border border-[--border] bg-[--card] hover:border-[--primary] hover:text-[--primary] transition-colors"
+                  >
+                    Filter zurücksetzen
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
-          {!loading && ergebnisse.length > 0 && (
+          {!loading && sortedErgebnisse.length > 0 && (
             viewMode === "liste" ? (
               <div className="space-y-3" role="list" aria-label="Suchergebnisse">
-                {ergebnisse.map((a) => (
+                {sortedErgebnisse.map((a) => (
                   <div key={a.id} role="listitem">
                     <AnbieterKarte
                       anbieter={a}
@@ -548,7 +612,7 @@ export default function SuchePage() {
               </div>
             ) : (
               <KartenAnsicht
-                anbieter={ergebnisse.map((a) => ({
+                anbieter={sortedErgebnisse.map((a) => ({
                   id: a.id,
                   name: a.name,
                   lat: a.lat ?? null,
