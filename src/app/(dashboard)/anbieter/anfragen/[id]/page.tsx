@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, MapPin, Phone, Calendar, FileText, Receipt, BellRing, Paperclip } from "lucide-react";
+import { ArrowLeft, User, MapPin, Phone, Calendar, FileText, Receipt, BellRing, Paperclip, Euro, CalendarDays, PackageCheck, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,6 +96,30 @@ export default async function AnfrageDetailPage({
     .select("*, sender:profiles!sender_id(vorname, nachname, role)")
     .eq("anfrage_id", id)
     .order("created_at", { ascending: true });
+
+  // Gesendetes Angebot aus Nachrichten extrahieren
+  const angebotNachricht = nachrichten
+    ?.slice()
+    .reverse()
+    .find((n) => n.inhalt?.startsWith("📋 **Angebot**")) ?? null;
+
+  type AngebotData = { preis: string | null; startdatum: string | null; gueltigBis: string | null; notizen: string | null; gesendetAm: string | null };
+  let angebotData: AngebotData = { preis: null, startdatum: null, gueltigBis: null, notizen: null, gesendetAm: null };
+  if (angebotNachricht?.inhalt) {
+    const lines = angebotNachricht.inhalt.split("\n");
+    const preisLine = lines.find((l) => l.startsWith("**Preis:**"));
+    const startLine = lines.find((l) => l.startsWith("**Startdatum:**"));
+    const gueltigLine = lines.find((l) => l.startsWith("**Gültig bis:**"));
+    const beschIdx = lines.findIndex((l) => l.startsWith("**Beschreibung:**"));
+    angebotData = {
+      preis: preisLine ? preisLine.replace("**Preis:**", "").trim() : null,
+      startdatum: startLine ? startLine.replace("**Startdatum:**", "").trim() : null,
+      gueltigBis: gueltigLine ? gueltigLine.replace("**Gültig bis:**", "").trim() : null,
+      notizen: beschIdx !== -1 ? lines.slice(beschIdx + 1).join("\n").trim() || null : null,
+      gesendetAm: angebotNachricht.created_at ?? null,
+    };
+  }
+  const showAngebot = (anfrage.status === "angeboten" || anfrage.status === "bestaetigt") && angebotNachricht;
 
   // Interne Notizen laden
   const { data: notizen } = await supabase
@@ -292,6 +316,61 @@ export default async function AnfrageDetailPage({
             profileId={profile.id}
             currentStatus={anfrage.status as AnfrageStatus}
           />
+        )}
+
+        {/* Gesendetes Angebot – Zusammenfassung */}
+        {showAngebot && (
+          <div className="rounded-xl border-2 border-purple-200 bg-purple-50 p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <PackageCheck className="h-5 w-5 text-purple-600 shrink-0" />
+                <p className="font-semibold text-purple-800 text-sm">Gesendetes Angebot</p>
+              </div>
+              {angebotData.gesendetAm && (
+                <p className="text-[10px] text-purple-400">{formatDate(angebotData.gesendetAm)}</p>
+              )}
+            </div>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {angebotData.preis && (
+                <div className="flex items-start gap-2 bg-white rounded-lg p-3 border border-purple-100">
+                  <Euro className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wide">Preis</p>
+                    <p className="text-sm font-semibold text-purple-900 mt-0.5">{angebotData.preis}</p>
+                  </div>
+                </div>
+              )}
+              {angebotData.startdatum && (
+                <div className="flex items-start gap-2 bg-white rounded-lg p-3 border border-purple-100">
+                  <CalendarDays className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wide">Startdatum</p>
+                    <p className="text-sm font-semibold text-purple-900 mt-0.5">{angebotData.startdatum}</p>
+                  </div>
+                </div>
+              )}
+              {angebotData.gueltigBis && (
+                <div className="flex items-start gap-2 bg-white rounded-lg p-3 border border-purple-100">
+                  <Clock className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wide">Gültig bis</p>
+                    <p className="text-sm font-semibold text-purple-900 mt-0.5">{angebotData.gueltigBis}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {angebotData.notizen && (
+              <div className="bg-white rounded-lg p-3 border border-purple-100">
+                <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wide mb-1">Beschreibung</p>
+                <p className="text-sm text-purple-900 leading-relaxed whitespace-pre-wrap">{angebotData.notizen}</p>
+              </div>
+            )}
+            {anfrage.status === "bestaetigt" && (
+              <div className="flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-lg px-3 py-2 border border-green-200">
+                <PackageCheck className="h-3.5 w-3.5" /> Angebot wurde von der Familie angenommen
+              </div>
+            )}
+          </div>
         )}
 
         {/* Interne Notizen (CRM) */}

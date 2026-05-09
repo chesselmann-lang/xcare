@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { AdminAnfrageStatusAktion } from "@/components/admin/AdminAnfrageStatusAktion";
 import type { AnfrageStatus } from "@/lib/types";
 
 const STATUS_CONFIG: Record<AnfrageStatus, { label: string; color: string; icon: React.ElementType }> = {
@@ -48,6 +49,13 @@ export default async function AdminAnfrageDetailPage({
     .single();
 
   if (caller?.role !== "admin") redirect("/");
+
+  // Get caller profile id for status history
+  const { data: callerProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
 
   const { data: anfrage } = await supabase
     .from("anfragen")
@@ -91,10 +99,19 @@ export default async function AdminAnfrageDetailPage({
           <h1 className="text-2xl font-bold text-gray-900">Anfrage-Detail</h1>
           <p className="text-sm text-gray-500 mt-0.5 font-mono">{anfrage.id}</p>
         </div>
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ${cfg.color}`}>
-          <StatusIcon className="h-4 w-4" />
-          {cfg.label}
-        </span>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ${cfg.color}`}>
+            <StatusIcon className="h-4 w-4" />
+            {cfg.label}
+          </span>
+          {callerProfile && (
+            <AdminAnfrageStatusAktion
+              anfrageId={anfrage.id}
+              currentStatus={anfrage.status as AnfrageStatus}
+              adminProfileId={callerProfile.id}
+            />
+          )}
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
