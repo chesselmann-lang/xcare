@@ -24,16 +24,16 @@ export function Navbar({ profile }: NavbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[--border] bg-[--background]/95 backdrop-blur">
+    <header className="sticky top-0 z-50 w-full border-b border-[--border] bg-[--background]/95 backdrop-blur" role="banner">
       <div className="max-w-7xl mx-auto px-4 flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-[--primary]">
-          <Heart className="h-6 w-6 fill-[--primary]" />
+        <Link href="/" className="flex items-center gap-2 font-bold text-[--primary]" aria-label="xcare Startseite">
+          <Heart className="h-6 w-6 fill-[--primary]" aria-hidden="true" />
           <span className="text-xl">xcare</span>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-6" aria-label="Hauptnavigation">
           <Link
             href="/lotse"
             className="flex items-center gap-1.5 text-sm text-[--muted-foreground] hover:text-[--foreground] transition-colors"
@@ -62,8 +62,8 @@ export function Navbar({ profile }: NavbarProps) {
                   {profile.vorname ?? profile.email}
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
+              <Button variant="ghost" size="sm" onClick={handleLogout} aria-label="Abmelden">
+                <LogOut className="h-4 w-4" aria-hidden="true" />
               </Button>
             </>
           ) : (
@@ -84,14 +84,17 @@ export function Navbar({ profile }: NavbarProps) {
         <button
           className="md:hidden p-2 rounded-lg hover:bg-[--muted]"
           onClick={() => setMobileOpen(!mobileOpen)}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-menu"
+          aria-label={mobileOpen ? "Menü schließen" : "Menü öffnen"}
         >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
         </button>
       </div>
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-[--border] bg-[--background] p-4 space-y-2">
+        <nav id="mobile-menu" className="md:hidden border-t border-[--border] bg-[--background] p-4 space-y-2" aria-label="Mobile Navigation">
           <Link href="/lotse" className="flex items-center gap-2 p-2 rounded-lg hover:bg-[--muted]">
             <Compass className="h-4 w-4" /> Lotse
           </Link>
@@ -123,7 +126,7 @@ export function Navbar({ profile }: NavbarProps) {
               </Link>
             </div>
           )}
-        </div>
+        </nav>
       )}
     </header>
   );

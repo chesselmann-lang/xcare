@@ -79,3 +79,74 @@ body {
 
 /* Focus */
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ============================================
+   Print Styles — Rechnung
+   ============================================ */
+@media print {
+  body { background: white !important; }
+  .print\:hidden { display: none !important; }
+  .print\:shadow-none { box-shadow: none !important; }
+  .print\:border-0 { border: none !important; }
+  .print\:p-0 { padding: 0 !important; }
+  .print\:rounded-none { border-radius: 0 !important; }
+  nav, aside, header, footer { display: none !important; }
+  @page { margin: 1.5cm; }
+}
+
+/* ============================================
+   Accessibility — WCAG 2.1 AA
+   ============================================ */
+
+/* Visible focus rings for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default focus for mouse users, keep for keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* High-contrast text on primary backgrounds */
+.bg-\[--primary\] { color: var(--primary-foreground); }
+
+/* Ensure interactive elements have minimum 44×44px touch targets on mobile */
+@media (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* but allow smaller icons/badges to override */
+  .touch-compact { min-height: unset; min-width: unset; }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   Mobile Safe Area & Bottom Nav
+   ============================================ */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pb-safe {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Ensure content doesn't hide behind bottom nav */
+@media (max-width: 767px) {
+  .dashboard-content {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+}

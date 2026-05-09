@@ -1,55 +1,57 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/navigation/Navbar";
-import { createClient } from "@/lib/supabase/server";
+import { Toaster } from "sonner";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "xcare — Ihr digitales Pflege-Ökosystem",
+  title: {
+    default: "xcare — Ihr digitales Pflege-Ökosystem",
+    template: "%s – xcare",
+  },
   description:
     "xcare verbindet Familien, Pflegebedürftige und Sozialdienstleister in Deutschland. KI-gestützte Beratung, Anbietersuche und Fallmanagement.",
   keywords: ["Pflege", "Sozialleistungen", "Anbietersuche", "Lebenslage", "SGB XI", "xcare"],
+  authors: [{ name: "xcare" }],
+  creator: "xcare gemeinnützige GmbH",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare-git-main-mindry.vercel.app"
+  ),
   openGraph: {
     title: "xcare — Ihr digitales Pflege-Ökosystem",
     description: "KI-gestützte Beratung und Anbietersuche für alle Pflegesituationen.",
     type: "website",
     locale: "de_DE",
+    siteName: "xcare",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "xcare — Ihr digitales Pflege-Ökosystem",
+    description: "KI-gestützte Beratung und Anbietersuche für alle Pflegesituationen.",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let profile = null;
-  if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-    profile = data;
-  }
-
   return (
     <html lang="de" className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[--background] text-[--foreground]">
-        <Navbar profile={profile} />
-        <main className="flex-1">{children}</main>
-        <footer className="border-t border-[--border] py-8 mt-auto">
-          <div className="max-w-7xl mx-auto px-4 text-center text-sm text-[--muted-foreground]">
-            <p>© {new Date().getFullYear()} xcare gemeinnützige GmbH · Datenschutz · Impressum</p>
-            <p className="mt-1">Entwickelt mit ❤️ für ein besseres Pflege-Ökosystem in Deutschland</p>
-          </div>
-        </footer>
+      <body className="min-h-full bg-[--background] text-[--foreground]">
+        {children}
+        <Toaster
+          position="top-right"
+          richColors
+          toastOptions={{
+            style: { fontFamily: "var(--font-geist-sans)" },
+          }}
+        />
       </body>
     </html>
   );

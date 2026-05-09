@@ -1,17 +1,20 @@
-import { MapPin, Phone, Globe, Star, Clock } from "lucide-react";
+import { MapPin, Phone, Globe } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { formatDistance } from "@/lib/utils";
 import { LEISTUNGSKATEGORIEN } from "@/lib/constants";
 import type { AnbieterMitLeistungen } from "@/lib/types";
 
 interface AnbieterKarteProps {
   anbieter: AnbieterMitLeistungen;
+  avgSterne?: number;
+  bewertungenCount?: number;
 }
 
-export function AnbieterKarte({ anbieter }: AnbieterKarteProps) {
+export function AnbieterKarte({ anbieter, avgSterne, bewertungenCount }: AnbieterKarteProps) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-5">
@@ -42,6 +45,13 @@ export function AnbieterKarte({ anbieter }: AnbieterKarteProps) {
                 </span>
               )}
             </div>
+
+            {/* Bewertungen */}
+            {bewertungenCount != null && bewertungenCount > 0 && avgSterne != null && (
+              <div className="mt-1">
+                <SterneDisplay average={avgSterne} count={bewertungenCount} size="sm" />
+              </div>
+            )}
 
             {/* Leistungs-Tags */}
             {anbieter.leistungen.length > 0 && (
