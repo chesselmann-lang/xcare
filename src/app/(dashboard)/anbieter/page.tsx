@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   Package, MessageSquare, Building2, TrendingUp, ArrowRight,
   CheckCircle2, Clock, Star, AlertCircle, BarChart2, Zap,
-  FileText, PlusCircle, Eye, Receipt, CalendarDays, Users,
+  FileText, PlusCircle, Eye, Receipt, CalendarDays, Users, BellRing,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,6 +87,7 @@ export default async function AnbieterDashboard() {
     { count: anfragenDieserMonat },
     { count: anfragenLetzterMonat },
     { data: bestaetigte },
+    { data: pendingWiedervorlagen },
   ] = await Promise.all([
     supabase.from("leistungen").select("id, name, aktiv").eq("anbieter_id", anbieter?.id ?? "").eq("aktiv", true),
     supabase.from("anfragen").select("id, lebenslage, status, created_at").eq("anbieter_id", anbieter?.id ?? "").order("created_at", { ascending: false }).limit(5),
@@ -101,6 +102,12 @@ export default async function AnbieterDashboard() {
       .eq("status", "bestaetigt")
       .order("updated_at", { ascending: true })
       .limit(20),
+    supabase.from("wiedervorlagen")
+      .select("id, faellig_am, notiz, anfrage_id, anfragen!inner(lebenslage)")
+      .eq("anbieter_id", anbieter?.id ?? "")
+      .eq("erledigt", false)
+      .order("faellig_am", { ascending: true })
+      .limit(8),
   ]);
 
   const avgSterne = bewertungen && bewertungen.length > 0
@@ -438,8 +445,52 @@ export default async function AnbieterDashboard() {
           </Card>
         </div>
 
-        {/* Sidebar: Profil-Stärke + Bewertungen */}
+        {/* Sidebar: Wiedervorlagen + Profil-Stärke + Bewertungen */}
         <div className="space-y-4">
+          {/* Wiedervorlagen */}
+          {(pendingWiedervorlagen ?? []).length > 0 && (() => {
+            const todayStr = new Date().toISOString().split("T")[0];
+            return (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <BellRing className="h-4 w-4 text-amber-500" />
+                    Wiedervorlagen
+                    <span className="ml-auto inline-flex h-5 min-w-[1.25rem] px-1 items-center justify-center rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
+                      {pendingWiedervorlagen!.length}
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {pendingWiedervorlagen!.map((w) => {
+                    const overdue = w.faellig_am < todayStr;
+                    const anfrageLebenslage = (w.anfragen as { lebenslage: string } | null)?.lebenslage ?? "";
+                    const datum = new Date(w.faellig_am).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+                    return (
+                      <Link key={w.id} href={`/anbieter/anfragen/${w.anfrage_id}`}>
+                        <div className={`flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-[--muted] transition-colors cursor-pointer ${overdue ? "bg-red-50 border border-red-100" : "border border-[--border]"}`}>
+                          <div className={`h-1.5 w-1.5 rounded-full mt-1.5 shrink-0 ${overdue ? "bg-red-500" : "bg-amber-400"}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-semibold ${overdue ? "text-red-700" : "text-[--foreground]"}`}>
+                              {datum}{overdue ? " · überfällig" : ""}
+                            </p>
+                            {w.notiz ? (
+                              <p className="text-xs text-[--muted-foreground] truncate">{w.notiz}</p>
+                            ) : anfrageLebenslage ? (
+                              <p className="text-xs text-[--muted-foreground] capitalize truncate">
+                                {anfrageLebenslage.replace(/_/g, " ")}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            );
+          })()}
+
           {/* Profilstärke */}
           <Card>
             <CardHeader className="pb-2">

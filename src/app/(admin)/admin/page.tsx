@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Building2, Users, FileText, TrendingUp, Clock, CheckCircle2, AlertCircle, Star } from "lucide-react";
+import { Building2, Users, FileText, TrendingUp, Clock, CheckCircle2, AlertCircle, Star, BellRing } from "lucide-react";
 import Link from "next/link";
 
 async function StatCard({
@@ -118,6 +118,14 @@ export default async function AdminDashboard() {
           icon={AlertCircle}
           sub="Bewertungen zur Prüfung"
           href="/admin/bewertungen?filter=gemeldet"
+          color="orange"
+        />
+        <StatCard
+          label="Wiedervorlagen"
+          value="→"
+          icon={BellRing}
+          sub="Offene Follow-ups"
+          href="/admin/wiedervorlagen"
           color="orange"
         />
       </div>

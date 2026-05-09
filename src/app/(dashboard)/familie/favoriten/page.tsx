@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight, Heart, MapPin, Phone, Globe,
   Star, CheckCircle2, MessageSquare, ExternalLink,
@@ -35,7 +36,7 @@ export default async function FamilieFavoritenPage() {
   // Fetch favorites with anbieter details + leistungen
   const { data: favoriten } = await supabase
     .from("favoriten")
-    .select("id, created_at, anbieter(id, name, beschreibung, traeger, plz, ort, telefon, website, verifiziert, leistungen(id, name, kategorie, aktiv))")
+    .select("id, created_at, anbieter(id, name, beschreibung, traeger, plz, ort, telefon, website, verifiziert, logo_url, leistungen(id, name, kategorie, aktiv))")
     .eq("familie_id", profile?.id)
     .order("created_at", { ascending: false });
 
@@ -142,6 +143,7 @@ export default async function FamilieFavoritenPage() {
               telefon: string | null;
               website: string | null;
               verifiziert: boolean;
+              logo_url: string | null;
               leistungen: { id: string; name: string; kategorie: string; aktiv: boolean }[];
             } | null;
             if (!a) return null;
@@ -154,10 +156,26 @@ export default async function FamilieFavoritenPage() {
               <Card key={fav.id} className="hover:shadow-md transition-shadow flex flex-col">
                 <CardContent className="p-5 flex flex-col flex-1">
                   {/* Header row */}
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1 min-w-0 pr-2">
+                  <div className="flex items-start gap-3 mb-2">
+                    {/* Logo */}
+                    <div className="h-11 w-11 shrink-0 rounded-xl overflow-hidden bg-[--primary-light] flex items-center justify-center">
+                      {a.logo_url ? (
+                        <Image
+                          src={a.logo_url}
+                          alt={`Logo ${a.name}`}
+                          width={44}
+                          height={44}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-[--primary] font-bold text-base">
+                          {a.name.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-base">{a.name}</h3>
+                        <h3 className="font-semibold text-base leading-snug">{a.name}</h3>
                         {a.verifiziert && (
                           <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
                         )}
