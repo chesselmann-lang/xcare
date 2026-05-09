@@ -63,7 +63,16 @@ export default function SuchePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("liste");
   const [saving, setSaving] = useState(false);
   const [gespeichert, setGespeichert] = useState(false);
+  const [suchVerlauf, setSuchVerlauf] = useState<Array<{ label: string; plz: string; suchtext: string; kategorie: string }>>([]);
   const supabase = createClient();
+
+  // Load Suchverlauf from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("xcare_suchverlauf");
+      if (stored) setSuchVerlauf(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
 
   const activeFiltersCount = [
     kostentraeger !== "",
@@ -153,7 +162,24 @@ export default function SuchePage() {
         return scoreB - scoreA;
       });
 
-      setErgebnisse(gefiltert.slice(0, 20));
+      const slice = gefiltert.slice(0, 20);
+      setErgebnisse(slice);
+
+      // Save to Suchverlauf
+      if (plz) {
+        const katLabel = KATEGORIE_TABS.find((k) => k.key === kat)?.label;
+        const label = [suchtext.trim() || null, katLabel || null, `PLZ ${plz}`]
+          .filter(Boolean).join(" · ");
+        const entry = { label, plz, suchtext: suchtext.trim(), kategorie: kat ?? "" };
+        setSuchVerlauf((prev) => {
+          const deduped = prev.filter(
+            (e) => !(e.plz === entry.plz && e.suchtext === entry.suchtext && e.kategorie === entry.kategorie)
+          );
+          const next = [entry, ...deduped].slice(0, 5);
+          try { localStorage.setItem("xcare_suchverlauf", JSON.stringify(next)); } catch { /* ignore */ }
+          return next;
+        });
+      }
     }
     setLoading(false);
   }, [plz, suchtext, kategorie, kostentraeger, nurVerifiziert, nurVerfuegbar, sortBy, supabase, pushUrl]);
@@ -426,6 +452,37 @@ export default function SuchePage() {
           </div>
         )}
       </div>
+
+      {/* Suchverlauf */}
+      {suchVerlauf.length > 0 && !gesucht && (
+        <div className="flex flex-wrap items-center gap-2 mb-4 -mt-2">
+          <span className="text-xs text-[--muted-foreground] shrink-0">Zuletzt gesucht:</span>
+          {suchVerlauf.map((v, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                setPlz(v.plz);
+                setSuchtext(v.suchtext);
+                setKategorie(v.kategorie as LeistungsKategorie | "");
+                setTimeout(() => suchen(), 50);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[--muted] text-[--foreground] border border-[--border] hover:border-[--primary] hover:text-[--primary] transition-colors"
+            >
+              <Search className="h-3 w-3 shrink-0" />
+              {v.label}
+            </button>
+          ))}
+          <button
+            onClick={() => {
+              setSuchVerlauf([]);
+              try { localStorage.removeItem("xcare_suchverlauf"); } catch { /* ignore */ }
+            }}
+            className="text-xs text-[--muted-foreground] hover:text-[--foreground] transition-colors ml-1"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Active Filter Chips — visible even when filter panel is closed */}
       {activeFiltersCount > 0 && !filterOpen && (

@@ -121,7 +121,31 @@ export default async function FamilieDashboard() {
       .limit(5),
   ]);
 
-  // Top rated anbieter in PLZ area
+  // Lebenslage → Leistungskategorie mapping for personalized recommendations
+  const LEBENSLAGE_ZU_KATEGORIE: Record<string, string> = {
+    geburt_fruehe_kindheit: "kinderbetreuung",
+    schulkind_jugend: "jugendhilfe",
+    eingliederung_behinderung: "eingliederungshilfe",
+    erwerbsleben_vereinbarkeit: "beratung",
+    krankheit_genesung: "therapie",
+    alter_pflege: "pflege_ambulant",
+    hospiz_palliativ: "hospizdienst",
+    trauer_nachlass: "beratung",
+  };
+
+  // Find most-used lebenslage from the family's anfragen history
+  const allAnfragenForLebenslage = anfragen ?? [];
+  const lebenslageCount: Record<string, number> = {};
+  allAnfragenForLebenslage.forEach((a) => {
+    if (a.lebenslage) lebenslageCount[a.lebenslage] = (lebenslageCount[a.lebenslage] ?? 0) + 1;
+  });
+  const meistgenutzteLebenslage = Object.entries(lebenslageCount)
+    .sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const empfehlungsKategorie = meistgenutzteLebenslage
+    ? (LEBENSLAGE_ZU_KATEGORIE[meistgenutzteLebenslage] ?? null)
+    : null;
+
+  // Top rated anbieter in PLZ area — filtered by lebenslage if available
   let empfohleneAnbieter: Array<{
     id: string;
     name: string;
@@ -131,15 +155,16 @@ export default async function FamilieDashboard() {
     beschreibung: string | null;
     avgSterne: number;
     bewCount: number;
+    matchesLebenslage: boolean;
   }> = [];
 
   if (profile?.plz) {
     const { data: nearbyAnbieter } = await supabase
       .from("anbieter")
-      .select("id, name, plz, ort, verifiziert, beschreibung")
+      .select("id, name, plz, ort, verifiziert, beschreibung, leistungen(kategorie)")
       .eq("aktiv", true)
       .ilike("plz", profile.plz.substring(0, 2) + "%")
-      .limit(10);
+      .limit(20);
 
     if (nearbyAnbieter && nearbyAnbieter.length > 0) {
       const ids = nearbyAnbieter.map((a) => a.id);
@@ -155,13 +180,30 @@ export default async function FamilieDashboard() {
         bewMap[b.anbieter_id].count += 1;
       });
 
-      empfohleneAnbieter = nearbyAnbieter
-        .map((a) => ({
-          ...a,
+      const mapped = nearbyAnbieter.map((a) => {
+        const leistungen = (a.leistungen as Array<{ kategorie: string }> | null) ?? [];
+        const matchesLebenslage = empfehlungsKategorie
+          ? leistungen.some((l) => l.kategorie === empfehlungsKategorie)
+          : false;
+        return {
+          id: a.id,
+          name: a.name,
+          plz: a.plz,
+          ort: a.ort,
+          verifiziert: a.verifiziert,
+          beschreibung: a.beschreibung,
           avgSterne: bewMap[a.id] ? bewMap[a.id].sum / bewMap[a.id].count : 0,
           bewCount: bewMap[a.id]?.count ?? 0,
-        }))
+          matchesLebenslage,
+        };
+      });
+
+      // Sort: matching lebenslage first, then by score
+      empfohleneAnbieter = mapped
         .sort((a, b) => {
+          if (a.matchesLebenslage !== b.matchesLebenslage) {
+            return a.matchesLebenslage ? -1 : 1;
+          }
           const scoreA = (a.verifiziert ? 10 : 0) + a.avgSterne * 2;
           const scoreB = (b.verifiziert ? 10 : 0) + b.avgSterne * 2;
           return scoreB - scoreA;
@@ -169,6 +211,19 @@ export default async function FamilieDashboard() {
         .slice(0, 3);
     }
   }
+
+  const empfehlungsLabel = meistgenutzteLebenslage
+    ? ({
+        geburt_fruehe_kindheit: "Geburt & frühe Kindheit",
+        schulkind_jugend: "Schulkind & Jugend",
+        eingliederung_behinderung: "Behinderung & Eingliederung",
+        erwerbsleben_vereinbarkeit: "Erwerbsleben & Vereinbarkeit",
+        krankheit_genesung: "Krankheit & Genesung",
+        alter_pflege: "Alter & Pflege",
+        hospiz_palliativ: "Hospiz & Palliativ",
+        trauer_nachlass: "Trauer & Nachlass",
+      } as Record<string, string>)[meistgenutzteLebenslage] ?? null
+    : null;
 
   const greeting = getGreeting();
 
@@ -423,10 +478,16 @@ export default async function FamilieDashboard() {
           {empfohleneAnbieter.length > 0 && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-amber-500" /> Empfohlen in Ihrer Nähe
-                </CardTitle>
-                <Link href="/suche">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    {empfehlungsLabel ? "Passend zu Ihrer Situation" : "Empfohlen in Ihrer Nähe"}
+                  </CardTitle>
+                  {empfehlungsLabel && (
+                    <p className="text-xs text-[--muted-foreground] mt-0.5 pl-6">{empfehlungsLabel}</p>
+                  )}
+                </div>
+                <Link href={empfehlungsKategorie ? `/suche?kategorie=${empfehlungsKategorie}&plz=${profile?.plz ?? ""}` : "/suche"}>
                   <Button variant="ghost" size="sm" className="gap-1 text-xs h-7">
                     Alle <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
@@ -435,7 +496,11 @@ export default async function FamilieDashboard() {
               <CardContent className="pt-0 space-y-2">
                 {empfohleneAnbieter.map((a) => (
                   <Link key={a.id} href={`/anbieter/${a.id}`} className="group block">
-                    <div className="flex items-center gap-3 p-3 rounded-lg border border-[--border] hover:border-[--primary]/25 hover:bg-[--muted]/40 transition-all">
+                    <div className={`flex items-center gap-3 p-3 rounded-lg border transition-all hover:bg-[--muted]/40 ${
+                      a.matchesLebenslage
+                        ? "border-[--primary]/20 bg-[--primary]/5 hover:border-[--primary]/35"
+                        : "border-[--border] hover:border-[--primary]/25"
+                    }`}>
                       <div className="w-8 h-8 rounded-lg bg-[--primary]/10 flex items-center justify-center shrink-0">
                         <Users className="h-4 w-4 text-[--primary]" />
                       </div>
@@ -446,6 +511,11 @@ export default async function FamilieDashboard() {
                           </p>
                           {a.verifiziert && (
                             <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                          )}
+                          {a.matchesLebenslage && (
+                            <span className="text-[10px] font-medium text-[--primary] bg-[--primary]/10 px-1.5 py-0.5 rounded-full shrink-0">
+                              Passend
+                            </span>
                           )}
                         </div>
                         {(a.plz || a.ort) && (

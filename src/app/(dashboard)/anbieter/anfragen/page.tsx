@@ -12,6 +12,7 @@ import { AnfragenBulkAktionen } from "@/components/anfragen/AnfragenBulkAktionen
 import { AnfrageQuickActions } from "@/components/anfragen/AnfrageQuickActions";
 import { StatusWechselSelect } from "@/components/anfragen/StatusWechselSelect";
 import { WartelisteExportButton } from "@/components/anfragen/WartelisteExportButton";
+import { AnfragePrioritaetToggle } from "@/components/anfragen/AnfragePrioritaetToggle";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -266,7 +267,8 @@ function AnfrageCard({ anfrage: a }: { anfrage: AnfrageRow }) {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <AnfragePrioritaetToggle anfrageId={a.id} />
                 <StatusWechselSelect
                   anfrageId={a.id}
                   status={a.status as AnfrageStatus}
