@@ -393,28 +393,4 @@ export default async function AnbieterVerzeichnisPage({
             </nav>
           )}
 
-          {/* SEO-optimized category overview (only on page 1, no filter) */}
-          {!kategorie && !q && page === 1 && (
-            <section className="mt-16 pt-8 border-t border-[--border]">
-              <h2 className="text-xl font-bold mb-6">Anbieter nach Kategorie</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {KATEGORIE_FILTER.filter((k) => k.key !== "").map((opt) => (
-                  <Link
-                    key={opt.key}
-                    href={`/anbieter?kategorie=${opt.key}`}
-                    className="flex items-center gap-2 p-3 rounded-xl border border-[--border] hover:border-[--primary]/40 hover:bg-[--primary]/4 transition-all group"
-                  >
-                    <span className="text-xl">{opt.emoji}</span>
-                    <span className="text-sm font-medium group-hover:text-[--primary] transition-colors">
-                      {opt.label}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
+          {/* SEO-optimized category overview (only on page 1, no fil

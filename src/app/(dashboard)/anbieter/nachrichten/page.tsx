@@ -231,24 +231,4 @@ export default async function AnbieterNachrichtenPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{familieName}</p>
-                        <p className="text-xs text-[--muted-foreground] capitalize">
-                          {anfrage.lebenslage.replace(/_/g, " ")} · {formatRelative(anfrage.updated_at)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge variant={statusVariant[status] ?? "secondary"} className="text-xs">
-                        {statusLabel[status] ?? status}
-                      </Badge>
-                      <ArrowRight className="h-3.5 w-3.5 text-[--muted-foreground]" />
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
+                        <p className="text-xs text-[--muted-foreground] cap

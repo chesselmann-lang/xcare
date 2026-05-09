@@ -28,37 +28,4 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const kategorieRoutes: MetadataRoute.Sitemap = KATEGORIE_SLUGS.map((slug) => ({
     url: `${baseUrl}/anbieter?kategorie=${slug}`,
     lastModified: new Date(),
-    changeFrequency: "daily" as const,
-    priority: 0.75,
-  }));
-
-  // Dynamic: Anbieter-Profilseiten
-  try {
-    const { data: anbieter } = await supabase
-      .from("anbieter")
-      .select("id, updated_at")
-      .eq("aktiv", true)
-      .eq("verifiziert", true)
-      .limit(500);
-
-    const anbieterRoutes: MetadataRoute.Sitemap =
-      anbieter?.flatMap((a) => [
-        {
-          url: `${baseUrl}/anbieter/${a.id}`,
-          lastModified: new Date(a.updated_at),
-          changeFrequency: "weekly" as const,
-          priority: 0.7,
-        },
-        {
-          url: `${baseUrl}/anbieter/${a.id}/bewertungen`,
-          lastModified: new Date(a.updated_at),
-          changeFrequency: "weekly" as const,
-          priority: 0.5,
-        },
-      ]) ?? [];
-
-    return [...staticRoutes, ...kategorieRoutes, ...anbieterRoutes];
-  } catch {
-    return [...staticRoutes, ...kategorieRoutes];
-  }
-}
+    c

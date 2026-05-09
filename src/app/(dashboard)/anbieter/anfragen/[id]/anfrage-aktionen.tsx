@@ -147,16 +147,4 @@ export default function AnfrageAktionen({
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : u.variant === "success" ? (
                 <CheckCircle2 className="h-3.5 w-3.5" />
-              ) : u.variant === "destructive" ? (
-                <XCircle className="h-3.5 w-3.5" />
-              ) : (
-                <ArrowRight className="h-3.5 w-3.5" />
-              )}
-              {u.label}
-            </Button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+              )

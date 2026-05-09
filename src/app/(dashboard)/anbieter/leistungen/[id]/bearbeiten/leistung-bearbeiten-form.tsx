@@ -82,6 +82,7 @@ export function LeistungBearbeitenForm({ leistung }: { leistung: Leistung }) {
 
     const preisVon = formData.get("preis_von") as string;
     const preisBis = formData.get("preis_bis") as string;
+    const preisEinheit = formData.get("preis_einheit") as string;
     const kapazitaet = formData.get("kapazitaet") as string;
     const wartezeit = formData.get("wartezeit_wochen") as string;
 
@@ -96,6 +97,7 @@ export function LeistungBearbeitenForm({ leistung }: { leistung: Leistung }) {
         kostentraeger: selectedKostentraeger,
         preis_von: preisVon ? parseFloat(preisVon) : null,
         preis_bis: preisBis ? parseFloat(preisBis) : null,
+        preis_einheit: preisEinheit || null,
         kapazitaet: kapazitaet ? parseInt(kapazitaet) : null,
         wartezeit_wochen: wartezeit ? parseInt(wartezeit) : null,
         updated_at: new Date().toISOString(),
@@ -226,16 +228,16 @@ export function LeistungBearbeitenForm({ leistung }: { leistung: Leistung }) {
         <Card>
           <CardHeader><CardTitle className="text-base">Preise & Kapazität</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="preis_von">Preis von (€)</Label>
+                <Label htmlFor="preis_von">Preis ab (€)</Label>
                 <Input
                   id="preis_von"
                   name="preis_von"
                   type="number"
                   min="0"
                   step="0.01"
-                  defaultValue={leistung.preis_von ?? ""}
+                  defaultValue={(leistung as { preis_von?: number | null }).preis_von ?? ""}
                   placeholder="0.00"
                 />
               </div>
@@ -247,9 +249,26 @@ export function LeistungBearbeitenForm({ leistung }: { leistung: Leistung }) {
                   type="number"
                   min="0"
                   step="0.01"
-                  defaultValue={leistung.preis_bis ?? ""}
+                  defaultValue={(leistung as { preis_bis?: number | null }).preis_bis ?? ""}
                   placeholder="0.00"
                 />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="preis_einheit">Einheit</Label>
+                <select
+                  id="preis_einheit"
+                  name="preis_einheit"
+                  defaultValue={(leistung as { preis_einheit?: string | null }).preis_einheit ?? ""}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">– keine –</option>
+                  <option value="Stunde">/ Stunde</option>
+                  <option value="Tag">/ Tag</option>
+                  <option value="Woche">/ Woche</option>
+                  <option value="Monat">/ Monat</option>
+                  <option value="Pauschal">Pauschal</option>
+                  <option value="Einheit">/ Einheit</option>
+                </select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -264,38 +283,4 @@ export function LeistungBearbeitenForm({ leistung }: { leistung: Leistung }) {
                   placeholder="z.B. 10"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="wartezeit_wochen">Wartezeit (Wochen)</Label>
-                <Input
-                  id="wartezeit_wochen"
-                  name="wartezeit_wochen"
-                  type="number"
-                  min="0"
-                  defaultValue={leistung.wartezeit_wochen ?? ""}
-                  placeholder="0 = sofort"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {error && (
-          <p className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">{error}</p>
-        )}
-
-        <div className="flex gap-3">
-          <Link href="/anbieter/leistungen" className="flex-1">
-            <Button type="button" variant="outline" className="w-full">Abbrechen</Button>
-          </Link>
-          <Button type="submit" disabled={loading} className="flex-1 gap-2">
-            {loading ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Speichert...</>
-            ) : (
-              <><CheckCircle2 className="h-4 w-4" /> Änderungen speichern</>
-            )}
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
-}
+              <div clas

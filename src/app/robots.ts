@@ -13,29 +13,4 @@ export default function robots(): MetadataRoute.Robots {
           "/suche",
           "/lotse",
           "/anbieter",          // public directory listing
-          "/anbieter/",         // individual anbieter profiles (public)
-          "/impressum",
-          "/datenschutz",
-          "/login",
-          "/register",
-        ],
-        disallow: [
-          "/familie/",          // Familie dashboard (private)
-          "/anbieter/profil",   // Anbieter edit pages (private)
-          "/anbieter/leistungen",
-          "/anbieter/anfragen",
-          "/anbieter/nachrichten",
-          "/anbieter/statistiken",
-          "/anbieter/dokumente",
-          "/anbieter/team",
-          "/anbieter/abo",
-          "/admin/",            // Admin panel
-          "/api/",              // API routes
-          "/onboarding",
-          "/einstellungen",
-        ],
-      },
-    ],
-    sitemap: `${baseUrl}/sitemap.xml`,
-  };
-}
+          "/anbieter/",         // individual anbieter prof

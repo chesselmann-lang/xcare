@@ -285,45 +285,4 @@ export default async function FamilieAnfrageDetailPage({
 
         {/* Bewertung abgeben — nur wenn abgeschlossen */}
         {status === "abgeschlossen" && anbieter && (
-          <BewertungAbgeben
-            anbieterId={anbieter.id}
-            anbieterName={anbieter.name}
-            anfrageId={id}
-            familieId={profile.id}
-            initialSterne={existingBewertung?.sterne ?? null}
-            initialKommentar={existingBewertung?.kommentar ?? null}
-          />
-        )}
-
-        {/* Chat */}
-        {/* Status-Verlauf */}
-        {((historie && historie.length > 0) || anfrage.created_at) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-4 w-4" /> Anfrage-Verlauf
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <HistorieTimeline
-                historie={historie ?? []}
-                showCreation
-                erstelltAt={anfrage.created_at}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        <div>
-          <h2 className="text-base font-semibold mb-3">Nachrichten</h2>
-          <Chat
-            anfrageId={id}
-            currentProfileId={profile.id}
-            currentRole="familie"
-            initialNachrichten={nachrichten ?? []}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
+          <BewertungA

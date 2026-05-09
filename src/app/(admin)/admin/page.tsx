@@ -160,21 +160,4 @@ export default async function AdminDashboard() {
             {recentAnfragen?.map((a) => (
               <div key={a.id} className="flex items-center justify-between px-5 py-3.5">
                 <div>
-                  <p className="text-sm font-medium text-gray-800 capitalize">
-                    {a.lebenslage.replace(/_/g, " ")}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {new Date(a.created_at).toLocaleDateString("de-DE")}
-                  </p>
-                </div>
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${statusColors[a.status] ?? "bg-gray-100 text-gray-600"}`}>
-                  {a.status.replace(/_/g, " ")}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+                  <p className="text-sm fo

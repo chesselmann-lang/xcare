@@ -192,30 +192,4 @@ export default async function AnbieterBewertungenPage({
 
                         {/* Provider reply */}
                         {(b as { antwort?: string | null; antwort_at?: string | null }).antwort && (
-                          <div className="mt-3 pl-3 border-l-2 border-blue-200 bg-blue-50/50 rounded-r-lg py-2 pr-2">
-                            <p className="text-xs font-semibold text-blue-700 mb-0.5 flex items-center gap-1">
-                              <MessageSquare className="h-3 w-3" />
-                              Antwort des Anbieters
-                              {(b as { antwort_at?: string | null }).antwort_at && (
-                                <span className="font-normal text-blue-400 ml-1">
-                                  · {formatDate((b as { antwort_at: string }).antwort_at)}
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              {(b as { antwort: string }).antwort}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+                          <div c

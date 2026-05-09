@@ -91,6 +91,7 @@ export default function NeueLeistungPage() {
 
     const preisVon = formData.get("preis_von") as string;
     const preisBis = formData.get("preis_bis") as string;
+    const preisEinheit = formData.get("preis_einheit") as string;
     const kapazitaet = formData.get("kapazitaet") as string;
     const wartezeit = formData.get("wartezeit_wochen") as string;
 
@@ -104,6 +105,7 @@ export default function NeueLeistungPage() {
       kostentraeger: selectedKostentraeger,
       preis_von: preisVon ? parseFloat(preisVon) : null,
       preis_bis: preisBis ? parseFloat(preisBis) : null,
+      preis_einheit: preisEinheit || null,
       kapazitaet: kapazitaet ? parseInt(kapazitaet) : null,
       wartezeit_wochen: wartezeit ? parseInt(wartezeit) : null,
       aktiv: true,
@@ -220,41 +222,31 @@ export default function NeueLeistungPage() {
         <Card>
           <CardHeader><CardTitle className="text-base">Preise & Kapazität</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="preis_von">Preis von (€)</Label>
+                <Label htmlFor="preis_von">Preis ab (€)</Label>
                 <Input id="preis_von" name="preis_von" type="number" min="0" step="0.01" placeholder="0.00" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="preis_bis">Preis bis (€)</Label>
                 <Input id="preis_bis" name="preis_bis" type="number" min="0" step="0.01" placeholder="0.00" />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="preis_einheit">Einheit</Label>
+                <select
+                  id="preis_einheit"
+                  name="preis_einheit"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">– keine –</option>
+                  <option value="Stunde">/ Stunde</option>
+                  <option value="Tag">/ Tag</option>
+                  <option value="Woche">/ Woche</option>
+                  <option value="Monat">/ Monat</option>
+                  <option value="Pauschal">Pauschal</option>
+                  <option value="Einheit">/ Einheit</option>
+                </select>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="kapazitaet">Kapazität (Plätze)</Label>
-                <Input id="kapazitaet" name="kapazitaet" type="number" min="0" placeholder="z.B. 10" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="wartezeit_wochen">Wartezeit (Wochen)</Label>
-                <Input id="wartezeit_wochen" name="wartezeit_wochen" type="number" min="0" placeholder="0 = sofort" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {error && (
-          <p className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">{error}</p>
-        )}
-
-        <Button type="submit" disabled={loading} className="w-full gap-2">
-          {loading ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Wird gespeichert...</>
-          ) : (
-            <><CheckCircle2 className="h-4 w-4" /> Leistung speichern</>
-          )}
-        </Button>
-      </form>
-    </div>
-  );
-}
+              <div className="spa
