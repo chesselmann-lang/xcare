@@ -95,4 +95,20 @@ export function AnbieterKarte({ anbieter, avgSterne, bewertungenCount }: Anbiete
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 hover:text-[--primary]"
                   >
-   
+                    <Globe className="h-3.5 w-3.5" />
+                    Website
+                  </a>
+                )}
+              </div>
+              <Link href={`/anbieter/${anbieter.id}`}>
+                <Button size="sm" variant="outline">
+                  Mehr erfahren
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

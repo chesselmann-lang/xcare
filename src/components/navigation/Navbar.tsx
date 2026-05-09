@@ -115,4 +115,29 @@ export function Navbar({ profile }: NavbarProps) {
             <>
               <Link
                 href={profile.role === "anbieter" ? "/anbieter" : "/familie"}
-                className="flex items-center gap-2 p-2 rounded
+                className="flex items-center gap-2 p-2 rounded-lg hover:bg-[--muted]"
+              >
+                <User className="h-4 w-4" /> Dashboard
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 p-2 w-full rounded-lg hover:bg-[--muted] text-left"
+              >
+                <LogOut className="h-4 w-4" /> Abmelden
+              </button>
+            </>
+          ) : (
+            <div className="flex gap-2 pt-2">
+              <Link href="/login" className="flex-1">
+                <Button variant="outline" className="w-full">Anmelden</Button>
+              </Link>
+              <Link href="/register" className="flex-1">
+                <Button className="w-full">Registrieren</Button>
+              </Link>
+            </div>
+          )}
+        </nav>
+      )}
+    </header>
+  );
+}

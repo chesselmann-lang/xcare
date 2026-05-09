@@ -51,4 +51,17 @@ export default function HomePage() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-             
+              <Link href="/suche">
+                <Button size="lg" variant="outline" className="gap-2 border-white text-white hover:bg-white/10">
+                  <Search className="h-5 w-5" />
+                  Alle Anbieter
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="border-b" style={{ background: "var(--muted)", borderColor: "var(--border)" }}>
+        <div className="max-

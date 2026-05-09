@@ -275,9 +275,34 @@ export default async function FamilieAnfrageDetailPage({
                 Suchen Sie weitere Anbieter in Ihrer Nähe.
               </p>
             </div>
-            <Link href="/suche">
-              <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-100 shrink-0">
-                Andere Anbieter
+            <div className="flex gap-2 shrink-0">
+              {anbieter && (
+                <Link href={`/anbieter/${anbieter.id}?anfrage=true`}>
+                  <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-100">
+                    Erneut anfragen
+                  </Button>
+                </Link>
+              )}
+              <Link href="/suche">
+                <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-100">
+                  Andere Anbieter
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {status === "abgeschlossen" && anbieter && (
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex items-start justify-between gap-4">
+            <div>
+              <p className="font-medium text-gray-700 text-sm">Neue Anfrage senden?</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Stellen Sie eine neue Anfrage beim selben Anbieter.
+              </p>
+            </div>
+            <Link href={`/anbieter/${anbieter.id}`} className="shrink-0">
+              <Button size="sm" variant="outline" className="gap-1.5">
+                <FileText className="h-3.5 w-3.5" /> Erneut anfragen
               </Button>
             </Link>
           </div>
@@ -285,4 +310,45 @@ export default async function FamilieAnfrageDetailPage({
 
         {/* Bewertung abgeben — nur wenn abgeschlossen */}
         {status === "abgeschlossen" && anbieter && (
-          <BewertungA
+          <BewertungAbgeben
+            anbieterId={anbieter.id}
+            anbieterName={anbieter.name}
+            anfrageId={id}
+            familieId={profile.id}
+            initialSterne={existingBewertung?.sterne ?? null}
+            initialKommentar={existingBewertung?.kommentar ?? null}
+          />
+        )}
+
+        {/* Chat */}
+        {/* Status-Verlauf */}
+        {((historie && historie.length > 0) || anfrage.created_at) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4" /> Anfrage-Verlauf
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <HistorieTimeline
+                historie={historie ?? []}
+                showCreation
+                erstelltAt={anfrage.created_at}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        <div>
+          <h2 className="text-base font-semibold mb-3">Nachrichten</h2>
+          <Chat
+            anfrageId={id}
+            currentProfileId={profile.id}
+            currentRole="familie"
+            initialNachrichten={nachrichten ?? []}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

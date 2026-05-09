@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { MessageSquare, ArrowRight, Clock } from "lucide-react";
+import { MessageSquare, ArrowRight, Clock, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -115,18 +116,25 @@ export default async function AnbieterNachrichtenPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-1">Nachrichten</h1>
-        <p className="text-sm text-[--muted-foreground]">
-          {mitNachrichten.length > 0
-            ? `${mitNachrichten.length} Konversation${mitNachrichten.length > 1 ? "en" : ""}`
-            : "Noch keine Nachrichten"}
-          {totalUnread > 0 && (
-            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-[--primary] text-white text-xs font-semibold">
-              {totalUnread} ungelesen
-            </span>
-          )}
-        </p>
+      <div className="flex items-start justify-between mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Nachrichten</h1>
+          <p className="text-sm text-[--muted-foreground]">
+            {mitNachrichten.length > 0
+              ? `${mitNachrichten.length} Konversation${mitNachrichten.length > 1 ? "en" : ""}`
+              : "Noch keine Nachrichten"}
+            {totalUnread > 0 && (
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-[--primary] text-white text-xs font-semibold">
+                {totalUnread} ungelesen
+              </span>
+            )}
+          </p>
+        </div>
+        <Link href="/anbieter/nachrichten/vorlagen" className="shrink-0">
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <FileText className="h-3.5 w-3.5" /> Vorlagen
+          </Button>
+        </Link>
       </div>
 
       {/* Conversations with messages */}
@@ -231,4 +239,24 @@ export default async function AnbieterNachrichtenPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{familieName}</p>
-                        <p className="text-xs text-[--muted-foreground] cap
+                        <p className="text-xs text-[--muted-foreground] capitalize">
+                          {anfrage.lebenslage.replace(/_/g, " ")} · {formatRelative(anfrage.updated_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant={statusVariant[status] ?? "secondary"} className="text-xs">
+                        {statusLabel[status] ?? status}
+                      </Badge>
+                      <ArrowRight className="h-3.5 w-3.5 text-[--muted-foreground]" />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

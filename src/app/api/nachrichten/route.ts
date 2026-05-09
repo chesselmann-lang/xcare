@@ -102,4 +102,69 @@ export async function POST(request: Request) {
             .select("email, vorname, nachname")
             .eq("id", anfrage.familie_id)
             .single();
-          empfaengerEmail = (familieProfile as { email?: string 
+          empfaengerEmail = (familieProfile as { email?: string })?.email ?? null;
+          empfaengerName = familieProfile
+            ? `${familieProfile.vorname ?? ""} ${familieProfile.nachname ?? ""}`.trim() || "Familie"
+            : null;
+        }
+
+        if (empfaengerEmail && empfaengerName) {
+          fetch("https://inn.gs/e/" + process.env.INNGEST_EVENT_KEY, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: "nachricht/created",
+              data: {
+                anfrage_id,
+                empfaenger_email: empfaengerEmail,
+                empfaenger_name: empfaengerName,
+                sender_name: senderName,
+                vorschau: inhalt.trim(),
+              },
+            }),
+          }).catch(() => {});
+        }
+      } catch {
+        // Non-critical — notification failure doesn't block message delivery
+      }
+    }
+
+    return NextResponse.json({ data }, { status: 201 });
+  } catch (err) {
+    console.error("[nachrichten POST] unexpected:", err);
+    return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const anfrage_id = searchParams.get("anfrage_id");
+
+    if (!anfrage_id) {
+      return NextResponse.json({ error: "anfrage_id erforderlich" }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from("nachrichten")
+      .select("*, sender:profiles!sender_id(vorname, nachname, role)")
+      .eq("anfrage_id", anfrage_id)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ data });
+  } catch (err) {
+    console.error("[nachrichten GET] unexpected:", err);
+    return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
+  }
+}

@@ -84,4 +84,13 @@ export function LeistungAktionen({ leistungId, aktiv, onToggle, onDelete }: Prop
       <Button
         variant="ghost"
         size="sm"
-        onClick={handleDelete
+        onClick={handleDelete}
+        disabled={deleting}
+        className={`h-7 px-2 ${confirmDelete ? "text-red-600 bg-red-50" : "text-gray-400 hover:text-red-500"}`}
+        title={confirmDelete ? "Klicken zur Bestätigung" : "Löschen"}
+      >
+        {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+      </Button>
+    </div>
+  );
+}

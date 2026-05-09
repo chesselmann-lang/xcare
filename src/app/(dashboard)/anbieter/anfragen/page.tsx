@@ -180,4 +180,105 @@ export default async function AnbieterAnfragenPage({
                   <p>Keine neuen Anfragen</p>
                 </CardContent>
               </Card>
-        
+            )}
+          </section>
+
+          {/* In Bearbeitung */}
+          {inBearbeitung.length > 0 && (
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold mb-3">In Bearbeitung ({inBearbeitung.length})</h2>
+              <div className="space-y-3">
+                {inBearbeitung.map((a) => <AnfrageCard key={a.id} anfrage={a} />)}
+              </div>
+            </section>
+          )}
+
+          {/* Abgeschlossen */}
+          {abgeschlossen.length > 0 && (
+            <section className="opacity-70">
+              <h2 className="text-lg font-semibold mb-3 text-[--muted-foreground]">
+                Abgeschlossen ({abgeschlossen.length})
+              </h2>
+              <div className="space-y-3">
+                {abgeschlossen.map((a) => <AnfrageCard key={a.id} anfrage={a} />)}
+              </div>
+            </section>
+          )}
+        </>
+      ) : (
+        /* Flat filtered view */
+        <section>
+          {sorted.length > 0 ? (
+            <div className="space-y-3">
+              {sorted.map((a) => <AnfrageCard key={a.id} anfrage={a} />)}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-10 text-center text-[--muted-foreground]">
+                <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                <p>Keine Anfragen mit diesem Status</p>
+              </CardContent>
+            </Card>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
+
+function AnfrageCard({ anfrage: a }: { anfrage: AnfrageRow }) {
+  const familie = a.profiles;
+  const familienName = familie?.vorname || familie?.nachname
+    ? `${familie?.vorname ?? ""} ${familie?.nachname ?? ""}`.trim()
+    : "Familie";
+
+  return (
+    <div className="group">
+      <Card className="hover:shadow-sm transition-all group-hover:border-[--primary]/20">
+        <CardContent className="p-4">
+          {/* Main row — clicking here navigates to detail */}
+          <Link href={`/anbieter/anfragen/${a.id}`} className="block">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <Clock className="h-4 w-4 text-[--muted-foreground] shrink-0" />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium capitalize truncate">
+                      {a.lebenslage.replace(/_/g, " ")}
+                      {a.leistungen?.name && ` · ${a.leistungen.name}`}
+                    </p>
+                    {(a._unreadCount ?? 0) > 0 && (
+                      <span className="flex items-center gap-1 bg-[--primary] text-white text-xs px-2 py-0.5 rounded-full font-semibold shrink-0">
+                        <MessageCircle className="h-3 w-3" />
+                        {a._unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-[--muted-foreground]">
+                    {familienName}
+                    {familie?.plz && ` · ${familie.plz}`}
+                    {" · "}{formatRelative(a.created_at)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge variant={statusVariant[a.status as AnfrageStatus] ?? "secondary"}>
+                  {statusLabel[a.status as AnfrageStatus] ?? a.status}
+                </Badge>
+                <ArrowRight className="h-4 w-4 text-[--muted-foreground] group-hover:text-[--primary] transition-colors" />
+              </div>
+            </div>
+          </Link>
+
+          {/* Quick-action row — rendered outside the Link, no propagation issues */}
+          <AnfrageQuickActions
+            anfrageId={a.id}
+            status={a.status as AnfrageStatus}
+            profileId={a._profileId ?? ""}
+            anbieterId={a._anbieterId ?? ""}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

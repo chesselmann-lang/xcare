@@ -146,4 +146,70 @@ export default function LotsePage() {
       {schritt === "lebenslage" && (
         <div>
           <h2 className="text-xl font-semibold mb-4">
-            In welcher Lebenssitu
+            In welcher Lebenssituation befinden Sie sich?
+          </h2>
+          <LebenslagePicker selected={lebenslage} onSelect={handleLebenslagSelect} />
+        </div>
+      )}
+
+      {/* Schritt 2: PLZ */}
+      {schritt === "plz" && ll && (
+        <Card className="max-w-md mx-auto">
+          <CardHeader className="text-center pb-4">
+            <span className="text-5xl mb-2 block">{ll.emoji}</span>
+            <CardTitle>{ll.label}</CardTitle>
+            <p className="text-sm text-[--muted-foreground]">{ll.beschreibung}</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="plz" className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4" /> Ihre Postleitzahl
+              </Label>
+              <Input
+                id="plz"
+                placeholder="z.B. 10115"
+                maxLength={5}
+                value={plz}
+                onChange={(e) => setPlz(e.target.value.replace(/\D/g, ""))}
+                onKeyDown={(e) => e.key === "Enter" && handlePlzWeiter()}
+              />
+              {plzError && <p className="text-xs text-[--danger]">{plzError}</p>}
+              <p className="text-xs text-[--muted-foreground]">
+                Wird nur für die Anbietersuche in Ihrer Nähe verwendet.
+              </p>
+            </div>
+            <Button onClick={handlePlzWeiter} className="w-full gap-2">
+              Lotse starten <ArrowRight className="h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Schritt 3: Chat */}
+      {schritt === "chat" && lebenslage && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-[--primary-light] border border-[--primary]/20">
+            <span className="text-2xl">{ll?.emoji}</span>
+            <div>
+              <p className="font-medium text-sm">{ll?.label}</p>
+              <p className="text-xs text-[--muted-foreground]">PLZ {plz}</p>
+            </div>
+            <button
+              className="ml-auto text-xs text-[--primary] hover:underline"
+              onClick={() => setSchritt("lebenslage")}
+            >
+              Ändern
+            </button>
+          </div>
+          <LotseChat
+            lebenslage={lebenslage}
+            antworten={[]}
+            plz={plz}
+            initialMessage={`Ich befinde mich in der Lebenssituation "${ll?.label}". Was sind meine wichtigsten nächsten Schritte und welche Leistungen stehen mir zu?`}
+          />
+          {plz && <NearbyAnbieterPanel plz={plz} lebenslage={lebenslage} />}
+        </div>
+      )}
+    </div>
+  );
+}

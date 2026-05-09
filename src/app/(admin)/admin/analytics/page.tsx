@@ -50,6 +50,23 @@ export default async function AdminAnalyticsPage() {
     abgeschlossen: { label: "Abgeschlossen", color: "bg-gray-300" },
   };
 
+  // Leistungen by Kategorie
+  const { data: leistungenByKat } = await supabase
+    .from("leistungen")
+    .select("kategorie")
+    .eq("aktiv", true);
+
+  const katCounts = (leistungenByKat ?? []).reduce<Record<string, number>>((acc, l) => {
+    acc[l.kategorie] = (acc[l.kategorie] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const sortedKategorien = Object.entries(katCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+
+  const totalLeistungen = leistungenByKat?.length ?? 0;
+
   // Group recent by day
   const byDay = (recentAnfragen ?? []).reduce<Record<string, number>>((acc, a) => {
     const day = new Date(a.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
@@ -122,6 +139,37 @@ export default async function AdminAnalyticsPage() {
               );
             })}
           </div>
+        </div>
+
+        {/* Leistungskategorien */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 lg:col-span-2">
+          <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-emerald-500" /> Aktive Leistungen nach Kategorie
+          </h2>
+          {sortedKategorien.length === 0 ? (
+            <p className="text-sm text-gray-400">Noch keine Leistungen eingetragen</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-3">
+              {sortedKategorien.map(([kat, count]) => {
+                const pct = totalLeistungen > 0 ? (count / totalLeistungen) * 100 : 0;
+                return (
+                  <div key={kat}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-600 capitalize">{kat.replace(/_/g, " ")}</span>
+                      <span className="font-medium text-gray-800">{count}</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full bg-emerald-400 transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <p className="text-xs text-gray-400 pt-3">Gesamt: {totalLeistungen} aktive Leistungen</p>
         </div>
 
         {/* Verlauf letzte 30 Tage */}

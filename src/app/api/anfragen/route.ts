@@ -108,4 +108,12 @@ export async function POST(req: NextRequest) {
         });
       }
     } catch {
-      // Non-critical:
+      // Non-critical: email notification failed, don't fail the request
+    }
+
+    return NextResponse.json({ anfrage }, { status: 201 });
+  } catch (error) {
+    console.error("POST /api/anfragen error:", error);
+    return NextResponse.json({ error: "Serverfehler" }, { status: 500 });
+  }
+}

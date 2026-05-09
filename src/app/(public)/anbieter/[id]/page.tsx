@@ -144,6 +144,20 @@ export default async function AnbieterDetailPage({
     return acc;
   }, {});
 
+  // Ähnliche Anbieter: same PLZ prefix, exclude self
+  let aehnliche: Array<{ id: string; name: string; plz: string | null; ort: string | null; verifiziert: boolean }> = [];
+  if (anbieter.plz) {
+    const plzPrefix = anbieter.plz.substring(0, 2);
+    const { data: nearbyRaw } = await supabase
+      .from("anbieter")
+      .select("id, name, plz, ort, verifiziert")
+      .eq("aktiv", true)
+      .ilike("plz", `${plzPrefix}%`)
+      .neq("id", id)
+      .limit(6);
+    aehnliche = (nearbyRaw ?? []).slice(0, 3);
+  }
+
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
 
   return (
@@ -407,4 +421,205 @@ export default async function AnbieterDetailPage({
                                 leistungName={l.name}
                                 trigger={
                                   <Button size="sm" variant="outline" className="shrink-0 gap-1">
-                              
+                                    <Mail className="h-3 w-3" />
+                                    Anfragen
+                                  </Button>
+                                }
+                              />
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Nachweise & Zertifikate */}
+          {dokumente && dokumente.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Award className="h-4 w-4 text-amber-500" />
+                  Nachweise & Zertifikate
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {dokumente.map((doc) => (
+                    <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
+                      <FileCheck className="h-4 w-4 text-green-600 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
+                        {doc.typ && doc.typ !== "application/octet-stream" && (
+                          <p className="text-xs text-gray-400 uppercase">
+                            {doc.typ.split("/")[1] ?? doc.typ}
+                          </p>
+                        )}
+                      </div>
+                      <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-4">
+          {/* Kontaktkarte */}
+          <Card className="sticky top-24">
+            <CardHeader>
+              <CardTitle className="text-sm">Kontakt & Anfrage</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {anbieter.telefon && (
+                <a href={`tel:${anbieter.telefon}`} className="block">
+                  <Button variant="outline" className="w-full gap-2">
+                    <Phone className="h-4 w-4" />
+                    {anbieter.telefon}
+                  </Button>
+                </a>
+              )}
+              {anbieter.email && (
+                <a href={`mailto:${anbieter.email}`} className="block">
+                  <Button variant="outline" className="w-full gap-2">
+                    <Mail className="h-4 w-4" />
+                    E-Mail schreiben
+                  </Button>
+                </a>
+              )}
+              {profile?.role === "familie" ? (
+                <AnfrageDialog
+                  anbieterId={id}
+                  anbieterName={anbieter.name}
+                  trigger={
+                    <Button className="w-full gap-2">
+                      <Package className="h-4 w-4" />
+                      Anfrage stellen
+                    </Button>
+                  }
+                />
+              ) : !user ? (
+                <Link href="/register">
+                  <Button className="w-full gap-2">
+                    <Package className="h-4 w-4" />
+                    Jetzt registrieren & anfragen
+                  </Button>
+                </Link>
+              ) : null}
+
+              {/* Social Media */}
+              {(() => {
+                type SocialMedia = { facebook?: string; instagram?: string; linkedin?: string; xing?: string };
+                const sm = (anbieter as { social_media?: SocialMedia }).social_media;
+                if (!sm || Object.keys(sm).length === 0) return null;
+                return (
+                  <div className="pt-2 border-t border-[--border]">
+                    <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Globe className="h-3.5 w-3.5" /> Online
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {sm.facebook && (
+                        <a href={sm.facebook} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-blue-600 transition-colors">
+                          <Facebook className="h-4 w-4" /> Facebook
+                        </a>
+                      )}
+                      {sm.instagram && (
+                        <a href={sm.instagram} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-pink-500 transition-colors">
+                          <Instagram className="h-4 w-4" /> Instagram
+                        </a>
+                      )}
+                      {sm.linkedin && (
+                        <a href={sm.linkedin} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-blue-700 transition-colors">
+                          <Linkedin className="h-4 w-4" /> LinkedIn
+                        </a>
+                      )}
+                      {sm.xing && (
+                        <a href={sm.xing} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-[--primary] transition-colors">
+                          <Globe className="h-3.5 w-3.5" /> XING
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Öffnungszeiten */}
+              {(() => {
+                const oz = (anbieter as { oeffnungszeiten?: OeffnungszeitenMap }).oeffnungszeiten;
+                if (!oz || Object.keys(oz).length === 0) return null;
+                return (
+                  <div className="pt-2 border-t border-[--border]">
+                    <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5" /> Öffnungszeiten
+                    </p>
+                    <OeffnungszeitenDisplay oeffnungszeiten={oz} />
+                  </div>
+                );
+              })()}
+
+              <div className="pt-2 border-t border-[--border] text-xs text-[--muted-foreground] space-y-1">
+                {anbieter.verifiziert && (
+                  <p className="flex items-center gap-1.5 text-green-700">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Verifizierter Anbieter
+                  </p>
+                )}
+                <p>Antwortzeit: in der Regel 1–2 Werktage</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Ähnliche Anbieter */}
+      {aehnliche.length > 0 && (
+        <div className="mt-12 border-t border-[--border] pt-8">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-[--primary]" />
+            Ähnliche Anbieter in der Region
+          </h2>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {aehnliche.map((a) => (
+              <Link key={a.id} href={`/anbieter/${a.id}`} className="group block">
+                <Card className="h-full hover:shadow-md transition-shadow hover:border-[--primary]/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-[--primary]/10 flex items-center justify-center shrink-0">
+                        <Building2 className="h-4 w-4 text-[--primary]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold group-hover:text-[--primary] transition-colors truncate">
+                          {a.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {(a.plz || a.ort) && (
+                            <p className="text-xs text-[--muted-foreground] flex items-center gap-0.5">
+                              <MapPin className="h-3 w-3" />
+                              {a.plz}{a.ort ? ` ${a.ort}` : ""}
+                            </p>
+                          )}
+                          {a.verifiziert && (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

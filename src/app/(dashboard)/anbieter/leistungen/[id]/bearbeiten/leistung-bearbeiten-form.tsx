@@ -283,4 +283,38 @@ export function LeistungBearbeitenForm({ leistung }: { leistung: Leistung }) {
                   placeholder="z.B. 10"
                 />
               </div>
-              <div clas
+              <div className="space-y-1.5">
+                <Label htmlFor="wartezeit_wochen">Wartezeit (Wochen)</Label>
+                <Input
+                  id="wartezeit_wochen"
+                  name="wartezeit_wochen"
+                  type="number"
+                  min="0"
+                  defaultValue={leistung.wartezeit_wochen ?? ""}
+                  placeholder="0 = sofort"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {error && (
+          <p className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">{error}</p>
+        )}
+
+        <div className="flex gap-3">
+          <Link href="/anbieter/leistungen" className="flex-1">
+            <Button type="button" variant="outline" className="w-full">Abbrechen</Button>
+          </Link>
+          <Button type="submit" disabled={loading} className="flex-1 gap-2">
+            {loading ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Speichert...</>
+            ) : (
+              <><CheckCircle2 className="h-4 w-4" /> Änderungen speichern</>
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}

@@ -239,4 +239,48 @@ export function DokumentUpload({ anbieterId, initialDokumente = [] }: Props) {
                   className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${
                     dok.oeffentlich
                       ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
-                      : "text-[--muted-foreground] hover:tex
+                      : "text-[--muted-foreground] hover:text-emerald-600 hover:bg-emerald-50"
+                  }`}
+                >
+                  {toggling === dok.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : dok.oeffentlich ? (
+                    <Globe className="h-4 w-4" />
+                  ) : (
+                    <Lock className="h-4 w-4" />
+                  )}
+                </button>
+                <button
+                  onClick={() => handleDownload(dok)}
+                  className="p-1.5 rounded-lg text-[--muted-foreground] hover:text-[--foreground] hover:bg-[--muted] transition-colors"
+                  aria-label={`"${dok.name}" herunterladen`}
+                >
+                  <Download className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(dok)}
+                  disabled={deleting === dok.id}
+                  className="p-1.5 rounded-lg text-[--muted-foreground] hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
+                  aria-label={`"${dok.name}" löschen`}
+                >
+                  {deleting === dok.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {dokumente.length === 0 && !uploading && (
+        <div className="flex items-center gap-2 text-xs text-[--muted-foreground] bg-[--muted]/40 rounded-xl p-3">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-[--primary]" />
+          <p>Laden Sie Nachweise wie Qualitätszertifikate, Erlaubnisse oder Referenzen hoch. Per <Globe className="inline h-3 w-3 mx-0.5 text-emerald-600" />-Symbol können Sie einzelne Dokumente auf Ihrem öffentlichen Profil anzeigen lassen.</p>
+        </div>
+      )}
+    </div>
+  );
+}
