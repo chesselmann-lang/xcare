@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   MapPin, Phone, Globe, CheckCircle2, Mail,
   Package, Euro, Clock, ArrowLeft, Building2,
-  Facebook, Instagram, Linkedin, Award, FileCheck, PlaneLanding
+  Facebook, Instagram, Linkedin, Award, FileCheck, PlaneLanding, Images
 } from "lucide-react";
 import { VerifizierungsBadge } from "@/components/anbieter/VerifizierungsBadge";
 import Image from "next/image";
@@ -248,6 +248,14 @@ export default async function AnbieterDetailPage({
     familieNotiz = notizData?.notiz ?? null;
   }
 
+  // Galerie-Bilder laden
+  const { data: galerieBilder } = await supabase
+    .from("anbieter_galerie")
+    .select("id, storage_pfad, alt_text, position")
+    .eq("anbieter_id", id)
+    .order("position", { ascending: true })
+    .limit(8);
+
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
 
   return (
@@ -473,6 +481,38 @@ export default async function AnbieterDetailPage({
                 <p className="text-sm leading-relaxed text-[--muted-foreground]">
                   {anbieter.beschreibung}
                 </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Galerie */}
+          {galerieBilder && galerieBilder.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Images className="h-4 w-4" /> Galerie
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {galerieBilder.map((bild) => {
+                    const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/anbieter-galerie/${bild.storage_pfad}`;
+                    return (
+                      <div
+                        key={bild.id}
+                        className="relative aspect-square rounded-xl overflow-hidden bg-[--muted] border border-[--border]"
+                      >
+                        <Image
+                          src={publicUrl}
+                          alt={bild.alt_text ?? `${anbieter.name} – Galerie`}
+                          fill
+                          sizes="(max-width: 640px) 50vw, 33vw"
+                          className="object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -710,44 +750,4 @@ export default async function AnbieterDetailPage({
               {/* Öffnungszeiten */}
               {(() => {
                 const oz = (anbieter as { oeffnungszeiten?: OeffnungszeitenMap }).oeffnungszeiten;
-                if (!oz || Object.keys(oz).length === 0) return null;
-                return (
-                  <div className="pt-2 border-t border-[--border]">
-                    <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5" /> Öffnungszeiten
-                    </p>
-                    <OeffnungszeitenDisplay oeffnungszeiten={oz} />
-                  </div>
-                );
-              })()}
-
-              <div className="pt-2 border-t border-[--border] text-xs text-[--muted-foreground] space-y-1">
-                {anbieter.verifiziert && (
-                  <VerifizierungsBadge variant="inline" size="sm" />
-                )}
-                <p>Antwortzeit: in der Regel 1–2 Werktage</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Kontaktformular für Gäste & Anbieter (nicht für eingeloggte Familien) */}
-          {profile?.role !== "familie" && (
-            <Card id="kontaktformular">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Direkt Kontakt aufnehmen</CardTitle>
-                <p className="text-xs text-[--muted-foreground]">
-                  Hinterlassen Sie eine Nachricht — {anbieter.name} meldet sich bei Ihnen.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <KontaktFormular
-                  anbieterId={id}
-                  anbieterName={anbieter.name}
-                />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-
-      {/* Familie priv
+                if (!oz || Object.keys(oz).len

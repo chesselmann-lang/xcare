@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, MapPin, Phone, Calendar, FileText, Receipt, BellRing } from "lucide-react";
+import { ArrowLeft, User, MapPin, Phone, Calendar, FileText, Receipt, BellRing, Paperclip } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Chat } from "@/components/nachrichten/Chat";
 import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
 import { WiedervorlageManager } from "@/components/anfragen/WiedervorlageManager";
 import { AnfragePrioritaetToggle } from "@/components/anfragen/AnfragePrioritaetToggle";
+import { AnbieterAnfrageDokumente } from "@/components/anfragen/AnbieterAnfrageDokumente";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -116,6 +117,13 @@ export default async function AnfrageDetailPage({
     .eq("anfrage_id", id)
     .eq("anbieter_id", anbieter?.id ?? "")
     .order("faellig_am", { ascending: true });
+
+  // Dokumente der Familie laden (Anbieter darf lesen per RLS)
+  const { data: dokumente } = await supabase
+    .from("anfrage_dokumente")
+    .select("id, dateiname, storage_pfad, mime_typ, groesse_bytes, created_at")
+    .eq("anfrage_id", id)
+    .order("created_at", { ascending: false });
 
   const familie = anfrage.profiles as {
     vorname: string | null;
@@ -233,6 +241,21 @@ export default async function AnfrageDetailPage({
           </CardContent>
         </Card>
 
+        {/* Dokumente der Familie */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Paperclip className="h-4 w-4" /> Dokumente der Familie
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-[--muted-foreground] mb-3">
+              Von der Familie hochgeladene Unterlagen (z.&nbsp;B. Pflegegutachten, Arztbriefe, Rezepte).
+            </p>
+            <AnbieterAnfrageDokumente dokumente={dokumente ?? []} />
+          </CardContent>
+        </Card>
+
         {/* Status-Aktionen */}
         <AnfrageAktionen
           anfrageId={anfrage.id}
@@ -259,34 +282,4 @@ export default async function AnfrageDetailPage({
             anbieterId={anbieter.id}
             initialNotizen={notizen ?? []}
           />
-        )}
-
-        {/* Wiedervorlagen */}
-        {anbieter && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <BellRing className="h-4 w-4 text-amber-500" /> Wiedervorlagen
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <WiedervorlageManager
-                anfrageId={anfrage.id}
-                anbieterId={anbieter.id}
-                initial={wiedervorlagen ?? []}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Status-Historie */}
-        {((historie && historie.length > 0) || anfrage.created_at) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-4 w-4" /> Verlauf
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <HistorieTimeline
-                historie={hi
+    

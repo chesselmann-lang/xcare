@@ -18,10 +18,20 @@ export default async function HomePage() {
   ).map((k) => ({ key: k, ...LEBENSLAGEN[k] }));
 
   // Live stats from DB
-  const [{ count: anbieterCount }, { count: anfragenCount }] = await Promise.all([
+  const [{ count: anbieterCount }, { count: anfragenCount }, { count: verifiziert }] = await Promise.all([
     supabase.from("anbieter").select("*", { count: "exact", head: true }).eq("aktiv", true),
     supabase.from("anfragen").select("*", { count: "exact", head: true }),
+    supabase.from("anbieter").select("*", { count: "exact", head: true }).eq("aktiv", true).eq("verifiziert", true),
   ]);
+
+  // Öffentliche Top-Bewertungen für Social Proof
+  const { data: topBewertungen } = await supabase
+    .from("bewertungen")
+    .select("id, sterne, kommentar, created_at, anbieter:anbieter_id(name, ort)")
+    .eq("sterne", 5)
+    .not("kommentar", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(6);
 
   const featuredLebenslagen = (
     ["alter_pflege", "geburt_fruehe_kindheit", "krankheit_genesung", "eingliederung_behinderung",
@@ -105,7 +115,7 @@ export default async function HomePage() {
           <div className="flex flex-wrap justify-center gap-8 md:gap-16">
             {[
               { value: anbieterCount?.toLocaleString("de-DE") ?? "—", label: "Aktive Anbieter", icon: Building2 },
-              { value: "8", label: "Lebenslagen", icon: Heart },
+              { value: verifiziert?.toLocaleString("de-DE") ?? "—", label: "Verifizierte Anbieter", icon: CheckCircle2 },
               { value: anfragenCount?.toLocaleString("de-DE") ?? "—", label: "Anfragen gestellt", icon: Users },
               { value: "100%", label: "Kostenlos für Familien", icon: Star },
             ].map((s) => (
@@ -234,36 +244,20 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── CTA – Anbieter ───────────────────────────────────────────────── */}
-      <section className="py-16 border-t" style={{ borderColor: "var(--border)" }}>
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium bg-[--primary]/10 text-[--primary] mb-4">
-            <Building2 className="h-4 w-4" /> Für Pflegedienstleister
+      {/* ── Wie es funktioniert ──────────────────────────────────────────── */}
+      <section className="py-16 md:py-24 border-t" style={{ background: "var(--background)", borderColor: "var(--border)" }}>
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <p className="text-sm font-semibold uppercase tracking-widest text-[--primary] mb-2">In 3 Schritten</p>
+            <h2 className="text-3xl md:text-4xl font-bold">So einfach funktioniert xcare</h2>
           </div>
-          <h2 className="text-3xl font-bold mb-4">
-            Werden Sie Teil von xcare
-          </h2>
-          <p className="text-lg text-[--muted-foreground] mb-8 max-w-xl mx-auto">
-            Präsentieren Sie Ihre Einrichtung Tausenden von Familien. Verwalten Sie Anfragen,
-            kommunizieren Sie direkt und bauen Sie Ihre digitale Präsenz auf.
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/registrieren">
-              <Button size="lg" className="gap-2">
-                <Building2 className="h-4 w-4" />
-                Als Anbieter registrieren
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/anbieter">
-              <Button size="lg" variant="outline" className="gap-2">
-                <Users className="h-4 w-4" />
-                Alle Anbieter ansehen
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "1",
+                icon: Compass,
+                title: "Situation schildern",
+                desc: "Starten Sie unseren KI-Lotsen und schildern Sie Ihre Situation. Er führt Sie in wenigen Minuten zu den passenden Hilfsangeboten.",
+                color: "bg-blue-50 text-blue-600 border-blue-100",
+              },
+    

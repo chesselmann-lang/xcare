@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Compass, Search, FileText, Heart,
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark,
-  GitCompareArrows, SlidersHorizontal, Bell
+  GitCompareArrows, SlidersHorizontal, Bell, Images
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -48,6 +48,7 @@ const ANBIETER_NAV = [
   { href: "/anbieter/benachrichtigungen", label: "Benachrichtigungen", icon: Bell },
   { href: "/anbieter/bewertungen", label: "Bewertungen", icon: Star },
   { href: "/anbieter/team", label: "Team", icon: Users },
+  { href: "/anbieter/galerie", label: "Galerie", icon: Images },
   { href: "/anbieter/dokumente", label: "Dokumente", icon: FolderOpen },
   { href: "/anbieter/statistiken", label: "Statistiken", icon: BarChart3 },
   { href: "/anbieter/abo", label: "Abo & Pläne", icon: CreditCard },
@@ -233,4 +234,4 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
           <aside className="relative w-72 bg-[--card] h-full shadow-2xl overflow-y-auto">
             <button
               onClick={closeMobile}
-              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[
+  

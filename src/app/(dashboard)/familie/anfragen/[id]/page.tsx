@@ -4,7 +4,7 @@ import Image from "next/image";
 import {
   ArrowLeft, Building2, Phone, Globe, MapPin, Mail,
   Calendar, FileText, CheckCircle2, XCircle, Clock,
-  AlertCircle, PackageCheck, Paperclip,
+  AlertCircle, PackageCheck, Paperclip, Printer,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,6 +168,12 @@ export default async function FamilieAnfrageDetailPage({
             {leistung && <span> · {leistung.name}</span>}
           </p>
         </div>
+        <Link href={`/familie/anfragen/${id}/drucken`} target="_blank" rel="noopener">
+          <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+            <Printer className="h-3.5 w-3.5" />
+            PDF
+          </Button>
+        </Link>
       </div>
 
       <div className="space-y-4">
@@ -360,12 +366,4 @@ export default async function FamilieAnfrageDetailPage({
         {(historie && historie.length > 0) && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[--primary]" /> Verlauf
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <HistorieTimeline
-                historie={historie}
-                showCreation={true}
-                
+              <CardTitle className="text-base flex items-center gap-2"
