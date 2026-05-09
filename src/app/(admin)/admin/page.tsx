@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Building2, Users, FileText, TrendingUp, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Building2, Users, FileText, TrendingUp, Clock, CheckCircle2, AlertCircle, Star } from "lucide-react";
 import Link from "next/link";
 
 async function StatCard({
@@ -52,6 +52,8 @@ export default async function AdminDashboard() {
     { count: totalAnfragen },
     { count: offeneAnfragen },
     { count: bestaetigteAnfragen },
+    { count: totalBewertungen },
+    { count: gemeldete },
   ] = await Promise.all([
     supabase.from("anbieter").select("*", { count: "exact", head: true }).eq("aktiv", true),
     supabase.from("anbieter").select("*", { count: "exact", head: true }).eq("verifiziert", false).eq("aktiv", true),
@@ -59,6 +61,8 @@ export default async function AdminDashboard() {
     supabase.from("anfragen").select("*", { count: "exact", head: true }),
     supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("status", "offen"),
     supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("status", "bestaetigt"),
+    supabase.from("bewertungen").select("*", { count: "exact", head: true }),
+    supabase.from("bewertungen").select("*", { count: "exact", head: true }).eq("gemeldet", true),
   ]);
 
   // Recent unverified Anbieter
@@ -107,6 +111,15 @@ export default async function AdminDashboard() {
         <StatCard label="Anfragen gesamt" value={totalAnfragen ?? 0} icon={FileText} href="/admin/analytics" color="blue" />
         <StatCard label="Offene Anfragen" value={offeneAnfragen ?? 0} icon={Clock} color="orange" />
         <StatCard label="Bestätigte Anfragen" value={bestaetigteAnfragen ?? 0} icon={CheckCircle2} color="green" />
+        <StatCard label="Bewertungen" value={totalBewertungen ?? 0} icon={Star} href="/admin/bewertungen" color="purple" />
+        <StatCard
+          label="Gemeldet"
+          value={gemeldete ?? 0}
+          icon={AlertCircle}
+          sub="Bewertungen zur Prüfung"
+          href="/admin/bewertungen?filter=gemeldet"
+          color="orange"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

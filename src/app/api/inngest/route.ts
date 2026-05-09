@@ -287,6 +287,115 @@ const notifyNeueNachricht = inngest.createFunction(
   }
 );
 
+// ─── 7. 48h-Erinnerung → Familie (Angebot wartet auf Bestätigung) ─────────────
+const remind48hFamilieAngebot = inngest.createFunction(
+  { id: "remind-familie-48h-angebot", concurrency: { limit: 50 } },
+  { event: "anfrage/status-changed" },
+  async ({ event, step }) => {
+    const { new_status, familie_email, familie_name, anbieter_name, anfrage_id } = event.data as {
+      new_status: string; familie_email: string; familie_name: string;
+      anbieter_name: string; anfrage_id?: string;
+    };
+
+    // Only trigger when an offer has been made
+    if (new_status !== "angeboten") return;
+
+    // Wait 48 hours for the family to respond
+    await step.sleep("wait-48h-angebot", "48h");
+
+    // Check if the anfrage is still in "angeboten" state (family hasn't responded)
+    const stillPending = await step.run("check-angebot-status", async () => {
+      if (!anfrage_id) return false;
+      try {
+        const supabase = getServiceClient();
+        const { data } = await supabase
+          .from("anfragen")
+          .select("status")
+          .eq("id", anfrage_id)
+          .single();
+        return data?.status === "angeboten";
+      } catch {
+        return false;
+      }
+    });
+
+    if (!stillPending) return { skipped: true, reason: "angebot already responded to" };
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const anfragenUrl = anfrage_id
+      ? `${appUrl}/familie/anfragen/${anfrage_id}`
+      : `${appUrl}/familie/anfragen`;
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: familie_email,
+      subject: `⏳ Erinnerung: Angebot von ${anbieter_name} wartet auf Ihre Antwort`,
+      html: baseTemplate("Angebot wartet", `
+        <h2 style="color:#1A5276;margin-top:0;">Offenes Angebot — Erinnerung</h2>
+        <p style="color:#333;line-height:1.6;">Hallo <strong>${familie_name}</strong>,</p>
+        <p style="color:#333;line-height:1.6;"><strong>${anbieter_name}</strong> hat Ihnen ein Angebot gemacht, das seit 48 Stunden auf Ihre Rückmeldung wartet.</p>
+        <div style="background:#EBF5FB;border-left:4px solid #1A5276;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;">
+          <p style="margin:0;color:#1A5276;font-size:13px;">Bestätigen oder lehnen Sie das Angebot ab — damit der Anbieter planen kann.</p>
+        </div>
+        ${btn("Angebot jetzt ansehen", anfragenUrl)}
+        <p style="color:#999;font-size:12px;margin-top:24px;">Falls Sie bereits geantwortet haben, können Sie diese E-Mail ignorieren.</p>
+      `),
+    });
+
+    return { sent: true };
+  }
+);
+
+// ─── 8. Erinnerung offen gebliebene Anfrage → Anbieter nach 7 Tagen ──────────
+const remind7dAnbieterOffen = inngest.createFunction(
+  { id: "remind-anbieter-7d-offen", concurrency: { limit: 20 } },
+  { event: "anfrage/created" },
+  async ({ event, step }) => {
+    const { anfrage_id, anbieter_email, anbieter_name, familie_name, lebenslage } = event.data as {
+      anfrage_id: string; anbieter_email: string; anbieter_name: string;
+      familie_name: string; lebenslage: string;
+    };
+
+    // Wait 7 days — final nudge before the anfrage might be considered expired
+    await step.sleep("wait-7d", "168h");
+
+    const shouldSend = await step.run("check-7d-status", async () => {
+      try {
+        const supabase = getServiceClient();
+        const { data } = await supabase
+          .from("anfragen")
+          .select("status")
+          .eq("id", anfrage_id)
+          .single();
+        return data?.status === "offen";
+      } catch {
+        return false;
+      }
+    });
+
+    if (!shouldSend) return { skipped: true, reason: "anfrage no longer offen after 7d" };
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: fromEmail,
+      to: anbieter_email,
+      subject: `📋 Letzte Erinnerung: Anfrage von ${familie_name} seit 7 Tagen offen`,
+      html: baseTemplate("7-Tage-Erinnerung", `
+        <h2 style="color:#1A5276;margin-top:0;">Anfrage seit 7 Tagen unbeantwortet</h2>
+        <p style="color:#333;line-height:1.6;">Hallo <strong>${anbieter_name}</strong>,</p>
+        <p style="color:#333;line-height:1.6;">Die Anfrage von <strong>${familie_name}</strong> zu <strong>${lebenslage.replace(/_/g, " ")}</strong> ist seit 7 Tagen offen.</p>
+        <div style="background:#FDEDEC;border-left:4px solid #E74C3C;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;">
+          <p style="margin:0;color:#922B21;font-size:13px;">Unbeantwortete Anfragen wirken sich negativ auf Ihre Antwortrate aus.</p>
+        </div>
+        <p style="color:#555;font-size:13px;">Bitte bearbeiten oder lehnen Sie die Anfrage ab, damit die Familie Alternativanbieter kontaktieren kann.</p>
+        ${btn("Anfrage jetzt bearbeiten", anfrage_id ? `${appUrl}/anbieter/anfragen/${anfrage_id}` : `${appUrl}/anbieter/anfragen`)}
+      `),
+    });
+
+    return { sent: true };
+  }
+);
+
 // ─── Export (Inngest serve handler) ────────────────────────────────────────────
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -297,5 +406,7 @@ export const { GET, POST, PUT } = serve({
     remind48hAnbieter,
     requestBewertungNachAbschluss,
     notifyNeueNachricht,
+    remind48hFamilieAngebot,
+    remind7dAnbieterOffen,
   ],
 });

@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatRelative, formatDate } from "@/lib/utils";
 import { AnfragenFilter } from "@/components/anfragen/AnfragenFilter";
+import { FamilieAnfragenVergleich } from "@/components/anfragen/FamilieAnfragenVergleich";
 import type { AnfrageStatus } from "@/lib/types";
+import type { AnfrageCompareItem } from "@/components/anfragen/FamilieAnfragenVergleich";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
   offen: "secondary",
@@ -90,6 +92,20 @@ export default async function FamilieAnfragenPage({
     anbieter: a.anbieter as AnfrageRow["anbieter"],
     leistungen: a.leistungen as AnfrageRow["leistungen"],
     _unreadCount: unreadMap[a.id] ?? 0,
+  }));
+
+  // Comparison data — flattened for client component
+  const compareItems: AnfrageCompareItem[] = enriched.map((a) => ({
+    id: a.id,
+    status: a.status as AnfrageStatus,
+    lebenslage: a.lebenslage,
+    beschreibung: a.beschreibung,
+    created_at: a.created_at,
+    updated_at: a.updated_at,
+    anbieterName: a.anbieter?.name,
+    anbieterOrt: a.anbieter?.ort ?? undefined,
+    leistungName: a.leistungen?.name,
+    unreadCount: a._unreadCount ?? 0,
   }));
 
   // Apply filter
@@ -196,6 +212,11 @@ export default async function FamilieAnfragenPage({
       <Suspense>
         <AnfragenFilter totalCount={sorted.length} />
       </Suspense>
+
+      {/* Vergleichs-Modus */}
+      {enriched.length >= 2 && (
+        <FamilieAnfragenVergleich anfragen={compareItems} />
+      )}
 
       {showSections ? (
         <>

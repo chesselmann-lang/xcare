@@ -33,23 +33,40 @@ const KATEGORIE_FILTER: Array<{ key: LeistungsKategorie | ""; label: string; emo
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ kategorie?: string; seite?: string }>;
+  searchParams: Promise<{ kategorie?: string; seite?: string; q?: string }>;
 }): Promise<Metadata> {
-  const { kategorie } = await searchParams;
+  const { kategorie, seite, q } = await searchParams;
+  const page = Math.max(1, parseInt(seite ?? "1", 10));
   const kategorieLabel = kategorie
     ? (LEISTUNGSKATEGORIEN[kategorie as LeistungsKategorie] ?? "Anbieter")
     : "Alle Anbieter";
 
+  const buildUrl = (p: number) => {
+    const params = new URLSearchParams();
+    if (kategorie) params.set("kategorie", kategorie);
+    if (q) params.set("q", q);
+    if (p > 1) params.set("seite", String(p));
+    const qs = params.toString();
+    return `/anbieter${qs ? `?${qs}` : ""}`;
+  };
+
+  const pageTitle = page > 1
+    ? `${kategorieLabel} – Seite ${page} | xcare`
+    : `${kategorieLabel} – Pflegeanbieter Verzeichnis | xcare`;
+
   return {
-    title: `${kategorieLabel} – Pflegeanbieter Verzeichnis | xcare`,
+    title: pageTitle,
     description: `Finden Sie ${kategorieLabel.toLowerCase()} in Ihrer Nähe. Das xcare-Verzeichnis listet alle verifizierten Pflegedienste, Beratungsstellen und Sozialeinrichtungen in Deutschland.`,
     openGraph: {
       title: `${kategorieLabel} – xcare Verzeichnis`,
       description: "Alle verifizierten Pflegedienste und Sozialeinrichtungen auf xcare.",
     },
     alternates: {
-      canonical: `/anbieter${kategorie ? `?kategorie=${kategorie}` : ""}`,
+      canonical: buildUrl(page),
+      ...(page > 1 ? { prev: buildUrl(page - 1) } : {}),
+      next: buildUrl(page + 1), // Next.js will omit if there's no next page (we always emit but it's acceptable)
     },
+    robots: page > 1 ? { index: true, follow: true } : undefined,
   };
 }
 
@@ -75,36 +92,44 @@ export default async function AnbieterVerzeichnisPage({
 
   const supabase = await createClient();
 
-  // Fetch anbieter with leistungen for filtering
+  // When filtering by kategorie: first resolve anbieter IDs that offer this category
+  let kategorieAnbieterIds: string[] | null = null;
+  if (kategorie) {
+    const { data: leistungsRows } = await supabase
+      .from("leistungen")
+      .select("anbieter_id")
+      .eq("kategorie", kategorie)
+      .eq("aktiv", true);
+    kategorieAnbieterIds = [...new Set((leistungsRows ?? []).map((r) => r.anbieter_id))];
+    // If no providers offer this category, short-circuit
+    if (kategorieAnbieterIds.length === 0) {
+      kategorieAnbieterIds = ["00000000-0000-0000-0000-000000000000"]; // ensures empty result
+    }
+  }
+
+  // Build base query with server-side pagination
   let query = supabase
     .from("anbieter")
     .select("id, name, beschreibung, plz, ort, verifiziert, leistungen(kategorie)", { count: "exact" })
     .eq("aktiv", true)
     .order("verifiziert", { ascending: false })
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+    .range(from, to);
 
-  // Text search by name or PLZ
   if (q) {
     query = query.or(`name.ilike.%${q}%,ort.ilike.%${q}%,plz.ilike.%${q}%`);
   }
-
-  // Filter by Kategorie via leistungen join — must use a separate approach
-  const { data: allAnbieter, count } = await query.limit(500); // fetch all for client-side category filter
-
-  // Apply category filter client-side (Supabase nested relation filter is limited)
-  let filtered = (allAnbieter ?? []) as AnbieterRow[];
-  if (kategorie) {
-    filtered = filtered.filter((a) =>
-      a.leistungen?.some((l) => l.kategorie === kategorie)
-    );
+  if (kategorieAnbieterIds) {
+    query = query.in("id", kategorieAnbieterIds);
   }
 
-  const totalFiltered = filtered.length;
+  const { data: paginated, count } = await query;
+
+  const totalFiltered = count ?? 0;
   const totalPages = Math.ceil(totalFiltered / PAGE_SIZE);
-  const paginated = filtered.slice(from, to + 1);
 
   // Batch-fetch ratings for this page
-  const ids = paginated.map((a) => a.id);
+  const ids = (paginated ?? []).map((a) => a.id);
   const bewertungenMap: Record<string, { avg: number; count: number }> = {};
 
   if (ids.length > 0) {
@@ -121,7 +146,7 @@ export default async function AnbieterVerzeichnisPage({
     });
   }
 
-  const verifizierteCount = filtered.filter((a) => a.verifiziert).length;
+  const verifizierteCount = (paginated ?? []).filter((a) => a.verifiziert).length;
   const kategorieLabel = kategorie
     ? (LEISTUNGSKATEGORIEN[kategorie as LeistungsKategorie] ?? kategorie)
     : "Alle Anbieter";
@@ -206,9 +231,13 @@ export default async function AnbieterVerzeichnisPage({
           <div className="flex items-center justify-between mb-5">
             <p className="text-sm text-[--muted-foreground]">
               <span className="font-semibold text-[--foreground]">{totalFiltered}</span>{" "}
-              Anbieter{totalFiltered !== 1 ? "" : ""} gefunden
+              Anbieter gefunden
               {q && <span> für „<strong>{q}</strong>"</span>}
-              {page > 1 && <span> · Seite {page} von {totalPages}</span>}
+              {totalPages > 1 && (
+                <span className="ml-1.5 text-xs bg-[--muted] px-2 py-0.5 rounded-full font-medium">
+                  Seite {page} / {totalPages}
+                </span>
+              )}
             </p>
             <Link href="/suche">
               <Button variant="outline" size="sm" className="gap-1.5 text-xs">
@@ -219,9 +248,9 @@ export default async function AnbieterVerzeichnisPage({
           </div>
 
           {/* Grid */}
-          {paginated.length > 0 ? (
+          {(paginated ?? []).length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              {paginated.map((anbieter) => {
+              {(paginated ?? []).map((anbieter) => {
                 const bew = bewertungenMap[anbieter.id];
                 const kategorien = [...new Set(anbieter.leistungen?.map((l) => l.kategorie) ?? [])];
                 return (

@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   Package, MessageSquare, Building2, TrendingUp, ArrowRight,
   CheckCircle2, Clock, Star, AlertCircle, BarChart2, Zap,
-  FileText, PlusCircle, Eye, Receipt,
+  FileText, PlusCircle, Eye, Receipt, CalendarDays, Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +86,7 @@ export default async function AnbieterDashboard() {
     { count: anfragenDieseWoche },
     { count: anfragenDieserMonat },
     { count: anfragenLetzterMonat },
+    { data: bestaetigte },
   ] = await Promise.all([
     supabase.from("leistungen").select("id, name, aktiv").eq("anbieter_id", anbieter?.id ?? "").eq("aktiv", true),
     supabase.from("anfragen").select("id, lebenslage, status, created_at").eq("anbieter_id", anbieter?.id ?? "").order("created_at", { ascending: false }).limit(5),
@@ -95,6 +96,11 @@ export default async function AnbieterDashboard() {
     supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").gte("created_at", oneWeekAgo),
     supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").gte("created_at", oneMonthAgo),
     supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").gte("created_at", twoMonthsAgo).lt("created_at", oneMonthAgo),
+    supabase.from("anfragen").select("id, lebenslage, updated_at, profiles!familie_id(vorname, nachname)")
+      .eq("anbieter_id", anbieter?.id ?? "")
+      .eq("status", "bestaetigt")
+      .order("updated_at", { ascending: true })
+      .limit(20),
   ]);
 
   const avgSterne = bewertungen && bewertungen.length > 0
@@ -265,6 +271,112 @@ export default async function AnbieterDashboard() {
           <BarChart2 className="h-8 w-8 text-blue-400 opacity-60 shrink-0" />
         </div>
       </div>
+
+      {/* Bestätigte Anfragen – Kalender-Strip */}
+      {(bestaetigte ?? []).length > 0 && (() => {
+        // Group by date string (yyyy-mm-dd using updated_at as proxy for appointment date)
+        type BestaetigteItem = NonNullable<typeof bestaetigte>[number];
+        const grouped: Record<string, BestaetigteItem[]> = {};
+        for (const a of bestaetigte!) {
+          const dateKey = a.updated_at.slice(0, 10);
+          if (!grouped[dateKey]) grouped[dateKey] = [];
+          grouped[dateKey].push(a);
+        }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const sortedDates = Object.keys(grouped).sort();
+        // Show next 14 days + any past ones without removal (already confirmed)
+        const upcomingFirst = [
+          ...sortedDates.filter((d) => new Date(d) >= today),
+          ...sortedDates.filter((d) => new Date(d) < today),
+        ];
+        const displayDates = upcomingFirst.slice(0, 7);
+
+        const formatDayLabel = (iso: string) => {
+          const d = new Date(iso + "T00:00:00");
+          const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
+          if (diff === 0) return "Heute";
+          if (diff === 1) return "Morgen";
+          if (diff === -1) return "Gestern";
+          return d.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" });
+        };
+
+        return (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2 text-[--foreground]">
+                <CalendarDays className="h-4 w-4 text-[--primary]" />
+                Bestätigte Termine ({bestaetigte!.length})
+              </h2>
+              <Link href="/anbieter/anfragen?status=bestaetigt">
+                <Button variant="ghost" size="sm" className="gap-1 text-xs h-7">
+                  Alle <ArrowRight className="h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {displayDates.map((dateKey) => {
+                const items = grouped[dateKey]!;
+                const d = new Date(dateKey + "T00:00:00");
+                const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
+                const isPast = diff < 0;
+                const isToday = diff === 0;
+                return (
+                  <div
+                    key={dateKey}
+                    className={`shrink-0 w-44 rounded-xl border p-3 flex flex-col gap-2 transition-all ${
+                      isToday
+                        ? "border-[--primary] bg-[--primary]/5"
+                        : isPast
+                          ? "border-[--border] bg-[--muted]/40 opacity-60"
+                          : "border-[--border] bg-[--card]"
+                    }`}
+                  >
+                    {/* Date header */}
+                    <div className="flex items-center gap-1.5">
+                      <div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        isToday ? "bg-[--primary] text-white" : "bg-[--muted] text-[--muted-foreground]"
+                      }`}>
+                        {d.getDate()}
+                      </div>
+                      <span className={`text-xs font-semibold truncate ${isToday ? "text-[--primary]" : "text-[--foreground]"}`}>
+                        {formatDayLabel(dateKey)}
+                      </span>
+                    </div>
+
+                    {/* Anfrage entries */}
+                    <div className="space-y-1.5">
+                      {items.slice(0, 3).map((a) => {
+                        const fam = a.profiles as { vorname: string | null; nachname: string | null } | null;
+                        return (
+                          <Link key={a.id} href={`/anbieter/anfragen/${a.id}`}>
+                            <div className="rounded-lg bg-[--muted]/60 hover:bg-[--muted] px-2.5 py-1.5 transition-colors cursor-pointer">
+                              {fam && (
+                                <p className="text-xs font-medium truncate flex items-center gap-1">
+                                  <Users className="h-2.5 w-2.5 text-[--muted-foreground] shrink-0" />
+                                  {fam.vorname} {fam.nachname}
+                                </p>
+                              )}
+                              <p className="text-[10px] text-[--muted-foreground] capitalize truncate mt-0.5">
+                                {a.lebenslage.replace(/_/g, " ")}
+                              </p>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                      {items.length > 3 && (
+                        <p className="text-[10px] text-[--muted-foreground] text-center">
+                          +{items.length - 3} weitere
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Letzte Anfragen */}

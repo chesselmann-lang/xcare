@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { Shield, LayoutDashboard, Building2, Users, BarChart3, LogOut } from "lucide-react";
+import { Shield, LayoutDashboard, Building2, Users, BarChart3, LogOut, Star } from "lucide-react";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "christian@whatsdigital.de";
 
@@ -28,6 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             { href: "/admin/anbieter", label: "Anbieter", icon: Building2 },
             { href: "/admin/nutzer", label: "Nutzer", icon: Users },
             { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+            { href: "/admin/bewertungen", label: "Bewertungen", icon: Star },
           ].map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
