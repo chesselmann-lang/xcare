@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/utils";
 import AnfrageAktionen from "./anfrage-aktionen";
 import { AnfrageNotizen } from "./anfrage-notizen";
 import { Chat } from "@/components/nachrichten/Chat";
+import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -89,6 +90,13 @@ export default async function AnfrageDetailPage({
     .eq("anfrage_id", id)
     .eq("anbieter_id", anbieter?.id ?? "")
     .order("created_at", { ascending: false });
+
+  // Status-Historie laden
+  const { data: historie } = await supabase
+    .from("anfragen_historie")
+    .select("id, alter_status, neuer_status, notiz, created_at")
+    .eq("anfrage_id", id)
+    .order("created_at", { ascending: true });
 
   const familie = anfrage.profiles as {
     vorname: string | null;
@@ -214,7 +222,24 @@ export default async function AnfrageDetailPage({
           />
         )}
 
-        {/* Chat */}
+        {/* Status-Historie */}
+        {((historie && historie.length > 0) || anfrage.created_at) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4" /> Verlauf
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <HistorieTimeline
+                historie={historie ?? []}
+                showCreation
+                erstelltAt={anfrage.created_at}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Rechnung */}
         <div className="flex justify-end">
           <Link href={`/anbieter/anfragen/${anfrage.id}/rechnung`}>

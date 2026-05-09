@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { Chat } from "@/components/nachrichten/Chat";
 import { BewertungAbgeben } from "@/components/bewertungen/BewertungAbgeben";
+import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusConfig: Record<
@@ -115,6 +116,13 @@ export default async function FamilieAnfrageDetailPage({
   const { data: nachrichten } = await supabase
     .from("nachrichten")
     .select("*, sender:profiles!sender_id(vorname, nachname, role)")
+    .eq("anfrage_id", id)
+    .order("created_at", { ascending: true });
+
+  // Status-Historie laden
+  const { data: historie } = await supabase
+    .from("anfragen_historie")
+    .select("id, alter_status, neuer_status, notiz, created_at")
     .eq("anfrage_id", id)
     .order("created_at", { ascending: true });
 
@@ -279,6 +287,24 @@ export default async function FamilieAnfrageDetailPage({
         )}
 
         {/* Chat */}
+        {/* Status-Verlauf */}
+        {((historie && historie.length > 0) || anfrage.created_at) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4" /> Anfrage-Verlauf
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <HistorieTimeline
+                historie={historie ?? []}
+                showCreation
+                erstelltAt={anfrage.created_at}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         <div>
           <h2 className="text-base font-semibold mb-3">Nachrichten</h2>
           <Chat

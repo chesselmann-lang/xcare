@@ -91,6 +91,13 @@ export default function AnfrageAktionen({
       return;
     }
 
+    // Log to history (non-blocking — table may not exist yet in older deployments)
+    supabase.from("anfragen_historie").insert({
+      anfrage_id: anfrageId,
+      alter_status: currentStatus,
+      neuer_status: nextStatus,
+    }).then(() => {/* ignore */}).catch(() => {/* ignore */});
+
     // Fire Inngest event for email notification (non-blocking)
     if (familieEmail && familieName && anbieterName) {
       fetch("/api/inngest-status", {

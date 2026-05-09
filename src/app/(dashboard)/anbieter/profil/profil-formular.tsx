@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Loader2, Clock } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Clock, Share2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,9 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  type SocialMedia = { facebook?: string; instagram?: string; linkedin?: string; xing?: string };
+  const initialSocial = (anbieter as { social_media?: SocialMedia } | null)?.social_media ?? {};
+
   const [form, setForm] = useState({
     name: anbieter?.name ?? "",
     beschreibung: anbieter?.beschreibung ?? "",
@@ -39,6 +42,11 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
     vorname: profile?.vorname ?? "",
     nachname: profile?.nachname ?? "",
     profilTelefon: profile?.telefon ?? "",
+    // Social media
+    facebook: initialSocial.facebook ?? "",
+    instagram: initialSocial.instagram ?? "",
+    linkedin: initialSocial.linkedin ?? "",
+    xing: initialSocial.xing ?? "",
   });
 
   const [oeffnungszeiten, setOeffnungszeiten] = useState<OeffnungszeitenMap>(
@@ -75,6 +83,12 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
       }
 
       // Update or insert Anbieter
+      const socialPayload: SocialMedia = {};
+      if (form.facebook) socialPayload.facebook = form.facebook;
+      if (form.instagram) socialPayload.instagram = form.instagram;
+      if (form.linkedin) socialPayload.linkedin = form.linkedin;
+      if (form.xing) socialPayload.xing = form.xing;
+
       const anbieterPayload = {
         name: form.name,
         beschreibung: form.beschreibung || null,
@@ -86,6 +100,7 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
         email: form.email || null,
         website: form.website || null,
         oeffnungszeiten: Object.keys(oeffnungszeiten).length > 0 ? oeffnungszeiten : null,
+        social_media: Object.keys(socialPayload).length > 0 ? socialPayload : null,
       };
 
       if (anbieter?.id) {
@@ -233,6 +248,38 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
             <p className="text-xs text-[--muted-foreground] mt-3">
               Aktivieren Sie die Tage, an denen Sie erreichbar sind. Diese Information wird auf Ihrem öffentlichen Profil angezeigt.
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Social Media */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Share2 className="h-4 w-4" /> Social Media
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-[--muted-foreground]">
+              Optional: Verlinken Sie Ihre Social-Media-Profile auf Ihrer öffentlichen Profilseite.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="facebook">Facebook</Label>
+                <Input id="facebook" name="facebook" value={form.facebook} onChange={handleChange} placeholder="https://facebook.com/..." />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="instagram">Instagram</Label>
+                <Input id="instagram" name="instagram" value={form.instagram} onChange={handleChange} placeholder="https://instagram.com/..." />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="linkedin">LinkedIn</Label>
+                <Input id="linkedin" name="linkedin" value={form.linkedin} onChange={handleChange} placeholder="https://linkedin.com/in/..." />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="xing">XING</Label>
+                <Input id="xing" name="xing" value={form.xing} onChange={handleChange} placeholder="https://xing.com/profile/..." />
+              </div>
+            </div>
           </CardContent>
         </Card>
 

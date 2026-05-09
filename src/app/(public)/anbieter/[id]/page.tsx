@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   MapPin, Phone, Globe, CheckCircle2, Mail,
-  Package, Euro, Clock, ArrowLeft, Building2
+  Package, Euro, Clock, ArrowLeft, Building2,
+  Facebook, Instagram, Linkedin
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -455,6 +456,46 @@ export default async function AnbieterDetailPage({
                   </Button>
                 </Link>
               ) : null}
+
+              {/* Social Media */}
+              {(() => {
+                type SocialMedia = { facebook?: string; instagram?: string; linkedin?: string; xing?: string };
+                const sm = (anbieter as { social_media?: SocialMedia }).social_media;
+                if (!sm || Object.keys(sm).length === 0) return null;
+                return (
+                  <div className="pt-2 border-t border-[--border]">
+                    <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Globe className="h-3.5 w-3.5" /> Online
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {sm.facebook && (
+                        <a href={sm.facebook} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-blue-600 transition-colors">
+                          <Facebook className="h-4 w-4" /> Facebook
+                        </a>
+                      )}
+                      {sm.instagram && (
+                        <a href={sm.instagram} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-pink-500 transition-colors">
+                          <Instagram className="h-4 w-4" /> Instagram
+                        </a>
+                      )}
+                      {sm.linkedin && (
+                        <a href={sm.linkedin} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-blue-700 transition-colors">
+                          <Linkedin className="h-4 w-4" /> LinkedIn
+                        </a>
+                      )}
+                      {sm.xing && (
+                        <a href={sm.xing} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-[--primary] transition-colors">
+                          <Globe className="h-3.5 w-3.5" /> XING
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Öffnungszeiten */}
               {(() => {

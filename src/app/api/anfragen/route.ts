@@ -69,6 +69,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Anfrage konnte nicht erstellt werden" }, { status: 500 });
     }
 
+    // Log initial status to history
+    await supabase.from("anfragen_historie").insert({
+      anfrage_id: anfrage.id,
+      alter_status: null,
+      neuer_status: "offen",
+      geaendert_von: profile.id,
+    }).then(() => {/* ignore */}).catch(() => {/* ignore */});
+
     // Trigger Inngest event for email notification
     try {
       const { data: anbieterData } = await supabase
