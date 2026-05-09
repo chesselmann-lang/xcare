@@ -160,6 +160,39 @@ export default async function AnbieterAnfragenPage({
         )}
       </div>
 
+      {/* Quick-Filter-Tabs */}
+      <div className="flex gap-1.5 mb-4 flex-wrap" role="tablist" aria-label="Anfragen filtern">
+        {[
+          { label: "Alle", status: undefined, count: enriched.length },
+          { label: "Offen", status: "offen", count: offen.length },
+          { label: "In Bearbeitung", status: "in_bearbeitung", count: inBearbeitung.length },
+          { label: "Erledigt", status: "abgeschlossen", count: abgeschlossen.length },
+        ].map((tab) => {
+          const isActive = (filterStatus ?? undefined) === tab.status;
+          const href = tab.status ? `/anbieter/anfragen?status=${tab.status}` : "/anbieter/anfragen";
+          return (
+            <Link
+              key={tab.label}
+              href={href}
+              role="tab"
+              aria-selected={isActive}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
+                isActive
+                  ? "bg-[--primary] text-white shadow-sm"
+                  : "bg-[--card] border border-[--border] text-[--muted-foreground] hover:text-[--foreground] hover:border-[--primary]/40"
+              }`}
+            >
+              {tab.label}
+              <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                isActive ? "bg-white/20 text-white" : "bg-[--muted] text-[--muted-foreground]"
+              }`}>
+                {tab.count}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
       {/* Filter bar */}
       <Suspense>
         <AnfragenFilter totalCount={sorted.length} />

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { AnbieterTabelle } from "./anbieter-tabelle";
 
 export const metadata = { title: "Anbieter – Admin xcare" };
@@ -37,6 +38,14 @@ export default async function AdminAnbieterPage({
           <h1 className="text-2xl font-bold text-gray-900">Anbieter</h1>
           <p className="text-gray-500 text-sm mt-0.5">{anbieter?.length ?? 0} Einträge geladen</p>
         </div>
+        <a
+          href="/api/admin/anbieter-export"
+          download
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+        >
+          <Download className="h-4 w-4 text-gray-500" />
+          CSV exportieren
+        </a>
       </div>
 
       {/* Filter Tabs */}

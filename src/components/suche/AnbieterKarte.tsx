@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { VerfuegbarkeitBadge } from "@/components/anbieter/VerfuegbarkeitBadge";
 import { VerifizierungsBadge } from "@/components/anbieter/VerifizierungsBadge";
+import { FavoritButton } from "@/components/favoriten/FavoritButton";
 import { formatDistance } from "@/lib/utils";
 import { LEISTUNGSKATEGORIEN } from "@/lib/constants";
 import { LeistungsBadgeGroup } from "@/components/anbieter/LeistungsBadge";
@@ -16,9 +17,12 @@ interface AnbieterKarteProps {
   anbieter: AnbieterMitLeistungen;
   avgSterne?: number;
   bewertungenCount?: number;
+  /** When provided, renders a favourite-toggle button */
+  profileId?: string;
+  istFavorit?: boolean;
 }
 
-export function AnbieterKarte({ anbieter, avgSterne, bewertungenCount }: AnbieterKarteProps) {
+export function AnbieterKarte({ anbieter, avgSterne, bewertungenCount, profileId, istFavorit }: AnbieterKarteProps) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-5">
@@ -112,11 +116,21 @@ export function AnbieterKarte({ anbieter, avgSterne, bewertungenCount }: Anbiete
                   </a>
                 )}
               </div>
-              <Link href={`/anbieter/${anbieter.id}`}>
-                <Button size="sm" variant="outline">
-                  Mehr erfahren
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                {profileId && (
+                  <FavoritButton
+                    anbieterId={anbieter.id}
+                    istFavorit={istFavorit ?? false}
+                    profileId={profileId}
+                    size="sm"
+                  />
+                )}
+                <Link href={`/anbieter/${anbieter.id}`}>
+                  <Button size="sm" variant="outline">
+                    Mehr erfahren
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

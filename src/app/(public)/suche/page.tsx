@@ -75,7 +75,31 @@ export default function SuchePage() {
   const [showPlzAc, setShowPlzAc] = useState(false);
   const [plzAcIndex, setPlzAcIndex] = useState(-1);
   const plzContainerRef = useRef<HTMLDivElement>(null);
+  // Favoriten
+  const [profileId, setProfileId] = useState<string | undefined>(undefined);
+  const [favoritenIds, setFavoritenIds] = useState<Set<string>>(new Set());
   const supabase = createClient();
+
+  // Load logged-in user + ihre favoriten IDs on mount
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, role")
+        .eq("id", user.id)
+        .single();
+      if (profile?.role !== "familie") return;
+      setProfileId(profile.id);
+      const { data: favs } = await supabase
+        .from("favoriten")
+        .select("anbieter_id")
+        .eq("familie_id", profile.id);
+      setFavoritenIds(new Set((favs ?? []).map((f: { anbieter_id: string }) => f.anbieter_id)));
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load Suchverlauf from localStorage on mount
   useEffect(() => {
@@ -833,6 +857,8 @@ export default function SuchePage() {
                       anbieter={a}
                       avgSterne={a._avgSterne}
                       bewertungenCount={a._bewertungenCount}
+                      profileId={profileId}
+                      istFavorit={favoritenIds.has(a.id)}
                     />
                   </div>
                 ))}
