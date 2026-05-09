@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowLeft, ArrowRight, Clock, FileText, MessageCircle, Package2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Archive, Clock, FileText, MessageCircle, Package2, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { AnfragenFilter } from "@/components/anfragen/AnfragenFilter";
 import { FamilieAnfragenVergleich } from "@/components/anfragen/FamilieAnfragenVergleich";
 import type { AnfrageStatus } from "@/lib/types";
 import type { AnfrageCompareItem } from "@/components/anfragen/FamilieAnfragenVergleich";
+
+const AKTIV_STATUS = ["offen", "in_bearbeitung", "angeboten", "bestaetigt"] as const;
+const ARCHIV_STATUS = ["abgelehnt", "abgeschlossen"] as const;
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
   offen: "secondary",
@@ -45,9 +48,10 @@ type AnfrageRow = {
 export default async function FamilieAnfragenPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; sort?: string }>;
+  searchParams: Promise<{ status?: string; sort?: string; archiv?: string }>;
 }) {
-  const { status: filterStatus, sort = "updated_desc" } = await searchParams;
+  const { status: filterStatus, sort = "updated_desc", archiv } = await searchParams;
+  const isArchiv = archiv === "true";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -108,27 +112,20 @@ export default async function FamilieAnfragenPage({
     unreadCount: a._unreadCount ?? 0,
   }));
 
-  // Apply filter
-  const filtered = filterStatus
-    ? enriched.filter((a) => a.status === filterStatus)
-    : enriched;
+  // Split into aktiv / archiv pools
+  const aktivPool = enriched.filter((a) => (AKTIV_STATUS as readonly string[]).includes(a.status));
+  const archivPool = enriched.filter((a) => (ARCHIV_STATUS as readonly string[]).includes(a.status));
+
+  // Apply status filter within the current pool
+  const pool = isArchiv ? archivPool : aktivPool;
+  const filtered = filterStatus ? pool.filter((a) => a.status === filterStatus) : pool;
 
   // Apply sort
   const sorted = [...filtered].sort((a, b) => {
     if (sort === "created_asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     if (sort === "created_desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    // updated_desc (default)
     return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
   });
-
-  // Only split into sections when no filter is active
-  const showSections = !filterStatus;
-  const aktiv = sorted.filter((a) =>
-    ["offen", "in_bearbeitung", "angeboten", "bestaetigt"].includes(a.status)
-  );
-  const abgeschlossen = sorted.filter((a) =>
-    ["abgelehnt", "abgeschlossen"].includes(a.status)
-  );
 
   const AnfrageCard = ({ a }: { a: AnfrageRow }) => (
     <Link href={`/familie/anfragen/${a.id}`} className="block group">
@@ -191,86 +188,125 @@ export default async function FamilieAnfragenPage({
     </Link>
   );
 
+  const totalUnread = Object.values(unreadMap).reduce((s, v) => s + v, 0);
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/familie">
-          <Button variant="ghost" size="sm" className="gap-1">
-            <ArrowLeft className="h-4 w-4" /> Zurück
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <Link href="/familie">
+            <Button variant="ghost" size="sm" className="gap-1">
+              <ArrowLeft className="h-4 w-4" /> Zurück
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold">Meine Anfragen</h1>
+            <p className="text-sm text-[--muted-foreground]">
+              {aktivPool.length} aktiv · {archivPool.length} im Archiv
+              {totalUnread > 0 && (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-[--primary] text-white text-xs font-semibold">
+                  {totalUnread} neu
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+        <Link href="/suche">
+          <Button size="sm" className="gap-1.5 shrink-0">
+            <Plus className="h-4 w-4" /> Neue Anfrage
           </Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold">Meine Anfragen</h1>
-          <p className="text-sm text-[--muted-foreground]">
-            {enriched.length} Anfragen · {Object.values(unreadMap).reduce((s, v) => s + v, 0)} ungelesene Nachrichten
-          </p>
-        </div>
       </div>
 
-      {/* Filter bar */}
-      <Suspense>
-        <AnfragenFilter totalCount={sorted.length} />
-      </Suspense>
+      {/* Tabs: Aktiv / Archiv */}
+      <div className="flex gap-1 mb-6 border-b border-[--border]">
+        <Link
+          href="/familie/anfragen"
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            !isArchiv
+              ? "border-[--primary] text-[--primary]"
+              : "border-transparent text-[--muted-foreground] hover:text-[--foreground]"
+          }`}
+        >
+          <FileText className="h-4 w-4" />
+          Aktive Anfragen
+          {aktivPool.length > 0 && (
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+              !isArchiv ? "bg-[--primary] text-white" : "bg-[--muted] text-[--muted-foreground]"
+            }`}>
+              {aktivPool.length}
+            </span>
+          )}
+        </Link>
+        <Link
+          href="/familie/anfragen?archiv=true"
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            isArchiv
+              ? "border-[--primary] text-[--primary]"
+              : "border-transparent text-[--muted-foreground] hover:text-[--foreground]"
+          }`}
+        >
+          <Archive className="h-4 w-4" />
+          Archiv
+          {archivPool.length > 0 && (
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+              isArchiv ? "bg-[--primary] text-white" : "bg-[--muted] text-[--muted-foreground]"
+            }`}>
+              {archivPool.length}
+            </span>
+          )}
+        </Link>
+      </div>
 
-      {/* Vergleichs-Modus */}
-      {enriched.length >= 2 && (
-        <FamilieAnfragenVergleich anfragen={compareItems} />
+      {/* Filter bar (only for active tab with status filter) */}
+      {!isArchiv && (
+        <Suspense>
+          <AnfragenFilter totalCount={sorted.length} />
+        </Suspense>
       )}
 
-      {showSections ? (
-        <>
-          {/* Aktive Anfragen */}
-          <section className="mb-10">
-            <h2 className="text-base font-semibold text-[--muted-foreground] uppercase tracking-wider text-xs mb-3">
-              Aktive Anfragen ({aktiv.length})
-            </h2>
-            {aktiv.length > 0 ? (
-              <div className="space-y-3">
-                {aktiv.map((a) => <AnfrageCard key={a.id} a={a} />)}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="py-10 text-center text-[--muted-foreground]">
-                  <FileText className="h-8 w-8 mx-auto mb-3 opacity-30" />
-                  <p className="mb-3 text-sm">Keine aktiven Anfragen vorhanden</p>
-                  <Link href="/lotse">
-                    <Button size="sm">KI-Lotsen starten</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
-          </section>
-
-          {/* Abgeschlossene Anfragen */}
-          {abgeschlossen.length > 0 && (
-            <section>
-              <h2 className="text-base font-semibold text-[--muted-foreground] uppercase tracking-wider text-xs mb-3">
-                Abgeschlossen ({abgeschlossen.length})
-              </h2>
-              <div className="space-y-3 opacity-70">
-                {abgeschlossen.map((a) => <AnfrageCard key={a.id} a={a} />)}
-              </div>
-            </section>
-          )}
-        </>
-      ) : (
-        /* Flat filtered view */
-        <section>
-          {sorted.length > 0 ? (
-            <div className="space-y-3">
-              {sorted.map((a) => <AnfrageCard key={a.id} a={a} />)}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-10 text-center text-[--muted-foreground]">
-                <FileText className="h-8 w-8 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Keine Anfragen mit diesem Status</p>
-              </CardContent>
-            </Card>
-          )}
-        </section>
+      {/* Vergleichs-Modus (only in active tab) */}
+      {!isArchiv && aktivPool.length >= 2 && (
+        <FamilieAnfragenVergleich anfragen={compareItems.filter((c) =>
+          (AKTIV_STATUS as readonly string[]).includes(c.status)
+        )} />
       )}
+
+      {/* List */}
+      <section>
+        {sorted.length > 0 ? (
+          <div className={`space-y-3 ${isArchiv ? "opacity-80" : ""}`}>
+            {sorted.map((a) => <AnfrageCard key={a.id} a={a} />)}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="py-14 text-center text-[--muted-foreground]">
+              {isArchiv ? (
+                <>
+                  <Archive className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                  <p className="font-medium mb-1">Archiv ist leer</p>
+                  <p className="text-sm">Abgeschlossene und abgelehnte Anfragen erscheinen hier.</p>
+                </>
+              ) : (
+                <>
+                  <FileText className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                  <p className="font-medium mb-3">
+                    {filterStatus ? "Keine Anfragen mit diesem Status" : "Keine aktiven Anfragen"}
+                  </p>
+                  {!filterStatus && (
+                    <Link href="/lotse">
+                      <Button size="sm" className="gap-1.5">
+                        <Plus className="h-4 w-4" /> KI-Lotsen starten
+                      </Button>
+                    </Link>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </section>
     </div>
   );
 }

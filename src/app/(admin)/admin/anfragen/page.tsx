@@ -64,11 +64,33 @@ export default async function AdminAnfragenPage({
     return acc;
   }, {});
 
+  const gesamt = counts?.length ?? 0;
+  const bestaetigtCount = statusCounts["bestaetigt"] ?? 0;
+  const offenCount = statusCounts["offen"] ?? 0;
+  const convRate = gesamt > 0 ? ((bestaetigtCount / gesamt) * 100).toFixed(1) : "0";
+
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Anfragen-Übersicht</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Alle Anfragen auf der Plattform</p>
+        <p className="text-gray-500 text-sm mt-0.5">Alle Anfragen auf der Plattform · {gesamt} gesamt</p>
+      </div>
+
+      {/* Funnel KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        {[
+          { label: "Gesamt",         value: gesamt,                           color: "bg-gray-100 text-gray-700" },
+          { label: "Offen",          value: offenCount,                       color: "bg-yellow-100 text-yellow-700" },
+          { label: "In Bearbeitung", value: statusCounts["in_bearbeitung"] ?? 0, color: "bg-blue-100 text-blue-700" },
+          { label: "Angeboten",      value: statusCounts["angeboten"] ?? 0,   color: "bg-purple-100 text-purple-700" },
+          { label: "Bestätigt",      value: bestaetigtCount,                  color: "bg-green-100 text-green-700" },
+          { label: "Conversion",     value: `${convRate}%`,                   color: "bg-teal-100 text-teal-700" },
+        ].map((kpi) => (
+          <div key={kpi.label} className={`rounded-xl px-4 py-3 ${kpi.color}`}>
+            <p className="text-xl font-bold">{kpi.value}</p>
+            <p className="text-xs font-medium opacity-80">{kpi.label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Status-Filter */}

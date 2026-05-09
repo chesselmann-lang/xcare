@@ -88,6 +88,9 @@ export default async function AnbieterDashboard() {
     { count: anfragenLetzterMonat },
     { data: bestaetigte },
     { data: pendingWiedervorlagen },
+    { count: anfragenInBearbeitung },
+    { count: anfragenAngeboten },
+    { count: anfragenBestaetigt },
   ] = await Promise.all([
     supabase.from("leistungen").select("id, name, aktiv").eq("anbieter_id", anbieter?.id ?? "").eq("aktiv", true),
     supabase.from("anfragen").select("id, lebenslage, status, created_at").eq("anbieter_id", anbieter?.id ?? "").order("created_at", { ascending: false }).limit(5),
@@ -108,6 +111,9 @@ export default async function AnbieterDashboard() {
       .eq("erledigt", false)
       .order("faellig_am", { ascending: true })
       .limit(8),
+    supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").eq("status", "in_bearbeitung"),
+    supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").eq("status", "angeboten"),
+    supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").eq("status", "bestaetigt"),
   ]);
 
   const avgSterne = bewertungen && bewertungen.length > 0
@@ -120,6 +126,13 @@ export default async function AnbieterDashboard() {
   const gesamt = anfragenGesamt ?? 0;
   const bearbeitet = Math.max(0, gesamt - (offeneAnfragen ?? 0));
   const antwortrate = gesamt > 0 ? Math.round((bearbeitet / gesamt) * 100) : 100;
+
+  // Anfragen-Funnel für Statistik-Card
+  const funnelOffen = offeneAnfragen ?? 0;
+  const funnelInBearbeitung = anfragenInBearbeitung ?? 0;
+  const funnelAngeboten = anfragenAngeboten ?? 0;
+  const funnelBestaetigt = anfragenBestaetigt ?? 0;
+  const conversionRate = gesamt > 0 ? Math.round((funnelBestaetigt / gesamt) * 100) : 0;
 
   // Trend: this month vs last month
   const dieserMonat = anfragenDieserMonat ?? 0;
@@ -278,6 +291,47 @@ export default async function AnbieterDashboard() {
           <BarChart2 className="h-8 w-8 text-blue-400 opacity-60 shrink-0" />
         </div>
       </div>
+
+      {/* Anfragen-Funnel Statistik-Card */}
+      {gesamt > 0 && (
+        <div className="mb-8 rounded-xl border border-[--border] bg-[--card] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="font-semibold text-sm">Anfragen-Übersicht</p>
+              <p className="text-xs text-[--muted-foreground]">{gesamt} Anfragen insgesamt · {conversionRate}% Abschlussquote</p>
+            </div>
+            <Link href="/anbieter/anfragen">
+              <Button variant="outline" size="sm" className="text-xs gap-1">
+                Alle ansehen <ArrowRight className="h-3 w-3" />
+              </Button>
+            </Link>
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: "Offen", count: funnelOffen, color: "bg-amber-400", textColor: "text-amber-700", bg: "bg-amber-50", href: "/anbieter/anfragen?status=offen" },
+              { label: "In Bearbeitung", count: funnelInBearbeitung, color: "bg-blue-400", textColor: "text-blue-700", bg: "bg-blue-50", href: "/anbieter/anfragen?status=in_bearbeitung" },
+              { label: "Angeboten", count: funnelAngeboten, color: "bg-purple-400", textColor: "text-purple-700", bg: "bg-purple-50", href: "/anbieter/anfragen?status=angeboten" },
+              { label: "Bestätigt", count: funnelBestaetigt, color: "bg-green-500", textColor: "text-green-700", bg: "bg-green-50", href: "/anbieter/anfragen?status=bestaetigt" },
+            ].map((step) => (
+              <Link key={step.label} href={step.href}>
+                <div className={`rounded-xl p-3 ${step.bg} hover:opacity-80 transition-opacity cursor-pointer`}>
+                  <p className={`text-2xl font-bold ${step.textColor}`}>{step.count}</p>
+                  <p className={`text-xs font-medium ${step.textColor} opacity-80 mt-0.5`}>{step.label}</p>
+                  <div className="mt-2 w-full bg-white/50 rounded-full h-1 overflow-hidden">
+                    <div
+                      className={`h-1 rounded-full ${step.color}`}
+                      style={{ width: gesamt > 0 ? `${Math.round((step.count / gesamt) * 100)}%` : "0%" }}
+                    />
+                  </div>
+                  <p className={`text-[10px] ${step.textColor} opacity-60 mt-0.5`}>
+                    {gesamt > 0 ? Math.round((step.count / gesamt) * 100) : 0}%
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Bestätigte Anfragen – Kalender-Strip */}
       {(bestaetigte ?? []).length > 0 && (() => {
