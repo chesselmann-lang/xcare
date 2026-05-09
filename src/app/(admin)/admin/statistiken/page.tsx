@@ -2,8 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import {
   Users, Building2, FileText, Star, TrendingUp,
-  ShieldCheck, Clock, CheckCircle2, AlertCircle
+  ShieldCheck, Clock, CheckCircle2, AlertCircle, LayoutList
 } from "lucide-react";
+import { LEISTUNGSKATEGORIEN } from "@/lib/constants";
+import type { LeistungsKategorie } from "@/lib/types";
 
 type MonthBucket = { month: string; nutzer: number; anbieter: number; anfragen: number };
 
@@ -128,6 +130,37 @@ export default async function AdminStatistikenPage() {
   const avgBew = (allBew?.length ?? 0) > 0
     ? (allBew!.reduce((s, b) => s + b.sterne, 0) / allBew!.length).toFixed(1)
     : "–";
+
+  // Leistungskategorien breakdown
+  const { data: leistungenRaw } = await supabase.from("leistungen").select("kategorie");
+  const katCount: Record<string, number> = {};
+  (leistungenRaw ?? []).forEach((l) => {
+    if (l.kategorie) katCount[l.kategorie] = (katCount[l.kategorie] ?? 0) + 1;
+  });
+  const topKategorien = Object.entries(katCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([kat, count]) => ({
+      kat: kat as LeistungsKategorie,
+      label: LEISTUNGSKATEGORIEN[kat as LeistungsKategorie] ?? kat,
+      count,
+    }));
+  const maxKat = topKategorien[0]?.count ?? 1;
+
+  // Anfragen by status
+  const { data: anfragenStatusRaw } = await supabase.from("anfragen").select("status");
+  const statusCount: Record<string, number> = {};
+  (anfragenStatusRaw ?? []).forEach((a) => {
+    statusCount[a.status] = (statusCount[a.status] ?? 0) + 1;
+  });
+  const statusBreakdown = [
+    { status: "offen", label: "Offen", color: "bg-amber-400" },
+    { status: "in_bearbeitung", label: "In Bearbeitung", color: "bg-blue-400" },
+    { status: "angeboten", label: "Angebot", color: "bg-indigo-400" },
+    { status: "bestaetigt", label: "Bestätigt", color: "bg-emerald-400" },
+    { status: "abgelehnt", label: "Abgelehnt", color: "bg-red-400" },
+    { status: "abgeschlossen", label: "Abgeschlossen", color: "bg-gray-400" },
+  ].map((s) => ({ ...s, count: statusCount[s.status] ?? 0 }));
 
   const kpis = [
     { label: "Nutzer", value: totalNutzer ?? 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
@@ -295,6 +328,75 @@ export default async function AdminStatistikenPage() {
               <p className="text-xs text-gray-400 mt-0.5">Ø Bewertung</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Bottom row: Leistungskategorien + Anfragen-Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        {/* Leistungskategorien */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <LayoutList className="h-4 w-4 text-purple-500" /> Top Leistungskategorien
+          </h2>
+          {topKategorien.length === 0 ? (
+            <p className="text-sm text-gray-400">Noch keine Leistungen angelegt.</p>
+          ) : (
+            <div className="space-y-3">
+              {topKategorien.map(({ kat, label, count }) => (
+                <div key={kat}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-gray-700 truncate">{label}</span>
+                    <span className="text-sm font-semibold text-gray-800 ml-2 shrink-0">{count}</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-purple-400 rounded-full transition-all"
+                      style={{ width: `${(count / maxKat) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Anfragen Status-Breakdown */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <FileText className="h-4 w-4 text-blue-500" /> Anfragen nach Status
+          </h2>
+          {(totalAnfragen ?? 0) === 0 ? (
+            <p className="text-sm text-gray-400">Noch keine Anfragen vorhanden.</p>
+          ) : (
+            <div className="space-y-3">
+              {statusBreakdown.filter((s) => s.count > 0).map((s) => {
+                const pct = Math.round((s.count / (totalAnfragen ?? 1)) * 100);
+                return (
+                  <div key={s.status}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-gray-700">{s.label}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400">{pct}%</span>
+                        <span className="text-sm font-semibold text-gray-800">{s.count}</span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${s.color} rounded-full transition-all`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <Link
+                href="/admin/anfragen"
+                className="block text-xs text-blue-500 hover:underline text-right pt-1"
+              >
+                Alle Anfragen ansehen →
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

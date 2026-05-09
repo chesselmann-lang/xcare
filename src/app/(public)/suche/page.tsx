@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { KOSTENTRAEGER, UMKREIS_OPTIONEN } from "@/lib/constants";
 import type { AnbieterMitLeistungen, LeistungsKategorie, Kostentraeger } from "@/lib/types";
 
-type SortOption = "relevanz" | "name_asc" | "bewertung" | "verifiziert";
+type SortOption = "relevanz" | "name_asc" | "bewertung" | "verifiziert" | "entfernung" | "neueste";
 type ViewMode = "liste" | "karte";
 
 interface ErgebnisAnbieter extends AnbieterMitLeistungen {
@@ -25,9 +25,11 @@ interface ErgebnisAnbieter extends AnbieterMitLeistungen {
 
 const SORT_OPTIONS: Record<SortOption, string> = {
   relevanz:    "Relevanz",
-  name_asc:   "Name A–Z",
-  bewertung:  "Beste Bewertung",
+  entfernung:  "Entfernung",
+  bewertung:   "Beste Bewertung",
   verifiziert: "Verifiziert zuerst",
+  name_asc:    "Name A–Z",
+  neueste:     "Neueste zuerst",
 };
 
 const KATEGORIE_TABS: Array<{ key: LeistungsKategorie | ""; label: string; emoji: string }> = [
@@ -252,6 +254,8 @@ export default function SuchePage() {
       gefiltert = [...gefiltert].sort((a, b) => {
         if (sortBy === "name_asc") return a.name.localeCompare(b.name, "de");
         if (sortBy === "bewertung") return (b._avgSterne ?? 0) - (a._avgSterne ?? 0);
+        if (sortBy === "entfernung") return (a.entfernung_km ?? 9999) - (b.entfernung_km ?? 9999);
+        if (sortBy === "neueste") return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
         if (sortBy === "verifiziert") {
           if (a.verifiziert && !b.verifiziert) return -1;
           if (!a.verifiziert && b.verifiziert) return 1;
@@ -343,6 +347,8 @@ export default function SuchePage() {
     return [...ergebnisse].sort((a, b) => {
       if (sortBy === "name_asc") return a.name.localeCompare(b.name, "de");
       if (sortBy === "bewertung") return (b._avgSterne ?? 0) - (a._avgSterne ?? 0);
+      if (sortBy === "entfernung") return (a.entfernung_km ?? 9999) - (b.entfernung_km ?? 9999);
+      if (sortBy === "neueste") return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
       if (sortBy === "verifiziert") {
         if (a.verifiziert && !b.verifiziert) return -1;
         if (!a.verifiziert && b.verifiziert) return 1;
@@ -588,9 +594,11 @@ export default function SuchePage() {
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
                   className="flex-1 h-9 rounded-lg border border-[--input] bg-[--background] px-3 text-sm"
                 >
-                  {Object.entries(SORT_OPTIONS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
+                  {Object.entries(SORT_OPTIONS).map(([k, v]) => {
+                    // Only show "Entfernung" when a PLZ is entered
+                    if (k === "entfernung" && !plz.trim()) return null;
+                    return <option key={k} value={k}>{v}</option>;
+                  })}
                 </select>
               </div>
             </div>
@@ -775,9 +783,10 @@ export default function SuchePage() {
                     className="h-8 rounded-lg border border-[--input] bg-[--background] px-2 text-xs font-medium text-[--foreground]"
                     aria-label="Sortierung"
                   >
-                    {Object.entries(SORT_OPTIONS).map(([k, v]) => (
-                      <option key={k} value={k}>{v}</option>
-                    ))}
+                    {Object.entries(SORT_OPTIONS).map(([k, v]) => {
+                      if (k === "entfernung" && !plz.trim()) return null;
+                      return <option key={k} value={k}>{v}</option>;
+                    })}
                   </select>
                 </div>
               )}

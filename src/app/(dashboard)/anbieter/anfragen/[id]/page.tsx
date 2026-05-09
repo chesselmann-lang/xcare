@@ -15,6 +15,7 @@ import { WiedervorlageManager } from "@/components/anfragen/WiedervorlageManager
 import { AnfragePrioritaetToggle } from "@/components/anfragen/AnfragePrioritaetToggle";
 import { AnbieterAnfrageDokumente } from "@/components/anfragen/AnbieterAnfrageDokumente";
 import { AnfrageQuickNotiz } from "@/components/anfragen/AnfrageQuickNotiz";
+import { LeistungSchnellErstellen } from "@/components/anbieter/LeistungSchnellErstellen";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -265,6 +266,14 @@ export default async function AnfrageDetailPage({
             <AnbieterAnfrageDokumente dokumente={dokumente ?? []} />
           </CardContent>
         </Card>
+
+        {/* Leistung schnell erstellen */}
+        {anbieter && (
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-[--muted-foreground]">Passende Leistung noch nicht angelegt?</p>
+            <LeistungSchnellErstellen anbieterId={anbieter.id} />
+          </div>
+        )}
 
         {/* Status-Aktionen */}
         <AnfrageAktionen
