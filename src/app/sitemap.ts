@@ -8,6 +8,17 @@ const KATEGORIE_SLUGS = [
   "hospizdienst", "trauerhilfe", "sonstiges",
 ];
 
+const LEBENSLAGE_SLUGS = [
+  "alter-pflege",
+  "geburt-fruehe-kindheit",
+  "schulkind-jugend",
+  "eingliederung-behinderung",
+  "erwerbsleben-vereinbarkeit",
+  "krankheit-genesung",
+  "hospiz-palliativ",
+  "trauer-nachlass",
+];
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare-git-main-mindry.vercel.app";
@@ -20,6 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/suche`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: `${baseUrl}/lotse`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/anbieter`, lastModified: new Date(), changeFrequency: "daily", priority: 0.85 },
+    { url: `${baseUrl}/lebenslage`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
     { url: `${baseUrl}/login`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     { url: `${baseUrl}/register`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
   ];
@@ -30,6 +42,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(),
     changeFrequency: "daily" as const,
     priority: 0.75,
+  }));
+
+  // Lebenslage landing pages
+  const lebenslagenRoutes: MetadataRoute.Sitemap = LEBENSLAGE_SLUGS.map((slug) => ({
+    url: `${baseUrl}/lebenslage/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.85,
   }));
 
   // Dynamic: Anbieter-Profilseiten
@@ -57,8 +77,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
       ]) ?? [];
 
-    return [...staticRoutes, ...kategorieRoutes, ...anbieterRoutes];
+    return [...staticRoutes, ...kategorieRoutes, ...lebenslagenRoutes, ...anbieterRoutes];
   } catch {
-    return [...staticRoutes, ...kategorieRoutes];
+    return [...staticRoutes, ...kategorieRoutes, ...lebenslagenRoutes];
   }
 }

@@ -1,7 +1,8 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
-  ArrowLeft, Building2, Phone, Globe, MapPin,
+  ArrowLeft, Building2, Phone, Globe, MapPin, Mail,
   Calendar, FileText, CheckCircle2, XCircle, Clock,
   AlertCircle, PackageCheck,
 } from "lucide-react";
@@ -102,10 +103,13 @@ export default async function FamilieAnfrageDetailPage({
     name: string;
     beschreibung: string | null;
     telefon: string | null;
+    email: string | null;
     website: string | null;
     plz: string | null;
     ort: string | null;
     strasse: string | null;
+    logo_url: string | null;
+    verifiziert: boolean;
   } | null;
 
   const leistung = anfrage.leistungen as { name: string } | null;
@@ -178,55 +182,85 @@ export default async function FamilieAnfrageDetailPage({
         {/* Anbieter-Info */}
         {anbieter && (
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Building2 className="h-4 w-4" /> Anbieter
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="font-semibold text-lg">{anbieter.name}</p>
-                {anbieter.beschreibung && (
-                  <p className="text-sm text-[--muted-foreground] mt-0.5 leading-relaxed line-clamp-3">
-                    {anbieter.beschreibung}
-                  </p>
-                )}
-              </div>
+            <CardContent className="p-5">
+              <div className="flex items-start gap-4">
+                {/* Logo */}
+                <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-[--primary-light] flex items-center justify-center">
+                  {anbieter.logo_url ? (
+                    <Image
+                      src={anbieter.logo_url}
+                      alt={`Logo ${anbieter.name}`}
+                      width={56}
+                      height={56}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-[--primary] font-bold text-xl">
+                      {anbieter.name.charAt(0)}
+                    </span>
+                  )}
+                </div>
 
-              <div className="space-y-1.5 text-sm">
-                {(anbieter.plz || anbieter.ort) && (
-                  <p className="flex items-center gap-2 text-[--muted-foreground]">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {anbieter.strasse ? `${anbieter.strasse}, ` : ""}{anbieter.plz} {anbieter.ort}
-                  </p>
-                )}
-                {anbieter.telefon && (
-                  <a
-                    href={`tel:${anbieter.telefon}`}
-                    className="flex items-center gap-2 text-[--primary] hover:underline"
-                  >
-                    <Phone className="h-3.5 w-3.5" />
-                    {anbieter.telefon}
-                  </a>
-                )}
-                {anbieter.website && (
-                  <a
-                    href={anbieter.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-[--primary] hover:underline"
-                  >
-                    <Globe className="h-3.5 w-3.5" />
-                    Website besuchen
-                  </a>
-                )}
-              </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    <p className="font-semibold text-base">{anbieter.name}</p>
+                    {anbieter.verifiziert && (
+                      <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                    )}
+                  </div>
 
-              <Link href={`/anbieter/${anbieter.id}`}>
-                <Button variant="outline" size="sm" className="mt-1">
-                  Vollständiges Profil ansehen
-                </Button>
-              </Link>
+                  {anbieter.beschreibung && (
+                    <p className="text-sm text-[--muted-foreground] leading-relaxed line-clamp-2 mb-2">
+                      {anbieter.beschreibung}
+                    </p>
+                  )}
+
+                  <div className="space-y-1 text-sm">
+                    {(anbieter.plz || anbieter.ort) && (
+                      <p className="flex items-center gap-1.5 text-[--muted-foreground]">
+                        <MapPin className="h-3.5 w-3.5 shrink-0" />
+                        {anbieter.strasse ? `${anbieter.strasse}, ` : ""}{anbieter.plz} {anbieter.ort}
+                      </p>
+                    )}
+                    {anbieter.telefon && (
+                      <a
+                        href={`tel:${anbieter.telefon}`}
+                        className="flex items-center gap-1.5 text-[--primary] hover:underline"
+                      >
+                        <Phone className="h-3.5 w-3.5 shrink-0" />
+                        {anbieter.telefon}
+                      </a>
+                    )}
+                    {anbieter.email && (
+                      <a
+                        href={`mailto:${anbieter.email}`}
+                        className="flex items-center gap-1.5 text-[--primary] hover:underline"
+                      >
+                        <Mail className="h-3.5 w-3.5 shrink-0" />
+                        {anbieter.email}
+                      </a>
+                    )}
+                    {anbieter.website && (
+                      <a
+                        href={anbieter.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-[--primary] hover:underline"
+                      >
+                        <Globe className="h-3.5 w-3.5 shrink-0" />
+                        Website besuchen
+                      </a>
+                    )}
+                  </div>
+
+                  <Link href={`/anbieter/${anbieter.id}`} className="inline-block mt-3">
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                      <Building2 className="h-3.5 w-3.5" />
+                      Vollständiges Profil
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -322,9 +356,9 @@ export default async function FamilieAnfrageDetailPage({
             <CardContent className="p-0">
               <Chat
                 anfrageId={id}
-                currentUserId={user!.id}
+                currentProfileId={profile.id}
+                currentRole="familie"
                 initialNachrichten={nachrichten ?? []}
-                profileId={profile.id}
               />
             </CardContent>
           </Card>

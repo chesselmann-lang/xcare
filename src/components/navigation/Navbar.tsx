@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, Menu, X, User, LogOut, Search, Compass, Building2 } from "lucide-react";
+import { Heart, Menu, X, User, LogOut, Search, Compass, Building2, LayoutGrid } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -47,6 +47,13 @@ export function Navbar({ profile }: NavbarProps) {
           >
             <Building2 className="h-4 w-4" />
             Verzeichnis
+          </Link>
+          <Link
+            href="/lebenslage"
+            className="flex items-center gap-1.5 text-sm text-[--muted-foreground] hover:text-[--foreground] transition-colors"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Kategorien
           </Link>
           <Link
             href="/suche"
@@ -107,6 +114,9 @@ export function Navbar({ profile }: NavbarProps) {
           </Link>
           <Link href="/anbieter" className="flex items-center gap-2 p-2 rounded-lg hover:bg-[--muted]">
             <Building2 className="h-4 w-4" /> Verzeichnis
+          </Link>
+          <Link href="/lebenslage" className="flex items-center gap-2 p-2 rounded-lg hover:bg-[--muted]">
+            <LayoutGrid className="h-4 w-4" /> Kategorien
           </Link>
           <Link href="/suche" className="flex items-center gap-2 p-2 rounded-lg hover:bg-[--muted]">
             <Search className="h-4 w-4" /> Anbieter suchen

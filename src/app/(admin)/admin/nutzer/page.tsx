@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { Users, Building2, Heart } from "lucide-react";
+import Link from "next/link";
+import { Users, Building2, Heart, ArrowRight } from "lucide-react";
 
 export default async function AdminNutzerPage() {
   const supabase = await createClient();
@@ -50,9 +51,13 @@ export default async function AdminNutzerPage() {
         )}
         <div className="divide-y divide-gray-50">
           {profiles?.map((p) => (
-            <div key={p.id} className="flex items-center justify-between px-5 py-3.5">
+            <Link
+              key={p.id}
+              href={`/admin/nutzer/${p.id}`}
+              className="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors group"
+            >
               <div>
-                <p className="text-sm font-medium text-gray-800">
+                <p className="text-sm font-medium text-gray-800 group-hover:text-blue-700 transition-colors">
                   {p.vorname ? `${p.vorname} ${p.nachname ?? ""}`.trim() : p.email}
                 </p>
                 <p className="text-xs text-gray-400">{p.email}</p>
@@ -66,8 +71,9 @@ export default async function AdminNutzerPage() {
                 <span className="text-xs text-gray-400">
                   {new Date(p.created_at).toLocaleDateString("de-DE")}
                 </span>
+                <ArrowRight className="h-3.5 w-3.5 text-gray-300 group-hover:text-blue-600 transition-colors" />
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
