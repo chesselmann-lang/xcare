@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MapPin, CheckCircle2, Star, ChevronRight, Building2, Search } from "lucide-react";
+import { MapPin, Star, ChevronRight, Building2, Search } from "lucide-react";
+import { VerifizierungsBadge } from "@/components/anbieter/VerifizierungsBadge";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -263,7 +264,7 @@ export default async function AnbieterVerzeichnisPage({
                             <Building2 className="h-5 w-5 text-[--primary]" />
                           </div>
                           {anbieter.verifiziert && (
-                            <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                            <VerifizierungsBadge variant="icon" size="sm" />
                           )}
                         </div>
 
@@ -412,9 +413,4 @@ export default async function AnbieterVerzeichnisPage({
                 ))}
               </div>
             </section>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
+        

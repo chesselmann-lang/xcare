@@ -281,12 +281,4 @@ function AnfrageCard({ anfrage: a }: { anfrage: AnfrageRow }) {
           {/* Quick-action row — rendered outside the Link, no propagation issues */}
           <AnfrageQuickActions
             anfrageId={a.id}
-            status={a.status as AnfrageStatus}
-            profileId={a._profileId ?? ""}
-            anbieterId={a._anbieterId ?? ""}
-          />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+            

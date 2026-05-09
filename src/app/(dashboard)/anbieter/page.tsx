@@ -627,25 +627,4 @@ export default async function AnbieterDashboard() {
                           <span className="w-3 text-right">{s}</span>
                           <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                           <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                            <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="text-[--muted-foreground] w-4 text-right">{cnt}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-3 text-[--muted-foreground]">
-                  <Star className="h-6 w-6 mx-auto mb-2 opacity-30" />
-                  <p className="text-xs">Noch keine Bewertungen</p>
-                  <p className="text-xs mt-0.5 opacity-70">Abgeschlossene Anfragen generieren Bewertungen</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
+                            <div className="h-full bg-amber-4

@@ -4,7 +4,7 @@ import Image from "next/image";
 import {
   ArrowLeft, Building2, Phone, Globe, MapPin, Mail,
   Calendar, FileText, CheckCircle2, XCircle, Clock,
-  AlertCircle, PackageCheck,
+  AlertCircle, PackageCheck, Paperclip,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { Chat } from "@/components/nachrichten/Chat";
 import { BewertungAbgeben } from "@/components/bewertungen/BewertungAbgeben";
 import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
 import { FamilieAnfrageAktionen } from "@/components/anfragen/FamilieAnfrageAktionen";
+import { FamilieAnfrageDokumente } from "@/components/anfragen/FamilieAnfrageDokumente";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusConfig: Record<
@@ -130,6 +131,14 @@ export default async function FamilieAnfrageDetailPage({
     .select("id, alter_status, neuer_status, notiz, created_at")
     .eq("anfrage_id", id)
     .order("created_at", { ascending: true });
+
+  // Dokumente laden
+  const { data: dokumente } = await supabase
+    .from("anfrage_dokumente")
+    .select("id, dateiname, storage_pfad, mime_typ, groesse_bytes, created_at")
+    .eq("anfrage_id", id)
+    .eq("familie_id", profile.id)
+    .order("created_at", { ascending: false });
 
   // Check existing bewertung for this famille+anbieter pair
   const { data: existingBewertung } = anbieter
@@ -301,6 +310,26 @@ export default async function FamilieAnfrageDetailPage({
         </Card>
 
 
+        {/* Dokumente */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Paperclip className="h-4 w-4" /> Dokumente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-[--muted-foreground] mb-3">
+              Laden Sie relevante Unterlagen hoch (z.&nbsp;B. Pflegegutachten, Arztbriefe, Rezepte).
+              Diese sind nur für Sie und den Anbieter sichtbar.
+            </p>
+            <FamilieAnfrageDokumente
+              anfrageId={id}
+              familieId={profile.id}
+              initialDokumente={dokumente ?? []}
+            />
+          </CardContent>
+        </Card>
+
         {/* Status-spezifische Aktionen */}
         {status === "abgelehnt" && (
           <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-start justify-between gap-4">
@@ -339,42 +368,4 @@ export default async function FamilieAnfrageDetailPage({
               <HistorieTimeline
                 historie={historie}
                 showCreation={true}
-                erstelltAt={anfrage.created_at}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Chat */}
-        {anbieter && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[--primary]" /> Nachrichten mit {anbieter.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Chat
-                anfrageId={id}
-                currentProfileId={profile.id}
-                currentRole="familie"
-                initialNachrichten={nachrichten ?? []}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Bewertung abgeben */}
-        {(status === "bestaetigt" || status === "abgeschlossen") && anbieter && (
-          <BewertungAbgeben
-            anfrageId={id}
-            anbieterId={anbieter.id}
-            familieId={profile.id}
-            anbieterName={anbieter.name}
-            existingBewertung={existingBewertung}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
+                

@@ -6,6 +6,7 @@ import {
   Package, Euro, Clock, ArrowLeft, Building2,
   Facebook, Instagram, Linkedin, Award, FileCheck, PlaneLanding
 } from "lucide-react";
+import { VerifizierungsBadge } from "@/components/anbieter/VerifizierungsBadge";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import type { OeffnungszeitenMap } from "@/components/anbieter/OeffnungszeitenEd
 import { FamilieAnbieterNotiz } from "@/components/anbieter/FamilieAnbieterNotiz";
 import { VerfuegbarkeitBadge } from "@/components/anbieter/VerfuegbarkeitBadge";
 import { KontaktFormular } from "@/components/anbieter/KontaktFormular";
+import { StickyMobileCTA } from "@/components/anbieter/StickyMobileCTA";
 
 // ── Lebenslage-Mapping: Leistungskategorie → Lebenslage-Slug ─────────────────
 const KATEGORIE_TO_LEBENSLAGE: Record<string, string[]> = {
@@ -343,9 +345,7 @@ export default async function AnbieterDetailPage({
             <div className="flex items-center gap-3 flex-wrap mb-1">
               <h1 className="text-2xl font-bold">{anbieter.name}</h1>
               {anbieter.verifiziert && (
-                <Badge variant="success" className="gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> Verifiziert
-                </Badge>
+                <VerifizierungsBadge variant="badge" size="sm" />
               )}
               <VerfuegbarkeitBadge
                 verfuegbarkeit={(anbieter as { verfuegbarkeit?: string }).verfuegbarkeit as "verfuegbar" | "eingeschraenkt" | "ausgebucht" | null}
@@ -608,38 +608,64 @@ export default async function AnbieterDetailPage({
         <div className="space-y-4">
           {/* Kontaktkarte */}
           <Card className="sticky top-24">
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-sm">Kontakt & Anfrage</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {anbieter.telefon && (
-                <a href={`tel:${anbieter.telefon}`} className="block">
-                  <Button variant="outline" className="w-full gap-2">
-                    <Phone className="h-4 w-4" />
-                    {anbieter.telefon}
-                  </Button>
-                </a>
-              )}
-              {anbieter.email && (
-                <a href={`mailto:${anbieter.email}`} className="block">
-                  <Button variant="outline" className="w-full gap-2">
-                    <Mail className="h-4 w-4" />
-                    E-Mail schreiben
-                  </Button>
-                </a>
-              )}
+              {/* PRIMARY CTA — most prominent, always at the top */}
               {profile?.role === "familie" ? (
-                <AnfrageDialog
-                  anbieterId={id}
-                  anbieterName={anbieter.name}
-                  trigger={
-                    <Button className="w-full gap-2">
-                      <Package className="h-4 w-4" />
-                      Anfrage stellen
+                <div>
+                  <AnfrageDialog
+                    anbieterId={id}
+                    anbieterName={anbieter.name}
+                    trigger={
+                      <Button className="w-full gap-2 py-5 text-base font-semibold shadow-sm hover:shadow-md transition-shadow">
+                        <Package className="h-5 w-5" />
+                        Jetzt Anfrage stellen
+                      </Button>
+                    }
+                  />
+                  <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-green-700">
+                    <svg className="h-3.5 w-3.5 text-green-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Kostenlos &amp; unverbindlich</span>
+                  </div>
+                </div>
+              ) : (
+                <a href="#kontaktformular" className="block">
+                  <Button className="w-full gap-2 py-5 text-base font-semibold shadow-sm hover:shadow-md transition-shadow">
+                    <Mail className="h-5 w-5" />
+                    Jetzt Kontakt aufnehmen
+                  </Button>
+                  <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-green-700">
+                    <svg className="h-3.5 w-3.5 text-green-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Kostenlos &amp; unverbindlich</span>
+                  </div>
+                </a>
+              )}
+
+              {/* Secondary: phone + email */}
+              <div className="flex flex-col gap-2 pt-1 border-t border-[--border]">
+                {anbieter.telefon && (
+                  <a href={`tel:${anbieter.telefon}`} className="block">
+                    <Button variant="outline" className="w-full gap-2">
+                      <Phone className="h-4 w-4" />
+                      {anbieter.telefon}
                     </Button>
-                  }
-                />
-              ) : null}
+                  </a>
+                )}
+                {anbieter.email && (
+                  <a href={`mailto:${anbieter.email}`} className="block">
+                    <Button variant="outline" className="w-full gap-2">
+                      <Mail className="h-4 w-4" />
+                      E-Mail schreiben
+                    </Button>
+                  </a>
+                )}
+              </div>
 
               {/* Social Media */}
               {(() => {
@@ -697,10 +723,7 @@ export default async function AnbieterDetailPage({
 
               <div className="pt-2 border-t border-[--border] text-xs text-[--muted-foreground] space-y-1">
                 {anbieter.verifiziert && (
-                  <p className="flex items-center gap-1.5 text-green-700">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Verifizierter Anbieter
-                  </p>
+                  <VerifizierungsBadge variant="inline" size="sm" />
                 )}
                 <p>Antwortzeit: in der Regel 1–2 Werktage</p>
               </div>
@@ -709,7 +732,7 @@ export default async function AnbieterDetailPage({
 
           {/* Kontaktformular für Gäste & Anbieter (nicht für eingeloggte Familien) */}
           {profile?.role !== "familie" && (
-            <Card>
+            <Card id="kontaktformular">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm">Direkt Kontakt aufnehmen</CardTitle>
                 <p className="text-xs text-[--muted-foreground]">
@@ -727,57 +750,4 @@ export default async function AnbieterDetailPage({
         </div>
       </div>
 
-      {/* Familie private Notiz zu diesem Anbieter */}
-      {profile?.role === "familie" && (
-        <div className="mt-8">
-          <FamilieAnbieterNotiz
-            anbieterId={id}
-            familieId={profile.id}
-            initialNotiz={familieNotiz}
-          />
-        </div>
-      )}
-
-      {/* Ähnliche Anbieter */}
-      {aehnliche.length > 0 && (
-        <div className="mt-12 border-t border-[--border] pt-8">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-[--primary]" />
-            Ähnliche Anbieter in der Region
-          </h2>
-          <div className="grid sm:grid-cols-3 gap-4">
-            {aehnliche.map((a) => (
-              <Link key={a.id} href={`/anbieter/${a.id}`} className="group block">
-                <Card className="h-full hover:shadow-md transition-shadow hover:border-[--primary]/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[--primary]/10 flex items-center justify-center shrink-0">
-                        <Building2 className="h-4 w-4 text-[--primary]" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold group-hover:text-[--primary] transition-colors truncate">
-                          {a.name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {(a.plz || a.ort) && (
-                            <p className="text-xs text-[--muted-foreground] flex items-center gap-0.5">
-                              <MapPin className="h-3 w-3" />
-                              {a.plz}{a.ort ? ` ${a.ort}` : ""}
-                            </p>
-                          )}
-                          {a.verifiziert && (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+      {/* Familie priv

@@ -12,6 +12,7 @@ import { AngebotEditor } from "./angebot-editor";
 import { Chat } from "@/components/nachrichten/Chat";
 import { HistorieTimeline } from "@/components/anfragen/HistorieTimeline";
 import { WiedervorlageManager } from "@/components/anfragen/WiedervorlageManager";
+import { AnfragePrioritaetToggle } from "@/components/anfragen/AnfragePrioritaetToggle";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -78,6 +79,14 @@ export default async function AnfrageDetailPage({
 
   if (!anfrage) notFound();
 
+  // Weitere Anfragen dieser Familie an diesen Anbieter
+  const { count: weitereAnfragenCount } = await supabase
+    .from("anfragen")
+    .select("*", { count: "exact", head: true })
+    .eq("anbieter_id", anbieter?.id ?? "")
+    .eq("familie_id", anfrage.familie_id)
+    .neq("id", id);
+
   // Nachrichten laden
   const { data: nachrichten } = await supabase
     .from("nachrichten")
@@ -135,10 +144,21 @@ export default async function AnfrageDetailPage({
               {statusLabel[anfrage.status as AnfrageStatus] ?? anfrage.status}
             </Badge>
           </div>
-          <p className="text-sm text-[--muted-foreground] mt-0.5">
-            Anfrage vom {formatDate(anfrage.created_at)}
-          </p>
+          <div className="flex items-center gap-3 mt-0.5">
+            <p className="text-sm text-[--muted-foreground]">
+              Anfrage vom {formatDate(anfrage.created_at)}
+            </p>
+            {(weitereAnfragenCount ?? 0) > 0 && (
+              <Link
+                href={`/anbieter/anfragen?familie=${anfrage.familie_id}`}
+                className="text-xs text-[--primary] hover:underline"
+              >
+                +{weitereAnfragenCount} weitere Anfrage{weitereAnfragenCount !== 1 ? "n" : ""} dieser Familie
+              </Link>
+            )}
+          </div>
         </div>
+        <AnfragePrioritaetToggle anfrageId={anfrage.id} />
       </div>
 
       <div className="space-y-4">
@@ -269,35 +289,4 @@ export default async function AnfrageDetailPage({
             </CardHeader>
             <CardContent>
               <HistorieTimeline
-                historie={historie ?? []}
-                showCreation
-                erstelltAt={anfrage.created_at}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Rechnung */}
-        <div className="flex justify-end">
-          <Link href={`/anbieter/anfragen/${anfrage.id}/rechnung`}>
-            <Button variant="outline" size="sm" className="gap-2 text-xs">
-              <Receipt className="h-3.5 w-3.5" />
-              Rechnung erstellen
-            </Button>
-          </Link>
-        </div>
-
-        {/* Chat */}
-        <div>
-          <h2 className="text-base font-semibold mb-3">Direktnachrichten mit der Familie</h2>
-          <Chat
-            anfrageId={anfrage.id}
-            currentProfileId={profile?.id ?? ""}
-            currentRole="anbieter"
-            initialNachrichten={nachrichten ?? []}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
+                historie={hi
