@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DokumentUpload } from "@/components/upload/DokumentUpload";
 import { FileCheck } from "lucide-react";

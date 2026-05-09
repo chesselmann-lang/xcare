@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Clock, MessageSquare, Download, MessageCircle } from "lucide-react";

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Star, MessageSquare, Calendar, User } from "lucide-react";
 import { formatDate } from "@/lib/utils";

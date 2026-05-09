@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Compass, Search, FileText, Heart, ArrowRight, Clock, Bookmark,

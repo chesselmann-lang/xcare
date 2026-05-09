@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PLANS, formatPrice, type PlanId } from "@/lib/stripe/plans";
 import { CheckCircle2, XCircle, Zap, Building2, Users, ArrowRight } from "lucide-react";

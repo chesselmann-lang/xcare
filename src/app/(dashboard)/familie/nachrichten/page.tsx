@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import Link from "next/link";
 import { MessageSquare, ArrowRight, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
