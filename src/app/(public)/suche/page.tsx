@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AnbieterKarte } from "@/components/suche/AnbieterKarte";
 import { KartenAnsicht } from "@/components/suche/KartenAnsicht";
+import { VergleichBar } from "@/components/vergleich/VergleichBar";
 import { createClient } from "@/lib/supabase/client";
 import { KOSTENTRAEGER, UMKREIS_OPTIONEN } from "@/lib/constants";
 import type { AnbieterMitLeistungen, LeistungsKategorie, Kostentraeger } from "@/lib/types";
@@ -937,6 +938,9 @@ export default function SuchePage() {
           <p className="text-sm">Wir zeigen Ihnen Anbieter in Ihrer Nähe.</p>
         </div>
       )}
+
+      {/* Floating compare bar – only shown when items are selected */}
+      <VergleichBar />
     </div>
   );
 }

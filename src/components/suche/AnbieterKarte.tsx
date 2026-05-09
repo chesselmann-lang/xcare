@@ -1,4 +1,7 @@
-import { MapPin, Phone, Globe } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { MapPin, Phone, Globe, ChevronDown, ChevronUp, Euro, Clock } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +11,7 @@ import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { VerfuegbarkeitBadge } from "@/components/anbieter/VerfuegbarkeitBadge";
 import { VerifizierungsBadge } from "@/components/anbieter/VerifizierungsBadge";
 import { FavoritButton } from "@/components/favoriten/FavoritButton";
+import { VergleichToggle } from "@/components/vergleich/VergleichToggle";
 import { formatDistance } from "@/lib/utils";
 import { LEISTUNGSKATEGORIEN } from "@/lib/constants";
 import { LeistungsBadgeGroup } from "@/components/anbieter/LeistungsBadge";
@@ -23,6 +27,10 @@ interface AnbieterKarteProps {
 }
 
 export function AnbieterKarte({ anbieter, avgSterne, bewertungenCount, profileId, istFavorit }: AnbieterKarteProps) {
+  const [leistungenExpanded, setLeistungenExpanded] = useState(false);
+  const aktiveLeistungen = anbieter.leistungen.filter((l) => l.aktiv !== false);
+  const hasMoreLeistungen = aktiveLeistungen.length > 3;
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-5">
@@ -75,13 +83,68 @@ export function AnbieterKarte({ anbieter, avgSterne, bewertungenCount, profileId
             )}
 
             {/* Leistungs-Tags */}
-            {anbieter.leistungen.length > 0 && (
+            {aktiveLeistungen.length > 0 && (
               <div className="mt-2">
                 <LeistungsBadgeGroup
-                  kategorien={anbieter.leistungen.map((l) => l.kategorie)}
+                  kategorien={aktiveLeistungen.map((l) => l.kategorie)}
                   max={4}
                   size="sm"
                 />
+              </div>
+            )}
+
+            {/* Expandable Leistungsliste */}
+            {aktiveLeistungen.length > 0 && (
+              <div className="mt-2">
+                {leistungenExpanded && (
+                  <div className="mt-2 rounded-lg border border-[--border] bg-[--muted]/40 divide-y divide-[--border] text-sm overflow-hidden">
+                    {aktiveLeistungen.slice(0, 8).map((l) => (
+                      <div key={l.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-xs truncate">{l.name}</p>
+                          <p className="text-[10px] text-[--muted-foreground] truncate">
+                            {LEISTUNGSKATEGORIEN[l.kategorie] ?? l.kategorie}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 text-[10px] text-[--muted-foreground]">
+                          {(l.preis_von != null || l.preis_bis != null) && (
+                            <span className="flex items-center gap-0.5">
+                              <Euro className="h-2.5 w-2.5" />
+                              {l.preis_von != null && l.preis_bis != null
+                                ? `${l.preis_von}–${l.preis_bis}`
+                                : l.preis_von != null
+                                ? `ab ${l.preis_von}`
+                                : `bis ${l.preis_bis}`}
+                            </span>
+                          )}
+                          {l.wartezeit_wochen != null && (
+                            <span className="flex items-center gap-0.5">
+                              <Clock className="h-2.5 w-2.5" />
+                              {l.wartezeit_wochen === 0 ? "Sofort" : `${l.wartezeit_wochen} W.`}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {aktiveLeistungen.length > 8 && (
+                      <div className="px-3 py-1.5 text-center text-[10px] text-[--muted-foreground]">
+                        + {aktiveLeistungen.length - 8} weitere Leistungen auf dem Profil
+                      </div>
+                    )}
+                  </div>
+                )}
+                {hasMoreLeistungen || aktiveLeistungen.length > 0 ? (
+                  <button
+                    onClick={() => setLeistungenExpanded((v) => !v)}
+                    className="mt-1.5 flex items-center gap-1 text-[10px] font-medium text-[--primary] hover:text-[--primary]/80 transition-colors"
+                  >
+                    {leistungenExpanded ? (
+                      <><ChevronUp className="h-3 w-3" /> Weniger anzeigen</>
+                    ) : (
+                      <><ChevronDown className="h-3 w-3" /> {aktiveLeistungen.length} Leistung{aktiveLeistungen.length !== 1 ? "en" : ""} anzeigen</>
+                    )}
+                  </button>
+                ) : null}
               </div>
             )}
 
@@ -117,6 +180,7 @@ export function AnbieterKarte({ anbieter, avgSterne, bewertungenCount, profileId
                 )}
               </div>
               <div className="flex items-center gap-2">
+                <VergleichToggle anbieterId={anbieter.id} anbieterName={anbieter.name} />
                 {profileId && (
                   <FavoritButton
                     anbieterId={anbieter.id}

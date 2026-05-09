@@ -53,6 +53,7 @@ const ANBIETER_NAV = [
   { href: "/anbieter/dokumente", label: "Dokumente", icon: FolderOpen },
   { href: "/anbieter/statistiken", label: "Statistiken", icon: BarChart3 },
   { href: "/anbieter/abo", label: "Abo & Pläne", icon: CreditCard },
+  { href: "/anbieter/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
 ];
 
 function NavItem({

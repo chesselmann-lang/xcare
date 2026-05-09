@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { FileText, Clock, CheckCircle2, XCircle, AlertCircle, PackageCheck, ArrowUpDown } from "lucide-react";
+import { FileText, Clock, CheckCircle2, XCircle, AlertCircle, PackageCheck, ArrowUpDown, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import type { AnfrageStatus } from "@/lib/types";
@@ -71,9 +71,18 @@ export default async function AdminAnfragenPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Anfragen-Übersicht</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Alle Anfragen auf der Plattform · {gesamt} gesamt</p>
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Anfragen-Übersicht</h1>
+          <p className="text-gray-500 text-sm mt-0.5">Alle Anfragen auf der Plattform · {gesamt} gesamt</p>
+        </div>
+        <a
+          href="/api/admin/anfragen-export"
+          className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-600 hover:border-gray-400 hover:text-gray-900 transition-colors"
+        >
+          <Download className="h-3.5 w-3.5" />
+          CSV exportieren
+        </a>
       </div>
 
       {/* Funnel KPIs */}
@@ -149,27 +158,39 @@ export default async function AdminAnfragenPage({
                 const familie = a.familie as { vorname: string | null; nachname: string | null } | null;
                 const anbieter = a.anbieter as { name: string } | null;
                 return (
-                  <tr key={a.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={a.id} className="hover:bg-gray-50 transition-colors cursor-pointer group">
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                      {formatDate(a.created_at)}
+                      <Link href={`/admin/anfragen/${a.id}`} className="block group-hover:text-gray-900">
+                        {formatDate(a.created_at)}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-800">
-                      {familie ? `${familie.vorname ?? ""} ${familie.nachname ?? ""}`.trim() || "—" : "—"}
+                      <Link href={`/admin/anfragen/${a.id}`} className="block group-hover:text-black">
+                        {familie ? `${familie.vorname ?? ""} ${familie.nachname ?? ""}`.trim() || "—" : "—"}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {anbieter?.name ?? "—"}
+                      <Link href={`/admin/anfragen/${a.id}`} className="block">
+                        {anbieter?.name ?? "—"}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-gray-600 capitalize text-xs">
-                      {LEBENSLAGE_LABELS[a.lebenslage] ?? a.lebenslage.replace(/_/g, " ")}
+                      <Link href={`/admin/anfragen/${a.id}`} className="block">
+                        {LEBENSLAGE_LABELS[a.lebenslage] ?? a.lebenslage.replace(/_/g, " ")}
+                      </Link>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
-                        <StatusIcon className="h-3 w-3" />
-                        {cfg.label}
-                      </span>
+                      <Link href={`/admin/anfragen/${a.id}`} className="block">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
+                          <StatusIcon className="h-3 w-3" />
+                          {cfg.label}
+                        </span>
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
-                      {formatDate(a.updated_at)}
+                      <Link href={`/admin/anfragen/${a.id}`} className="block">
+                        {formatDate(a.updated_at)}
+                      </Link>
                     </td>
                   </tr>
                 );
