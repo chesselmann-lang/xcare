@@ -2,12 +2,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  MapPin, CheckCircle2, Star, ArrowRight, Search, Phone, Globe,
+  MapPin, CheckCircle2, ArrowRight, Search, Phone,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
+import { PlzSuche } from "@/components/lebenslage/PlzSuche";
 import type { Metadata } from "next";
 
 const LEBENSLAGE_CONFIG: Record<string, {
@@ -133,11 +134,12 @@ export default async function LebenslagePage({
   const dbValue = SLUG_TO_DB[slug];
   const supabase = await createClient();
 
-  // Fetch anbieter offering this lebenslage via their leistungen
+  // Fetch anbieter offering this lebenslage via their leistungen (exclude abwesend)
   const { data: anbieter } = await supabase
     .from("anbieter")
-    .select("id, name, beschreibung, plz, ort, strasse, telefon, website, verifiziert, logo_url, leistungen!inner(id, name, kategorie, aktiv)")
+    .select("id, name, beschreibung, plz, ort, strasse, telefon, website, verifiziert, logo_url, abwesend, leistungen!inner(id, name, kategorie, aktiv)")
     .eq("aktiv", true)
+    .eq("abwesend", false)
     .eq("leistungen.aktiv", true)
     .ilike("leistungen.kategorie", `%${dbValue}%`)
     .limit(30);
@@ -161,8 +163,9 @@ export default async function LebenslagePage({
     if (newIds.length > 0) {
       const { data: extra } = await supabase
         .from("anbieter")
-        .select("id, name, beschreibung, plz, ort, strasse, telefon, website, verifiziert, logo_url, leistungen(id, name, kategorie, aktiv)")
+        .select("id, name, beschreibung, plz, ort, strasse, telefon, website, verifiziert, logo_url, abwesend, leistungen(id, name, kategorie, aktiv)")
         .eq("aktiv", true)
+        .eq("abwesend", false)
         .in("id", newIds.slice(0, 20));
       additionalAnbieter = extra ?? [];
     }
@@ -208,19 +211,14 @@ export default async function LebenslagePage({
           <div className="text-5xl mb-4">{config.icon}</div>
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">{config.label}</h1>
           <p className="text-lg opacity-90 mb-6 max-w-2xl">{config.longDescription}</p>
-          <div className="flex flex-wrap gap-3">
-            <Link href={`/suche?kategorie=${dbValue}`}>
-              <Button className="bg-white text-[--primary] hover:bg-gray-50 gap-2">
-                <Search className="h-4 w-4" />
-                Anbieter in meiner Nähe suchen
-              </Button>
-            </Link>
+          <div className="flex flex-wrap gap-3 mb-6">
             <Link href="/lotse">
               <Button variant="outline" className="border-white text-white hover:bg-white/10 gap-2">
                 KI-Beratung starten
               </Button>
             </Link>
           </div>
+          <PlzSuche kategorie={dbValue} label={config.label} />
         </div>
       </div>
 
@@ -255,6 +253,10 @@ export default async function LebenslagePage({
               {sorted.map((a) => {
                 const bw = bewertungenMap[a.id];
                 const aktiveLeistungen = (a.leistungen ?? []).filter((l) => l.aktiv);
+                const matchingLeistungen = (a.leistungen ?? []).filter(
+                  (l) => l.aktiv && l.kategorie?.includes(dbValue)
+                );
+                const matchScore = matchingLeistungen.length;
                 return (
                   <Link key={a.id} href={`/anbieter/${a.id}`} className="group block">
                     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all hover:border-[--primary]/20 flex flex-col h-full">
@@ -281,6 +283,11 @@ export default async function LebenslagePage({
                             </h3>
                             {a.verifiziert && (
                               <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                            )}
+                            {matchScore > 1 && (
+                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-[--primary-light] text-[--primary] font-medium">
+                                {matchScore} Angebote
+                              </span>
                             )}
                           </div>
                           {(a.plz || a.ort) && (

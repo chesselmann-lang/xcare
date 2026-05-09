@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   MapPin, Phone, Globe, CheckCircle2, Mail,
   Package, Euro, Clock, ArrowLeft, Building2,
-  Facebook, Instagram, Linkedin, Award, FileCheck
+  Facebook, Instagram, Linkedin, Award, FileCheck, PlaneLanding
 } from "lucide-react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
@@ -21,6 +21,35 @@ import type { Leistung, LeistungsKategorie } from "@/lib/types";
 import type { OeffnungszeitenMap } from "@/components/anbieter/OeffnungszeitenEditor";
 import { FamilieAnbieterNotiz } from "@/components/anbieter/FamilieAnbieterNotiz";
 import { VerfuegbarkeitBadge } from "@/components/anbieter/VerfuegbarkeitBadge";
+
+// ── Lebenslage-Mapping: Leistungskategorie → Lebenslage-Slug ─────────────────
+const KATEGORIE_TO_LEBENSLAGE: Record<string, string[]> = {
+  pflege_ambulant:   ["alter-pflege"],
+  pflege_stationaer: ["alter-pflege"],
+  tagespflege:       ["alter-pflege"],
+  kurzzeitpflege:    ["alter-pflege"],
+  haushaltshilfe:    ["alter-pflege", "erwerbsleben-vereinbarkeit"],
+  kinderbetreuung:   ["geburt-fruehe-kindheit", "schulkind-jugend"],
+  jugendhilfe:       ["schulkind-jugend"],
+  eingliederungshilfe: ["eingliederung-behinderung"],
+  therapie:          ["krankheit-genesung"],
+  hospizdienst:      ["hospiz-palliativ"],
+  trauerhilfe:       ["trauer-nachlass"],
+  beratung:          [],
+  foerderung:        [],
+  sonstiges:         [],
+};
+
+const LEBENSLAGE_LABELS: Record<string, string> = {
+  "alter-pflege":               "Alter & Pflege",
+  "geburt-fruehe-kindheit":     "Geburt & frühe Kindheit",
+  "schulkind-jugend":           "Schulkind & Jugend",
+  "eingliederung-behinderung":  "Eingliederung & Behinderung",
+  "erwerbsleben-vereinbarkeit": "Erwerbsleben & Vereinbarkeit",
+  "krankheit-genesung":         "Krankheit & Genesung",
+  "hospiz-palliativ":           "Hospiz & Palliativ",
+  "trauer-nachlass":            "Trauer & Nachlass",
+};
 
 // ── Öffnungszeiten display helper (server component safe) ────────────────────
 const TAG_ORDER = ["mo","di","mi","do","fr","sa","so"] as const;
@@ -146,6 +175,11 @@ export default async function AnbieterDetailPage({
     acc[key].push(l);
     return acc;
   }, {});
+
+  // Derive lebenslage slugs from active leistungen categories
+  const lebenslageSlugs = [...new Set(
+    leistungen.flatMap((l) => KATEGORIE_TO_LEBENSLAGE[l.kategorie] ?? [])
+  )];
 
   // Ähnliche Anbieter: same PLZ prefix, exclude self
   let aehnliche: Array<{ id: string; name: string; plz: string | null; ort: string | null; verifiziert: boolean }> = [];
@@ -286,6 +320,19 @@ export default async function AnbieterDetailPage({
                 <SterneDisplay average={avgSterne} count={bewertungenCount} size="sm" />
               </Link>
             )}
+            {lebenslageSlugs.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {lebenslageSlugs.map((slug) => (
+                  <Link
+                    key={slug}
+                    href={`/lebenslage/${slug}`}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[--primary-light] text-[--primary] hover:bg-[--primary] hover:text-white transition-colors"
+                  >
+                    {LEBENSLAGE_LABELS[slug]}
+                  </Link>
+                ))}
+              </div>
+            )}
             <div className="flex flex-wrap gap-4 text-sm text-[--muted-foreground]">
               {(anbieter.plz || anbieter.ort) && (
                 <span className="flex items-center gap-1.5">
@@ -351,6 +398,26 @@ export default async function AnbieterDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Abwesenheits-Banner */}
+      {(anbieter as { abwesend?: boolean }).abwesend && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 mb-6">
+          <PlaneLanding className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Vorübergehend abwesend</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              {(anbieter as { abwesend_notiz?: string | null }).abwesend_notiz
+                ? (anbieter as { abwesend_notiz: string }).abwesend_notiz
+                : "Dieser Anbieter nimmt derzeit keine neuen Anfragen entgegen."}
+              {(anbieter as { abwesend_bis?: string | null }).abwesend_bis && (
+                <span className="ml-1 font-medium">
+                  Voraussichtlich ab {new Date((anbieter as { abwesend_bis: string }).abwesend_bis).toLocaleDateString("de-DE")} wieder verfügbar.
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Hauptinhalt */}

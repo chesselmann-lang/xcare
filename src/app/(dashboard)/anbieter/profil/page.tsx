@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import ProfilFormular from "./profil-formular";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VerfuegbarkeitPicker } from "@/components/anbieter/VerfuegbarkeitPicker";
+import { AbwesenheitsCard } from "@/components/anbieter/AbwesenheitsCard";
 import { LogoUploadCard } from "@/components/anbieter/LogoUploadCard";
-import { CalendarCheck2 } from "lucide-react";
+import { CalendarCheck2, PlaneLanding } from "lucide-react";
 
 export default async function AnbieterProfilPage() {
   const supabase = await createClient();
@@ -45,6 +46,25 @@ export default async function AnbieterProfilPage() {
             <VerfuegbarkeitPicker
               anbieterId={anbieter.id}
               initial={(anbieter.verfuegbarkeit as "verfuegbar" | "eingeschraenkt" | "ausgebucht") ?? "verfuegbar"}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Abwesenheitsmodus */}
+      {anbieter && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <PlaneLanding className="h-4 w-4 text-[--primary]" /> Abwesenheitsmodus
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AbwesenheitsCard
+              anbieterId={anbieter.id}
+              initialAbwesend={(anbieter as { abwesend?: boolean }).abwesend ?? false}
+              initialAbwesenBis={(anbieter as { abwesend_bis?: string | null }).abwesend_bis ?? null}
+              initialAbwesenNotiz={(anbieter as { abwesend_notiz?: string | null }).abwesend_notiz ?? null}
             />
           </CardContent>
         </Card>
