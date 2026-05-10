@@ -9,6 +9,7 @@ import {
 import { VerifizierungsBadge } from "@/components/anbieter/VerifizierungsBadge";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
+import { getCachedAnbieterDetail } from "@/lib/cache";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -158,18 +159,22 @@ export default async function AnbieterDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
 
-  const { data: anbieter } = await supabase
-    .from("anbieter")
-    .select("*, leistungen(*)")
-    .eq("id", id)
-    .eq("aktiv", true)
-    .single();
+  // ── Cached public data (30 min TTL, service-role, no cookies) ────────────
+  const cached = await getCachedAnbieterDetail(id);
+  const anbieter = cached.anbieter;
+  const dokumente = cached.dokumente;
+  const bewertungen = cached.bewertungen;
 
   if (!anbieter) notFound();
 
-  // Check auth + favorites
+  const avgSterne = bewertungen.length > 0
+    ? bewertungen.reduce((sum: number, b: { sterne: number }) => sum + b.sterne, 0) / bewertungen.length
+    : 0;
+  const bewertungenCount = bewertungen.length;
+
+  // ── Auth-dependent data (dynamic, uses cookies) ───────────────────────────
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   let profile = null;
   let istFavorit = false;
@@ -202,24 +207,6 @@ export default async function AnbieterDetailPage({
       istMerkliste = !!merk;
     }
   }
-
-  // Public documents (certificates, qualifications)
-  const { data: dokumente } = await supabase
-    .from("anbieter_dokumente")
-    .select("id, name, typ")
-    .eq("anbieter_id", id)
-    .eq("oeffentlich", true)
-    .order("created_at", { ascending: false });
-
-  // Bewertungen average
-  const { data: bewertungen } = await supabase
-    .from("bewertungen")
-    .select("sterne")
-    .eq("anbieter_id", id);
-  const avgSterne = bewertungen && bewertungen.length > 0
-    ? bewertungen.reduce((sum, b) => sum + b.sterne, 0) / bewertungen.length
-    : 0;
-  const bewertungenCount = bewertungen?.length ?? 0;
 
   const leistungen: Leistung[] = anbieter.leistungen?.filter((l: Leistung) => l.aktiv) ?? [];
 

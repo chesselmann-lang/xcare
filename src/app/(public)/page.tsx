@@ -4,34 +4,23 @@ import {
   Zap, CheckCircle2, MapPin, Star, Clock, Headphones,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/server";
 import { LEBENSLAGEN } from "@/lib/constants";
 import type { LebenslageTyp } from "@/lib/types";
 import { AutocompleteSearch } from "@/components/suche/AutocompleteSearch";
 import { WebSiteJsonLd } from "@/components/seo/JsonLd";
+import { getCachedHomepageStats, getCachedTestimonials } from "@/lib/cache";
 
 export default async function HomePage() {
-  const supabase = await createClient();
-
   const topLebenslagen = (
     ["alter_pflege", "geburt_fruehe_kindheit", "krankheit_genesung", "eingliederung_behinderung"] as LebenslageTyp[]
   ).map((k) => ({ key: k, ...LEBENSLAGEN[k] }));
 
-  // Live stats from DB
-  const [{ count: anbieterCount }, { count: anfragenCount }, { count: verifiziert }] = await Promise.all([
-    supabase.from("anbieter").select("*", { count: "exact", head: true }).eq("aktiv", true),
-    supabase.from("anfragen").select("*", { count: "exact", head: true }),
-    supabase.from("anbieter").select("*", { count: "exact", head: true }).eq("aktiv", true).eq("verifiziert", true),
+  // Live stats + testimonials from cache (1 h TTL, service-role client)
+  const [stats, topBewertungen] = await Promise.all([
+    getCachedHomepageStats(),
+    getCachedTestimonials(),
   ]);
-
-  // Öffentliche Top-Bewertungen für Social Proof
-  const { data: topBewertungen } = await supabase
-    .from("bewertungen")
-    .select("id, sterne, kommentar, created_at, anbieter:anbieter_id(name, ort)")
-    .eq("sterne", 5)
-    .not("kommentar", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(6);
+  const { anbieterCount, anfragenCount, verifiziert } = stats;
 
   const featuredLebenslagen = (
     ["alter_pflege", "geburt_fruehe_kindheit", "krankheit_genesung", "eingliederung_behinderung",

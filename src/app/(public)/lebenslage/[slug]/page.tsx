@@ -5,6 +5,7 @@ import {
   MapPin, CheckCircle2, ArrowRight, Search, Phone,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getCachedLebenslageanbieter } from "@/lib/cache";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
@@ -132,17 +133,10 @@ export default async function LebenslagePage({
   if (!config) notFound();
 
   const dbValue = SLUG_TO_DB[slug];
-  const supabase = await createClient();
 
-  // Fetch anbieter offering this lebenslage via their leistungen (exclude abwesend)
-  const { data: anbieter } = await supabase
-    .from("anbieter")
-    .select("id, name, beschreibung, plz, ort, strasse, telefon, website, verifiziert, logo_url, abwesend, leistungen!inner(id, name, kategorie, aktiv)")
-    .eq("aktiv", true)
-    .eq("abwesend", false)
-    .eq("leistungen.aktiv", true)
-    .ilike("leistungen.kategorie", `%${dbValue}%`)
-    .limit(30);
+  // ── Primary anbieter list: cached 30 min (service-role, no cookies) ──────
+  const anbieter = await getCachedLebenslageanbieter(slug, dbValue);
+  const supabase = await createClient();
 
   // Also fetch by anfragen pattern (anbieter who have received this type)
   const { data: anfragenAnbieter } = await supabase
