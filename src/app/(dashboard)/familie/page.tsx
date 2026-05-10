@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { formatRelative } from "@/lib/utils";
 import { KIEmpfehlungBanner } from "@/components/familie/KIEmpfehlungBanner";
+import { DashboardWidgetRow } from "@/components/dashboard/DashboardWidgetRow";
 import type { AnfrageStatus } from "@/lib/types";
 
 const statusLabel: Record<AnfrageStatus, string> = {
@@ -249,6 +250,9 @@ export default async function FamilieDashboard() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
+      {/* Phase 3B: Dashboard 2.0 — Anspruchs-Widget, Fristen-Warner, Monatskosten, Schnellaktionen */}
+      <DashboardWidgetRow />
+
       {/* Angebote-Banner */}
       {angeboteCount != null && angeboteCount > 0 && (
         <div className="mb-6 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800">

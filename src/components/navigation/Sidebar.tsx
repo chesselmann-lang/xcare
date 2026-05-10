@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Compass, Search, FileText, Heart,
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
-  GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot
+  GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -39,6 +39,7 @@ const FAMILIE_NAV = [
   { href: "/familie/merkliste", label: "Merkliste", icon: BookmarkCheck },
   { href: "/familie/gespeicherte-suchen", label: "Gespeicherte Suchen", icon: Bookmark },
   { href: "/familie/vergleich", label: "Anbieter vergleichen", icon: GitCompareArrows },
+  { href: "/familie/pflegeplan", label: "Pflegeplan & Termine", icon: ClipboardList },
   { href: "/familie/gesundheit", label: "Gesundheits-Hub", icon: Activity },
   { href: "/familie/copilot", label: "KI-Co-Pilot", icon: Bot },
   { href: "/familie/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },

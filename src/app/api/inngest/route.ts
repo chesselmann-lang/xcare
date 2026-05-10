@@ -732,6 +732,341 @@ const dailyWiedervorlagenCheck = inngest.createFunction(
   }
 );
 
+// ─── 11. Täglicher Ablaufdaten-Check (08:00 UTC) ─────────────────────────────
+//
+// Prüft ablaufende Dokumente, Impfungen und Medikamente.
+// Erstellt Benachrichtigungen und sendet eine Zusammenfassungs-E-Mail je Nutzer.
+
+const ablaufdatenCheck = inngest.createFunction(
+  { id: "ablaufdaten-check", name: "Täglicher Ablaufdaten-Check" },
+  { cron: "0 8 * * *" }, // täglich 08:00 UTC (09:00 Berlin Winter / 10:00 Sommer)
+  async ({ step }) => {
+    const supabase = getServiceClient();
+
+    const heute = new Date();
+    const in7Tagen = new Date(heute.getTime() + 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const in14Tagen = new Date(heute.getTime() + 14 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const in30Tagen = new Date(heute.getTime() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const in60Tagen = new Date(heute.getTime() + 60 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const heuteStr = heute.toISOString().split("T")[0];
+
+    // ── Ablaufende Dokumente laden (30 und 60 Tage) ──────────────────────────
+    const ablaufendeDokumente = await step.run("fetch-ablaufende-dokumente", async () => {
+      const { data } = await supabase
+        .from("dokumente")
+        .select("id, name, ablaufdatum, profil_id")
+        .not("ablaufdatum", "is", null)
+        .gte("ablaufdatum", heuteStr)
+        .lte("ablaufdatum", in60Tagen);
+      return data ?? [];
+    });
+
+    // ── Fällige Impfungen laden (30 und 60 Tage) ─────────────────────────────
+    const faelligeImpfungen = await step.run("fetch-fällige-impfungen", async () => {
+      const { data } = await supabase
+        .from("impfungen")
+        .select("id, impfstoff, krankheit, naechste_impfung, profil_id")
+        .not("naechste_impfung", "is", null)
+        .gte("naechste_impfung", heuteStr)
+        .lte("naechste_impfung", in60Tagen);
+      return data ?? [];
+    });
+
+    // ── Auslaufende Medikamente laden (7 und 14 Tage) ────────────────────────
+    const auslaufendeMedikamente = await step.run("fetch-auslaufende-medikamente", async () => {
+      const { data } = await supabase
+        .from("medikamente")
+        .select("id, name, bis_datum, profil_id")
+        .not("bis_datum", "is", null)
+        .gte("bis_datum", heuteStr)
+        .lte("bis_datum", in14Tagen)
+        .eq("aktiv", true);
+      return data ?? [];
+    });
+
+    // ── Alle betroffenen profil_ids zusammenstellen ───────────────────────────
+    type FristItem = {
+      profil_id: string;
+      typ: "dokument" | "impfung" | "medikament";
+      name: string;
+      datum: string;
+      tage: number;
+    };
+
+    const alleItems: FristItem[] = [];
+
+    for (const dok of ablaufendeDokumente) {
+      const ablauf = new Date(dok.ablaufdatum as string);
+      const tage = Math.ceil((ablauf.getTime() - heute.getTime()) / (24 * 60 * 60 * 1000));
+      if (tage <= 30 || tage <= 60) {
+        alleItems.push({
+          profil_id: dok.profil_id as string,
+          typ: "dokument",
+          name: dok.name as string,
+          datum: dok.ablaufdatum as string,
+          tage,
+        });
+      }
+    }
+
+    for (const impf of faelligeImpfungen) {
+      const naechste = new Date(impf.naechste_impfung as string);
+      const tage = Math.ceil((naechste.getTime() - heute.getTime()) / (24 * 60 * 60 * 1000));
+      alleItems.push({
+        profil_id: impf.profil_id as string,
+        typ: "impfung",
+        name: `${impf.impfstoff} (${impf.krankheit})`,
+        datum: impf.naechste_impfung as string,
+        tage,
+      });
+    }
+
+    for (const med of auslaufendeMedikamente) {
+      const bis = new Date(med.bis_datum as string);
+      const tage = Math.ceil((bis.getTime() - heute.getTime()) / (24 * 60 * 60 * 1000));
+      alleItems.push({
+        profil_id: med.profil_id as string,
+        typ: "medikament",
+        name: med.name as string,
+        datum: med.bis_datum as string,
+        tage,
+      });
+    }
+
+    if (alleItems.length === 0) return { gesendet: 0, benachrichtigungen: 0 };
+
+    // ── Nach Nutzer gruppieren ────────────────────────────────────────────────
+    const nachNutzer = alleItems.reduce<Record<string, FristItem[]>>((acc, item) => {
+      acc[item.profil_id] = acc[item.profil_id] ?? [];
+      acc[item.profil_id].push(item);
+      return acc;
+    }, {});
+
+    let gesendetCount = 0;
+    let benachrichtigungenCount = 0;
+
+    for (const [profilId, items] of Object.entries(nachNutzer)) {
+      await step.run(`ablauf-notify-${profilId}`, async () => {
+        // Profil + E-Mail laden
+        const { data: profil } = await supabase
+          .from("profiles")
+          .select("email, vorname, email_prefs")
+          .eq("id", profilId)
+          .single();
+
+        if (!profil?.email) return;
+
+        const prefs = (profil.email_prefs ?? {}) as Record<string, boolean>;
+
+        // ── Benachrichtigungen in der App erstellen ───────────────────────────
+        const typLabels: Record<string, string> = {
+          dokument: "Dokument",
+          impfung: "Impfung",
+          medikament: "Medikament",
+        };
+        const typIcons: Record<string, string> = {
+          dokument: "📄",
+          impfung: "💉",
+          medikament: "💊",
+        };
+
+        for (const item of items) {
+          const { error: insertError } = await supabase.from("benachrichtigungen").insert({
+            profile_id: profilId,
+            typ: "system",
+            titel: `${typIcons[item.typ]} ${typLabels[item.typ]} läuft bald ab`,
+            nachricht: `„${item.name}" läuft in ${item.tage} ${item.tage === 1 ? "Tag" : "Tagen"} ab (${new Date(item.datum).toLocaleDateString("de-DE")}).`,
+            gelesen: false,
+          });
+          if (!insertError) benachrichtigungenCount++;
+        }
+
+        // ── E-Mail senden (wenn nicht abgemeldet) ─────────────────────────────
+        if (prefs.ablaufdaten === false) return;
+
+        const vorname = profil.vorname ?? "Nutzer";
+        const listItems = items
+          .sort((a, b) => a.tage - b.tage)
+          .map((item) => {
+            const datumStr = new Date(item.datum).toLocaleDateString("de-DE", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            });
+            return `<li style="padding:6px 0;border-bottom:1px solid #f0f0f0;">${typIcons[item.typ]} <strong>${item.name}</strong> — ${typLabels[item.typ]} — fällig am ${datumStr} (in ${item.tage} ${item.tage === 1 ? "Tag" : "Tagen"})</li>`;
+          })
+          .join("");
+
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
+          to: profil.email,
+          subject: `xcare Erinnerung: ${items.length} ${items.length === 1 ? "Frist" : "Fristen"} laufen bald ab`,
+          html: `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/><title>Fristen-Erinnerung</title></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;max-width:600px;">
+<tr><td style="background:#1A5276;padding:24px 32px;"><p style="margin:0;color:#fff;font-size:22px;font-weight:700;">❤️ xcare</p><p style="margin:4px 0 0;color:#a8c7e8;font-size:13px;">Ihr digitales Pflege-Ökosystem</p></td></tr>
+<tr><td style="padding:32px;">
+<h2 style="color:#1A5276;margin-top:0;">Wichtige Fristen-Erinnerung ⏰</h2>
+<p style="color:#333;line-height:1.6;">Hallo <strong>${vorname}</strong>,</p>
+<p style="color:#333;line-height:1.6;">Folgende Fristen laufen in den nächsten Tagen ab:</p>
+<ul style="list-style:none;padding:0;margin:16px 0;">${listItems}</ul>
+<p style="color:#555;font-size:13px;">Bitte nehmen Sie rechtzeitig Maßnahmen, um keine wichtigen Termine zu verpassen.</p>
+<a href="${appUrl}/familie/gesundheit" style="display:inline-block;background:#1A5276;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;margin:20px 0;">Zur Gesundheitsübersicht</a>
+<p style="color:#999;font-size:12px;margin-top:24px;"><a href="${appUrl}/familie/einstellungen" style="color:#999;">E-Mail-Einstellungen anpassen</a></p>
+</td></tr>
+<tr><td style="background:#f8f9fa;padding:16px 32px;border-top:1px solid #e9ecef;"><p style="margin:0;color:#6c757d;font-size:12px;text-align:center;">© ${new Date().getFullYear()} xcare gemeinnützige GmbH · <a href="${appUrl}" style="color:#1A5276;">xcare.de</a></p></td></tr>
+</table></td></tr></table>
+</body></html>`,
+        });
+        gesendetCount++;
+      });
+    }
+
+    return { gesendet: gesendetCount, benachrichtigungen: benachrichtigungenCount };
+  }
+);
+
+// ─── 12. Wöchentliche Impf-Erinnerung (montags 09:00 UTC) ────────────────────
+//
+// Prüft alle Impfungen mit naechste_impfung in den nächsten 30 Tagen
+// und sendet eine Zusammenfassungs-E-Mail.
+
+const impfungenErinnerung = inngest.createFunction(
+  { id: "impfungen-erinnerung", name: "Wöchentliche Impf-Erinnerung" },
+  { cron: "0 9 * * 1" }, // montags 09:00 UTC
+  async ({ step }) => {
+    const supabase = getServiceClient();
+
+    const heute = new Date();
+    const heuteStr = heute.toISOString().split("T")[0];
+    const in30Tagen = new Date(heute.getTime() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+
+    // Alle fälligen Impfungen der nächsten 30 Tage laden
+    const faelligeImpfungen = await step.run("fetch-impfungen-30d", async () => {
+      const { data } = await supabase
+        .from("impfungen")
+        .select("id, impfstoff, krankheit, naechste_impfung, profil_id")
+        .not("naechste_impfung", "is", null)
+        .gte("naechste_impfung", heuteStr)
+        .lte("naechste_impfung", in30Tagen);
+      return data ?? [];
+    });
+
+    if (faelligeImpfungen.length === 0) return { gesendet: 0 };
+
+    // Nach Nutzer gruppieren
+    const nachNutzer = faelligeImpfungen.reduce<
+      Record<string, typeof faelligeImpfungen>
+    >((acc, impf) => {
+      const pid = impf.profil_id as string;
+      acc[pid] = acc[pid] ?? [];
+      acc[pid].push(impf);
+      return acc;
+    }, {});
+
+    let gesendetCount = 0;
+
+    for (const [profilId, impfungen] of Object.entries(nachNutzer)) {
+      await step.run(`impfung-erinnerung-${profilId}`, async () => {
+        const { data: profil } = await supabase
+          .from("profiles")
+          .select("email, vorname, email_prefs")
+          .eq("id", profilId)
+          .single();
+
+        if (!profil?.email) return;
+
+        const prefs = (profil.email_prefs ?? {}) as Record<string, boolean>;
+        if (prefs.ablaufdaten === false) return;
+
+        // App-Benachrichtigung erstellen
+        const impfungsTitel =
+          impfungen.length === 1
+            ? `Impfung ${impfungen[0].impfstoff} fällig`
+            : `${impfungen.length} Impfungen in den nächsten 30 Tagen fällig`;
+
+        await supabase.from("benachrichtigungen").insert({
+          profile_id: profilId,
+          typ: "system",
+          titel: `💉 ${impfungsTitel}`,
+          nachricht: impfungen
+            .map((i) => {
+              const tage = Math.ceil(
+                (new Date(i.naechste_impfung as string).getTime() - heute.getTime()) /
+                  (24 * 60 * 60 * 1000)
+              );
+              return `${i.impfstoff} (${i.krankheit}) in ${tage} Tagen`;
+            })
+            .join(", "),
+          gelesen: false,
+        });
+
+        // E-Mail senden
+        const vorname = profil.vorname ?? "Nutzer";
+        const listItems = impfungen
+          .sort(
+            (a, b) =>
+              new Date(a.naechste_impfung as string).getTime() -
+              new Date(b.naechste_impfung as string).getTime()
+          )
+          .map((impf) => {
+            const naechste = new Date(impf.naechste_impfung as string);
+            const tage = Math.ceil(
+              (naechste.getTime() - heute.getTime()) / (24 * 60 * 60 * 1000)
+            );
+            const datumStr = naechste.toLocaleDateString("de-DE", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            });
+            const dringend = tage <= 7;
+            return `<li style="padding:8px 0;border-bottom:1px solid #f0f0f0;">💉 <strong>${impf.impfstoff}</strong> gegen <em>${impf.krankheit}</em> — fällig am ${datumStr}${dringend ? ' <span style="color:#E74C3C;font-size:12px;font-weight:bold;">(in ' + tage + ' Tagen!)</span>' : " (in " + tage + " Tagen)"}</li>`;
+          })
+          .join("");
+
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
+          to: profil.email,
+          subject: `💉 Impf-Erinnerung: ${impfungen.length} ${impfungen.length === 1 ? "Impfung" : "Impfungen"} in den nächsten 30 Tagen`,
+          html: `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/><title>Impf-Erinnerung</title></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;max-width:600px;">
+<tr><td style="background:#1A5276;padding:24px 32px;"><p style="margin:0;color:#fff;font-size:22px;font-weight:700;">❤️ xcare</p><p style="margin:4px 0 0;color:#a8c7e8;font-size:13px;">Ihr digitales Pflege-Ökosystem</p></td></tr>
+<tr><td style="padding:32px;">
+<h2 style="color:#1A5276;margin-top:0;">Ihre Impf-Erinnerungen 💉</h2>
+<p style="color:#333;line-height:1.6;">Hallo <strong>${vorname}</strong>,</p>
+<p style="color:#333;line-height:1.6;">Folgende Impfungen stehen in den nächsten 30 Tagen an:</p>
+<ul style="list-style:none;padding:0;margin:16px 0;">${listItems}</ul>
+<p style="color:#555;font-size:13px;">Vereinbaren Sie rechtzeitig einen Termin bei Ihrem Arzt.</p>
+<a href="${appUrl}/familie/gesundheit" style="display:inline-block;background:#1A5276;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;margin:20px 0;">Zum Impfpass</a>
+<p style="color:#999;font-size:12px;margin-top:24px;"><a href="${appUrl}/familie/einstellungen" style="color:#999;">E-Mail-Einstellungen anpassen</a></p>
+</td></tr>
+<tr><td style="background:#f8f9fa;padding:16px 32px;border-top:1px solid #e9ecef;"><p style="margin:0;color:#6c757d;font-size:12px;text-align:center;">© ${new Date().getFullYear()} xcare gemeinnützige GmbH · <a href="${appUrl}" style="color:#1A5276;">xcare.de</a></p></td></tr>
+</table></td></tr></table>
+</body></html>`,
+        });
+        gesendetCount++;
+      });
+    }
+
+    return { gesendet: gesendetCount, impfungen: faelligeImpfungen.length };
+  }
+);
+
 // ─── Dead-Letter / Failure Handler ──────────────────────────────────────────
 // Listens to the built-in `inngest/function.failed` system event which fires
 // after all automatic retries for a function are exhausted.
@@ -769,6 +1104,352 @@ export const { GET, POST, PUT } = serve({
     remind7dAnbieterOffen,
     weeklyDigestAnbieter,
     dailyWiedervorlagenCheck,
+    // Phase 3D: Smart Reminders
+    ablaufdatenCheck,
+    impfungenErinnerung,
+    handleFunctionFailure,
+  ],
+});
+        .gte("ablaufdatum", heuteStr)
+        .lte("ablaufdatum", in60Tagen);
+      return data ?? [];
+    });
+
+    // ── Fällige Impfungen laden (30 und 60 Tage) ─────────────────────────────
+    const faelligeImpfungen = await step.run("fetch-fällige-impfungen", async () => {
+      const { data } = await supabase
+        .from("impfungen")
+        .select("id, impfstoff, krankheit, naechste_impfung, profil_id")
+        .not("naechste_impfung", "is", null)
+        .gte("naechste_impfung", heuteStr)
+        .lte("naechste_impfung", in60Tagen);
+      return data ?? [];
+    });
+
+    // ── Auslaufende Medikamente laden (7 und 14 Tage) ────────────────────────
+    const auslaufendeMedikamente = await step.run("fetch-auslaufende-medikamente", async () => {
+      const { data } = await supabase
+        .from("medikamente")
+        .select("id, name, bis_datum, profil_id")
+        .not("bis_datum", "is", null)
+        .gte("bis_datum", heuteStr)
+        .lte("bis_datum", in14Tagen)
+        .eq("aktiv", true);
+      return data ?? [];
+    });
+
+    type FristItem = {
+      profil_id: string;
+      typ: "dokument" | "impfung" | "medikament";
+      name: string;
+      datum: string;
+      tage: number;
+    };
+
+    const alleItems: FristItem[] = [];
+
+    for (const dok of ablaufendeDokumente) {
+      const ablauf = new Date(dok.ablaufdatum as string);
+      const tage = Math.ceil((ablauf.getTime() - heute.getTime()) / (24 * 60 * 60 * 1000));
+      alleItems.push({
+        profil_id: dok.profil_id as string,
+        typ: "dokument",
+        name: dok.name as string,
+        datum: dok.ablaufdatum as string,
+        tage,
+      });
+    }
+
+    for (const impf of faelligeImpfungen) {
+      const naechste = new Date(impf.naechste_impfung as string);
+      const tage = Math.ceil((naechste.getTime() - heute.getTime()) / (24 * 60 * 60 * 1000));
+      alleItems.push({
+        profil_id: impf.profil_id as string,
+        typ: "impfung",
+        name: `${impf.impfstoff} (${impf.krankheit})`,
+        datum: impf.naechste_impfung as string,
+        tage,
+      });
+    }
+
+    for (const med of auslaufendeMedikamente) {
+      const bis = new Date(med.bis_datum as string);
+      const tage = Math.ceil((bis.getTime() - heute.getTime()) / (24 * 60 * 60 * 1000));
+      alleItems.push({
+        profil_id: med.profil_id as string,
+        typ: "medikament",
+        name: med.name as string,
+        datum: med.bis_datum as string,
+        tage,
+      });
+    }
+
+    if (alleItems.length === 0) return { gesendet: 0, benachrichtigungen: 0 };
+
+    const nachNutzer = alleItems.reduce<Record<string, FristItem[]>>((acc, item) => {
+      acc[item.profil_id] = acc[item.profil_id] ?? [];
+      acc[item.profil_id].push(item);
+      return acc;
+    }, {});
+
+    let gesendetCount = 0;
+    let benachrichtigungenCount = 0;
+
+    const typLabels: Record<string, string> = {
+      dokument: "Dokument",
+      impfung: "Impfung",
+      medikament: "Medikament",
+    };
+    const typIcons: Record<string, string> = {
+      dokument: "📄",
+      impfung: "💉",
+      medikament: "💊",
+    };
+
+    for (const [profilId, items] of Object.entries(nachNutzer)) {
+      await step.run(`ablauf-notify-${profilId}`, async () => {
+        const { data: profil } = await supabase
+          .from("profiles")
+          .select("email, vorname, email_prefs")
+          .eq("id", profilId)
+          .single();
+
+        if (!profil?.email) return;
+        const prefs = (profil.email_prefs ?? {}) as Record<string, boolean>;
+
+        // App-Benachrichtigungen erstellen
+        for (const item of items) {
+          const { error: insertError } = await supabase.from("benachrichtigungen").insert({
+            profile_id: profilId,
+            typ: "system",
+            titel: `${typIcons[item.typ]} ${typLabels[item.typ]} läuft bald ab`,
+            nachricht: `"${item.name}" läuft in ${item.tage} ${item.tage === 1 ? "Tag" : "Tagen"} ab (${new Date(item.datum).toLocaleDateString("de-DE")}).`,
+            gelesen: false,
+          });
+          if (!insertError) benachrichtigungenCount++;
+        }
+
+        // E-Mail senden (wenn nicht abgemeldet)
+        if (prefs.ablaufdaten === false) return;
+
+        const vorname = profil.vorname ?? "Nutzer";
+        const listItems = items
+          .sort((a, b) => a.tage - b.tage)
+          .map((item) => {
+            const datumStr = new Date(item.datum).toLocaleDateString("de-DE", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            });
+            return `<li style="padding:6px 0;border-bottom:1px solid #f0f0f0;">${typIcons[item.typ]} <strong>${item.name}</strong> — ${typLabels[item.typ]} — fällig am ${datumStr} (in ${item.tage} ${item.tage === 1 ? "Tag" : "Tagen"})</li>`;
+          })
+          .join("");
+
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
+          to: profil.email,
+          subject: `xcare Erinnerung: ${items.length} ${items.length === 1 ? "Frist" : "Fristen"} laufen bald ab`,
+          html: `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/><title>Fristen-Erinnerung</title></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;max-width:600px;"><tr><td style="background:#1A5276;padding:24px 32px;"><p style="margin:0;color:#fff;font-size:22px;font-weight:700;">❤️ xcare</p><p style="margin:4px 0 0;color:#a8c7e8;font-size:13px;">Ihr digitales Pflege-Ökosystem</p></td></tr><tr><td style="padding:32px;"><h2 style="color:#1A5276;margin-top:0;">Wichtige Fristen-Erinnerung ⏰</h2><p style="color:#333;line-height:1.6;">Hallo <strong>${vorname}</strong>,</p><p style="color:#333;line-height:1.6;">Folgende Fristen laufen in Kürze ab:</p><ul style="list-style:none;padding:0;margin:16px 0;">${listItems}</ul><a href="${appUrl}/familie/gesundheit" style="display:inline-block;background:#1A5276;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;margin:20px 0;">Zur Gesundheitsübersicht</a><p style="color:#999;font-size:12px;margin-top:24px;"><a href="${appUrl}/familie/einstellungen" style="color:#999;">E-Mail-Einstellungen anpassen</a></p></td></tr><tr><td style="background:#f8f9fa;padding:16px 32px;border-top:1px solid #e9ecef;"><p style="margin:0;color:#6c757d;font-size:12px;text-align:center;">© ${new Date().getFullYear()} xcare gemeinnützige GmbH</p></td></tr></table></td></tr></table></body></html>`,
+        });
+        gesendetCount++;
+      });
+    }
+
+    return { gesendet: gesendetCount, benachrichtigungen: benachrichtigungenCount };
+  }
+);
+
+// ─── 12. Wöchentliche Impf-Erinnerung (montags 09:00 UTC) ────────────────────
+
+const impfungenErinnerung = inngest.createFunction(
+  { id: "impfungen-erinnerung", name: "Wöchentliche Impf-Erinnerung" },
+  { cron: "0 9 * * 1" }, // montags 09:00 UTC
+  async ({ step }) => {
+    const supabase = getServiceClient();
+
+    const heute = new Date();
+    const heuteStr = heute.toISOString().split("T")[0];
+    const in30Tagen = new Date(heute.getTime() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+
+    const faelligeImpfungen = await step.run("fetch-impfungen-30d", async () => {
+      const { data } = await supabase
+        .from("impfungen")
+        .select("id, impfstoff, krankheit, naechste_impfung, profil_id")
+        .not("naechste_impfung", "is", null)
+        .gte("naechste_impfung", heuteStr)
+        .lte("naechste_impfung", in30Tagen);
+      return data ?? [];
+    });
+
+    if (faelligeImpfungen.length === 0) return { gesendet: 0 };
+
+    const nachNutzer = faelligeImpfungen.reduce<Record<string, typeof faelligeImpfungen>>(
+      (acc, impf) => {
+        const pid = impf.profil_id as string;
+        acc[pid] = acc[pid] ?? [];
+        acc[pid].push(impf);
+        return acc;
+      },
+      {}
+    );
+
+    let gesendetCount = 0;
+
+    for (const [profilId, impfungen] of Object.entries(nachNutzer)) {
+      await step.run(`impfung-erinnerung-${profilId}`, async () => {
+        const { data: profil } = await supabase
+          .from("profiles")
+          .select("email, vorname, email_prefs")
+          .eq("id", profilId)
+          .single();
+
+        if (!profil?.email) return;
+        const prefs = (profil.email_prefs ?? {}) as Record<string, boolean>;
+        if (prefs.ablaufdaten === false) return;
+
+        // App-Benachrichtigung
+        const impfungsTitel =
+          impfungen.length === 1
+            ? `Impfung ${impfungen[0].impfstoff} fällig`
+            : `${impfungen.length} Impfungen in den nächsten 30 Tagen fällig`;
+
+        await supabase.from("benachrichtigungen").insert({
+          profile_id: profilId,
+          typ: "system",
+          titel: `💉 ${impfungsTitel}`,
+          nachricht: impfungen
+            .map((i) => {
+              const tage = Math.ceil(
+                (new Date(i.naechste_impfung as string).getTime() - heute.getTime()) /
+                  (24 * 60 * 60 * 1000)
+              );
+              return `${i.impfstoff} (${i.krankheit}) in ${tage} Tagen`;
+            })
+            .join(", "),
+          gelesen: false,
+        });
+
+        const vorname = profil.vorname ?? "Nutzer";
+        const listItems = impfungen
+          .sort(
+            (a, b) =>
+              new Date(a.naechste_impfung as string).getTime() -
+              new Date(b.naechste_impfung as string).getTime()
+          )
+          .map((impf) => {
+            const naechste = new Date(impf.naechste_impfung as string);
+            const tage = Math.ceil(
+              (naechste.getTime() - heute.getTime()) / (24 * 60 * 60 * 1000)
+            );
+            const datumStr = naechste.toLocaleDateString("de-DE", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            });
+            return `<li style="padding:8px 0;border-bottom:1px solid #f0f0f0;">💉 <strong>${impf.impfstoff}</strong> gegen <em>${impf.krankheit}</em> — ${datumStr} (in ${tage} Tagen)</li>`;
+          })
+          .join("");
+
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
+          to: profil.email,
+          subject: `💉 Impf-Erinnerung: ${impfungen.length} ${impfungen.length === 1 ? "Impfung" : "Impfungen"} in den nächsten 30 Tagen`,
+          html: `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/><title>Impf-Erinnerung</title></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;max-width:600px;"><tr><td style="background:#1A5276;padding:24px 32px;"><p style="margin:0;color:#fff;font-size:22px;font-weight:700;">❤️ xcare</p></td></tr><tr><td style="padding:32px;"><h2 style="color:#1A5276;margin-top:0;">Ihre Impf-Erinnerungen 💉</h2><p style="color:#333;line-height:1.6;">Hallo <strong>${vorname}</strong>,</p><p style="color:#333;line-height:1.6;">Folgende Impfungen stehen in den nächsten 30 Tagen an:</p><ul style="list-style:none;padding:0;margin:16px 0;">${listItems}</ul><a href="${appUrl}/familie/gesundheit" style="display:inline-block;background:#1A5276;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;margin:20px 0;">Zum Impfpass</a><p style="color:#999;font-size:12px;margin-top:24px;"><a href="${appUrl}/familie/einstellungen" style="color:#999;">E-Mail-Einstellungen anpassen</a></p></td></tr><tr><td style="background:#f8f9fa;padding:16px 32px;border-top:1px solid #e9ecef;"><p style="margin:0;color:#6c757d;font-size:12px;text-align:center;">© ${new Date().getFullYear()} xcare gemeinnützige GmbH</p></td></tr></table></td></tr></table></body></html>`,
+        });
+        gesendetCount++;
+      });
+    }
+
+    return { gesendet: gesendetCount, impfungen: faelligeImpfungen.length };
+  }
+);
+
+// ─── Dead-Letter / Failure Handler ──────────────────────────────────────────
+// Listens to the built-in `inngest/function.failed` system event which fires
+// after all automatic retries for a function are exhausted.
+const handleFunctionFailure = inngest.createFunction(
+  { id: "handle-function-failure" },
+  { event: "inngest/function.failed" },
+  async ({ event }) => {
+    const { function_id, run_id, error } = event.data as {
+      function_id: string;
+      run_id: string;
+      error: { name?: string; message?: string; stack?: string };
+    };
+
+    logger.error("Inngest function permanently failed (dead-letter)", {
+      function_id,
+      run_id,
+      error_name: error?.name ?? "UnknownError",
+      error_message: error?.message ?? "no message",
+    });
+  }
+);
+
+// ─── Export (Inngest serve handler) ────────────────────────────────────────────
+export const { GET, POST, PUT } = serve({
+  client: inngest,
+  functions: [
+    sendWelcomeEmail,
+    notifyAnbieterNeueAnfrage,
+    notifyFamilieStatusUpdate,
+    remind48hAnbieter,
+    requestBewertungNachAbschluss,
+    notifyNeueNachricht,
+    remind48hFamilieAngebot,
+    remind7dAnbieterOffen,
+    weeklyDigestAnbieter,
+    dailyWiedervorlagenCheck,
+    // Phase 3D: Smart Reminders
+    ablaufdatenCheck,
+    impfungenErinnerung,
+    handleFunctionFailure,
+  ],
+});
+/ Failure Handler ──────────────────────────────────────────
+// Listens to the built-in `inngest/function.failed` system event which fires
+// after all automatic retries for a function are exhausted.
+const handleFunctionFailure = inngest.createFunction(
+  { id: "handle-function-failure" },
+  { event: "inngest/function.failed" },
+  async ({ event }) => {
+    const { function_id, run_id, error } = event.data as {
+      function_id: string;
+      run_id: string;
+      error: { name?: string; message?: string; stack?: string };
+    };
+
+    logger.error("Inngest function permanently failed (dead-letter)", {
+      function_id,
+      run_id,
+      error_name: error?.name ?? "UnknownError",
+      error_message: error?.message ?? "no message",
+      // stack deliberately omitted from structured log — too noisy; visible in Inngest UI
+    });
+  }
+);
+
+// ─── Export (Inngest serve handler) ────────────────────────────────────────────
+export const { GET, POST, PUT } = serve({
+  client: inngest,
+  functions: [
+    sendWelcomeEmail,
+    notifyAnbieterNeueAnfrage,
+    notifyFamilieStatusUpdate,
+    remind48hAnbieter,
+    requestBewertungNachAbschluss,
+    notifyNeueNachricht,
+    remind48hFamilieAngebot,
+    remind7dAnbieterOffen,
+    weeklyDigestAnbieter,
+    dailyWiedervorlagenCheck,
+    // Phase 3D: Smart Reminders
+    ablaufdatenCheck,
+    impfungenErinnerung,
     handleFunctionFailure,
   ],
 });
