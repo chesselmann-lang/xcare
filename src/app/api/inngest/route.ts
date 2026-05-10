@@ -94,9 +94,23 @@ const notifyFamilieStatusUpdate = inngest.createFunction(
       new_status: string; lebenslage: string; anfrage_id?: string;
     };
 
+    // Check email_prefs: skip if familie opted out of status updates
+    const supabase = getServiceClient();
+    const { data: familieProfile } = await supabase
+      .from("profiles")
+      .select("email_prefs")
+      .eq("email", familie_email)
+      .single();
+    const familiePrefs = (familieProfile?.email_prefs ?? {}) as Record<string, boolean>;
+    if (familiePrefs.statusupdate === false) return { skipped: true, reason: "opted out: statusupdate" };
+
     const anfragenUrl = anfrage_id
       ? `${appUrl}/familie/anfragen/${anfrage_id}`
       : `${appUrl}/familie/anfragen`;
+
+    // Build unsubscribe link (DSGVO / CAN-SPAM)
+    const unsubToken = await createUnsubscribeToken(familie_email, "statusupdate");
+    const unsubUrl = buildUnsubscribeUrl(appUrl, familie_email, "statusupdate", unsubToken);
 
     const msgs: Record<string, { subject: string; body: string }> = {
       in_bearbeitung: {
@@ -151,10 +165,15 @@ const notifyFamilieStatusUpdate = inngest.createFunction(
       from: fromEmail,
       to: familie_email,
       subject: msg.subject,
+      headers: {
+        "List-Unsubscribe": `<${unsubUrl}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
       html: baseTemplate(msg.subject, `
         <h2 style="color:#1A5276;margin-top:0;">Update zu Ihrer Anfrage</h2>
         <p style="color:#333;line-height:1.6;">Hallo <strong>${familie_name}</strong>,</p>
         ${msg.body}
+        <p style="color:#999;font-size:12px;margin-top:24px;"><a href="${unsubUrl}" style="color:#999;">Keine Status-E-Mails mehr erhalten</a> · <a href="${appUrl}/familie/einstellungen" style="color:#999;">Einstellungen</a></p>
       `),
     });
   }
@@ -271,18 +290,36 @@ const notifyNeueNachricht = inngest.createFunction(
       anfrage_id: string; vorschau?: string;
     };
 
+    // Check email_prefs: skip if recipient opted out of message notifications
+    const supabase = getServiceClient();
+    const { data: empfaengerProfile } = await supabase
+      .from("profiles")
+      .select("email_prefs")
+      .eq("email", empfaenger_email)
+      .single();
+    const empfaengerPrefs = (empfaengerProfile?.email_prefs ?? {}) as Record<string, boolean>;
+    if (empfaengerPrefs.neue_nachricht === false) return { skipped: true, reason: "opted out: neue_nachricht" };
+
+    // Build unsubscribe link (DSGVO / CAN-SPAM)
+    const unsubToken = await createUnsubscribeToken(empfaenger_email, "neue_nachricht");
+    const unsubUrl = buildUnsubscribeUrl(appUrl, empfaenger_email, "neue_nachricht", unsubToken);
+
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: fromEmail,
       to: empfaenger_email,
       subject: `Neue Nachricht von ${sender_name}`,
+      headers: {
+        "List-Unsubscribe": `<${unsubUrl}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
       html: baseTemplate("Neue Nachricht", `
         <h2 style="color:#1A5276;margin-top:0;">Neue Nachricht 💬</h2>
         <p style="color:#333;line-height:1.6;">Hallo <strong>${empfaenger_name}</strong>,</p>
         <p style="color:#333;line-height:1.6;"><strong>${sender_name}</strong> hat Ihnen eine Nachricht geschrieben.</p>
         ${vorschau ? `<div style="background:#f4f6f8;border-radius:8px;padding:12px 16px;margin:16px 0;color:#555;font-style:italic;font-size:14px;">"${vorschau.substring(0, 120)}${vorschau.length > 120 ? "…" : ""}"</div>` : ""}
         ${btn("Nachricht lesen", `${appUrl}/familie/anfragen/${anfrage_id}`)}
-        <p style="color:#999;font-size:12px;margin-top:24px;">Sie erhalten diese E-Mail, da Sie an einer Anfrage auf xcare beteiligt sind.</p>
+        <p style="color:#999;font-size:12px;margin-top:24px;"><a href="${unsubUrl}" style="color:#999;">Keine Nachrichten-E-Mails mehr</a> · <a href="${appUrl}/familie/einstellungen" style="color:#999;">Einstellungen</a></p>
       `),
     });
   }
@@ -540,17 +577,16 @@ const dailyWiedervorlagenCheck = inngest.createFunction(
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("user_id")
+          .select("email, email_prefs")
           .eq("id", anbieter.profile_id)
           .single();
 
-        if (!profile?.user_id) return;
-
-        const { data: userData } = await (supabase.auth.admin.getUserById(profile.user_id)
-          .catch(() => ({ data: null })));
-
-        const email = (userData as { user?: { email?: string } })?.user?.email;
+        const email = profile?.email;
         if (!email) return;
+
+        // Respect email_prefs: skip if anbieter opted out of wiedervorlage reminders
+        const wvPrefs = (profile?.email_prefs ?? {}) as Record<string, boolean>;
+        if (wvPrefs.wiedervorlage === false) return;
 
         const rows = items
           .map((item) => {
