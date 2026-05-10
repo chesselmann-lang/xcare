@@ -31,9 +31,15 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Öffentliche Anbieter-Profile (/anbieter/[uuid] und Sub-Pfade) sind frei zugänglich
+  const UUID_RE = /^\/anbieter\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+  const isPublicAnbieterProfile = UUID_RE.test(pathname);
+
   // Geschützte Routen
   const protectedPaths = ["/familie", "/anbieter"];
-  const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
+  const isProtected =
+    !isPublicAnbieterProfile &&
+    protectedPaths.some((p) => pathname.startsWith(p));
 
   if (isProtected && !user) {
     const redirectUrl = new URL("/login", request.url);
