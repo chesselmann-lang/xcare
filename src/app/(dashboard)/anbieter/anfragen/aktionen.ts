@@ -46,7 +46,7 @@ export async function statusAendern(anfrageId: string, neuerStatus: AnfrageStatu
   // Fetch the anfrage to get familie profile_id
   const { data: anfrage, error: fetchError } = await supabase
     .from("anfragen")
-    .select("id, status, familie_id, anbieter:anbieter_id(name)")
+    .select("id, status, familie_id, lebenslage, anbieter:anbieter_id(name)")
     .eq("id", anfrageId)
     .eq("anbieter_id", anbieter.id)
     .single();
@@ -83,6 +83,36 @@ export async function statusAendern(anfrageId: string, neuerStatus: AnfrageStatu
       nachricht: `${anbieterName}: ${nachrichtText}`,
       link: `/familie/anfragen/${anfrageId}`,
     });
+  }
+
+  // Fire Inngest status-changed email notification (non-blocking)
+  // Covers both StatusWechselSelect (list) and AnfrageAktionen (detail) paths
+  if (neuerStatus !== "offen" && anfrage.familie_id && process.env.INNGEST_EVENT_KEY) {
+    const { data: familieProfile } = await supabase
+      .from("profiles")
+      .select("email, vorname, nachname")
+      .eq("id", anfrage.familie_id)
+      .single();
+
+    if (familieProfile?.email) {
+      const familieName = `${familieProfile.vorname ?? ""} ${familieProfile.nachname ?? ""}`.trim() || "Familie";
+      const anbieterName = (anfrage.anbieter as { name?: string } | null)?.name ?? "Der Anbieter";
+      fetch(`https://inn.gs/e/${process.env.INNGEST_EVENT_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "anfrage/status-changed",
+          data: {
+            familie_email: familieProfile.email,
+            familie_name:  familieName,
+            anbieter_name: anbieterName,
+            new_status:    neuerStatus,
+            lebenslage:    anfrage.lebenslage ?? "",
+            anfrage_id:    anfrageId,
+          },
+        }),
+      }).catch(() => {});
+    }
   }
 
   revalidatePath("/anbieter/anfragen");

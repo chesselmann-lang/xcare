@@ -303,10 +303,7 @@ export default async function AnfrageDetailPage({
         <AnfrageAktionen
           anfrageId={anfrage.id}
           currentStatus={anfrage.status as AnfrageStatus}
-          familieEmail={familie?.email}
           familieName={familie ? `${familie.vorname ?? ""} ${familie.nachname ?? ""}`.trim() : undefined}
-          anbieterName={anbieter?.name ?? undefined}
-          lebenslage={anfrage.lebenslage}
         />
 
         {/* Angebot-Editor — structured offer with price, dates, description */}

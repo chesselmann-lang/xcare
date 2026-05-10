@@ -11,10 +11,7 @@ import type { AnfrageStatus } from "@/lib/types";
 interface AnfrageAktionenProps {
   anfrageId: string;
   currentStatus: AnfrageStatus;
-  familieEmail?: string;
   familieName?: string;
-  anbieterName?: string;
-  lebenslage?: string;
 }
 
 const statusUebergaenge: Record<
@@ -52,10 +49,7 @@ const statusLabels: Record<AnfrageStatus, string> = {
 export default function AnfrageAktionen({
   anfrageId,
   currentStatus,
-  familieEmail,
   familieName,
-  anbieterName,
-  lebenslage,
 }: AnfrageAktionenProps) {
   const [pendingStatus, setPendingStatus] = useState<AnfrageStatus | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -80,25 +74,10 @@ export default function AnfrageAktionen({
         toast.error("Fehler beim Statuswechsel", { description: result.error });
       } else {
         toast.success(`Status geändert: ${statusLabels[nextStatus]}`, {
-          description: familieEmail
+          description: nextStatus !== "offen"
             ? `${familieName ?? "Die Familie"} wurde benachrichtigt.`
             : undefined,
         });
-        // Fire Inngest email notification (non-blocking)
-        if (familieEmail && familieName && anbieterName) {
-          fetch("/api/inngest-status", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              familie_email: familieEmail,
-              familie_name: familieName,
-              anbieter_name: anbieterName,
-              new_status: nextStatus,
-              lebenslage: lebenslage ?? "",
-              anfrage_id: anfrageId,
-            }),
-          }).catch(() => {});
-        }
       }
       setPendingStatus(null);
     });
