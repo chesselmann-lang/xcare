@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
+import { scorePassword } from "@/lib/password-strength";
 
 const schema = z
   .object({
@@ -39,8 +40,12 @@ export function UpdatePasswordForm() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
+
+  const passwordValue = watch("password") ?? "";
+  const strength = scorePassword(passwordValue);
 
   async function onSubmit(data: FormData) {
     setError(null);
@@ -86,6 +91,29 @@ export function UpdatePasswordForm() {
                 )}
               </button>
             </div>
+            {/* Strength bar */}
+            {passwordValue.length > 0 && (
+              <div className="space-y-1 mt-1">
+                <div className="flex gap-1 h-1.5">
+                  {[1, 2, 3, 4].map((level) => (
+                    <div
+                      key={level}
+                      className="flex-1 rounded-full transition-all duration-300"
+                      style={{
+                        backgroundColor:
+                          strength.score >= level ? strength.barColor : "var(--border)",
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-medium ${strength.color}`}>{strength.label}</span>
+                  {strength.tips[0] && (
+                    <span className="text-xs text-[--muted-foreground]">{strength.tips[0]}</span>
+                  )}
+                </div>
+              </div>
+            )}
             {errors.password && (
               <p className="text-xs text-[--danger]">{errors.password.message}</p>
             )}

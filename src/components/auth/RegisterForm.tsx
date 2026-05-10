@@ -6,13 +6,14 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Users, Building2 } from "lucide-react";
+import { Loader2, Users, Building2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { scorePassword } from "@/lib/password-strength";
 import type { UserRole } from "@/lib/types";
 
 const schema = z.object({
@@ -29,6 +30,7 @@ type FormData = z.infer<typeof schema>;
 export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -44,6 +46,8 @@ export function RegisterForm() {
   });
 
   const rolle = watch("rolle");
+  const passwordValue = watch("password") ?? "";
+  const strength = scorePassword(passwordValue);
 
   async function onSubmit(data: FormData) {
     setError(null);
@@ -134,7 +138,48 @@ export function RegisterForm() {
 
           <div className="space-y-1.5">
             <Label>Passwort</Label>
-            <Input type="password" placeholder="Mindestens 8 Zeichen" {...register("password")} />
+            <div className="relative">
+              <Input
+                type={showPw ? "text" : "password"}
+                placeholder="Mindestens 8 Zeichen"
+                {...register("password")}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[--muted-foreground] hover:text-[--foreground]"
+                onClick={() => setShowPw((p) => !p)}
+                tabIndex={-1}
+              >
+                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {/* Password strength bar */}
+            {passwordValue.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex gap-1 h-1.5">
+                  {[1, 2, 3, 4].map((level) => (
+                    <div
+                      key={level}
+                      className="flex-1 rounded-full transition-all duration-300"
+                      style={{
+                        backgroundColor:
+                          strength.score >= level ? strength.barColor : "var(--border)",
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-medium ${strength.color}`}>
+                    {strength.label}
+                  </span>
+                  {strength.tips[0] && (
+                    <span className="text-xs text-[--muted-foreground]">
+                      {strength.tips[0]}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
             {errors.password && <p className="text-xs text-[--danger]">{errors.password.message}</p>}
           </div>
 
