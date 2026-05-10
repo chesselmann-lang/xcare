@@ -20,7 +20,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export function LoginForm({ next, updated }: { next?: string; updated?: boolean }) {
+export function LoginForm({ next, updated, authError }: { next?: string; updated?: boolean; authError?: string }) {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -100,6 +100,12 @@ export function LoginForm({ next, updated }: { next?: string; updated?: boolean 
           {updated && (
             <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
               ✓ Passwort erfolgreich geändert. Bitte jetzt anmelden.
+            </div>
+          )}
+
+          {authError && !error && (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+              {decodeURIComponent(authError)}
             </div>
           )}
 

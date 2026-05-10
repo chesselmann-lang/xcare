@@ -3,13 +3,14 @@ import { LoginForm } from "@/components/auth/LoginForm";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; updated?: string }>;
+  searchParams: Promise<{ next?: string; updated?: string; error?: string }>;
 }) {
   const params = await searchParams;
   return (
     <LoginForm
       next={params.next}
       updated={params.updated === "1"}
+      authError={params.error}
     />
   );
 }
