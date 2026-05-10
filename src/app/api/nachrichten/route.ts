@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error("[nachrichten POST]", error);
+      logger.error("nachrichten POST error", { error: error instanceof Error ? error.message : String(error) });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -131,7 +132,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (err) {
-    console.error("[nachrichten POST] unexpected:", err);
+    logger.error("nachrichten POST unexpected error", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }
@@ -164,7 +165,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ data });
   } catch (err) {
-    console.error("[nachrichten GET] unexpected:", err);
+    logger.error("nachrichten GET unexpected error", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }

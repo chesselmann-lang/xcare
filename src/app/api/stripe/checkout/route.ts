@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PLANS, type PlanId } from "@/lib/stripe/plans";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/stripe/checkout
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    console.error("[stripe/checkout]", err);
+    logger.error("stripe/checkout error", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json(
       { error: "Interner Fehler" },
       { status: 500 }

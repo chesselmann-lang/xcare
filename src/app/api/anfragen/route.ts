@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   // Rate limit: 5 new Anfragen per 5 minutes per IP to prevent spam
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (insertErr) {
-      console.error("Anfrage insert error:", insertErr);
+      logger.error("Anfrage insert error", { error: insertErr.message });
       return NextResponse.json({ error: "Anfrage konnte nicht erstellt werden" }, { status: 500 });
     }
 
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ anfrage }, { status: 201 });
   } catch (error) {
-    console.error("POST /api/anfragen error:", error);
+    logger.error("POST /api/anfragen unhandled error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Serverfehler" }, { status: 500 });
   }
 }

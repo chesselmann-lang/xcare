@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { streamLotseAntwort } from "@/lib/ai/lotse";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 import type { LebenslageTyp, WizardAntwort } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[KI-Lotse]", error);
+    logger.error("KI-Lotse error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Interner Fehler" },
       { status: 500 }

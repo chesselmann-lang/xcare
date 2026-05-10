@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -55,7 +56,7 @@ Schreibe GENAU 2 kurze Sätze: einen warmen Willkommenssatz und einen praktische
 
     return NextResponse.json({ text });
   } catch (err) {
-    console.error("[ki-empfehlung]", err);
+    logger.error("ki-empfehlung error", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "AI unavailable" }, { status: 500 });
   }
 }

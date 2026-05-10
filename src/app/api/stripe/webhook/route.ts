@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/stripe/webhook
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   // --- STUB mode: no Stripe keys ---
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
-    console.log("[stripe/webhook] STUB mode – received webhook, ignoring (no keys configured)");
+    logger.info("stripe/webhook STUB mode – no keys configured, ignoring");
     return NextResponse.json({ received: true, mode: "stub" });
   }
 
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
         process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
-      console.error("[stripe/webhook] Signature verification failed:", err);
+      logger.error("stripe/webhook signature verification failed", { error: err instanceof Error ? err.message : String(err) });
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
@@ -103,21 +104,21 @@ export async function POST(req: NextRequest) {
 
       case "invoice.paid":
         // Could store last_invoice_date, send receipt email via Inngest, etc.
-        console.log("[stripe/webhook] invoice.paid for subscription:", event.data.object.subscription);
+        logger.info("stripe/webhook invoice.paid", { subscription: event.data.object.subscription });
         break;
 
       case "invoice.payment_failed":
         // Could email Anbieter about failed payment, set a warning flag, etc.
-        console.warn("[stripe/webhook] invoice.payment_failed:", event.data.object.subscription);
+        logger.warn("stripe/webhook invoice.payment_failed", { subscription: event.data.object.subscription });
         break;
 
       default:
-        console.log(`[stripe/webhook] Unhandled event: ${event.type}`);
+        logger.debug("stripe/webhook unhandled event", { type: event.type });
     }
 
     return NextResponse.json({ received: true });
   } catch (err) {
-    console.error("[stripe/webhook] Error:", err);
+    logger.error("stripe/webhook error", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Webhook error" }, { status: 500 });
   }
 }

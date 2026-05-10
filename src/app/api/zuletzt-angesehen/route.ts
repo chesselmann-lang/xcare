@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[zuletzt-angesehen]", err);
+    logger.error("zuletzt-angesehen error", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
