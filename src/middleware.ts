@@ -39,19 +39,39 @@ export async function middleware(request: NextRequest) {
   const isPublicAnbieterPage =
     pathname === "/anbieter" || UUID_RE.test(pathname);
 
-  // Geschützte Routen (Dashboard-Bereiche)
-  const protectedPaths = ["/familie", "/anbieter"];
+  // Geschützte Routen — alle Bereiche die Login erfordern
+  const protectedPaths = ["/familie", "/anbieter", "/admin"];
   const isProtected =
     !isPublicAnbieterPage &&
     protectedPaths.some((p) => pathname.startsWith(p));
 
+  // 1. Unauthentifizierte Nutzer aus geschützten Bereichen ableiten
   if (isProtected && !user) {
     const redirectUrl = new URL("/login", request.url);
     redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Auth-Seiten bei eingeloggtem User umleiten (nur exakte Pfade, nicht Unterseiten wie /login/passwort-vergessen)
+  // 2. Rollenbasierte Zugriffskontrolle via JWT-Metadata (kein DB-Query nötig)
+  //    Gilt nur für explizite "familie"/"anbieter"-Rollen — Admins & unbekannte Rollen
+  //    passieren ohne Umleitung (ihre Seitenzugriffe werden auf Seiten-Ebene geprüft).
+  if (user && isProtected) {
+    const metadataRole = (user.user_metadata?.rolle as string | undefined) ?? "";
+
+    // Anbieter darf nicht ins Familien-Dashboard
+    if (metadataRole === "anbieter" && pathname.startsWith("/familie")) {
+      return NextResponse.redirect(new URL("/anbieter/dashboard", request.url));
+    }
+
+    // Familie darf nicht ins Anbieter-Dashboard
+    // (Öffentliche Anbieter-Profilseiten sind bereits durch isPublicAnbieterPage ausgenommen)
+    if (metadataRole === "familie" && pathname.startsWith("/anbieter")) {
+      return NextResponse.redirect(new URL("/familie/dashboard", request.url));
+    }
+  }
+
+  // 3. Auth-Seiten bei eingeloggtem User umleiten
+  //    (Nur exakte Pfade, nicht Unterseiten wie /login/passwort-vergessen)
   if ((pathname === "/login" || pathname === "/register") && user) {
     return NextResponse.redirect(new URL("/", request.url));
   }
