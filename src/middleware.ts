@@ -1,7 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { randomUUID } from "crypto";
 
 export async function middleware(request: NextRequest) {
+  // Attach a correlation ID to every request so log lines across route handlers
+  // can be correlated. Re-use an existing header if the upstream (e.g. Vercel CDN)
+  // already set one; otherwise generate a fresh UUID v4.
+  const requestId =
+    request.headers.get("x-request-id") ??
+    request.headers.get("x-vercel-id") ??
+    randomUUID();
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -75,6 +84,10 @@ export async function middleware(request: NextRequest) {
   if ((pathname === "/login" || pathname === "/register") && user) {
     return NextResponse.redirect(new URL("/", request.url));
   }
+
+  // Propagate the correlation ID on both the request (readable by route handlers)
+  // and the response (readable by clients / log aggregators).
+  supabaseResponse.headers.set("x-request-id", requestId);
 
   return supabaseResponse;
 }

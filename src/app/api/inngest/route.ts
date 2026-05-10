@@ -3,6 +3,7 @@ import { Inngest } from "inngest";
 import { Resend } from "resend";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createUnsubscribeToken, buildUnsubscribeUrl } from "@/lib/unsubscribe";
+import { logger } from "@/lib/logger";
 
 export const inngest = new Inngest({ id: "xcare" });
 
@@ -731,6 +732,29 @@ const dailyWiedervorlagenCheck = inngest.createFunction(
   }
 );
 
+// ─── Dead-Letter / Failure Handler ──────────────────────────────────────────
+// Listens to the built-in `inngest/function.failed` system event which fires
+// after all automatic retries for a function are exhausted.
+const handleFunctionFailure = inngest.createFunction(
+  { id: "handle-function-failure" },
+  { event: "inngest/function.failed" },
+  async ({ event }) => {
+    const { function_id, run_id, error } = event.data as {
+      function_id: string;
+      run_id: string;
+      error: { name?: string; message?: string; stack?: string };
+    };
+
+    logger.error("Inngest function permanently failed (dead-letter)", {
+      function_id,
+      run_id,
+      error_name: error?.name ?? "UnknownError",
+      error_message: error?.message ?? "no message",
+      // stack deliberately omitted from structured log — too noisy; visible in Inngest UI
+    });
+  }
+);
+
 // ─── Export (Inngest serve handler) ────────────────────────────────────────────
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -745,5 +769,6 @@ export const { GET, POST, PUT } = serve({
     remind7dAnbieterOffen,
     weeklyDigestAnbieter,
     dailyWiedervorlagenCheck,
+    handleFunctionFailure,
   ],
 });

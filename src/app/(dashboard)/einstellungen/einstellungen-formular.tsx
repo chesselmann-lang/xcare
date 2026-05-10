@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Loader2, Bell, Shield, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import type { Profile } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
@@ -45,23 +44,22 @@ export function EinstellungenFormular({
     setSaving(false);
   };
 
-  const exportData = async () => {
-    const { data: myData } = await supabase
-      .from("profiles").select("*, anfragen(*), favoriten(*), bewertungen(*)").eq("id", profile.id).single();
-    const blob = new Blob([JSON.stringify(myData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "xcare-meine-daten.json"; a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Datei heruntergeladen");
-  };
 
   const deleteAccount = async () => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
     setDeleting(true);
-    await supabase.auth.signOut();
-    // Note: full account deletion requires a server-side function (service role)
-    toast("Account-Löschung beantragt. Unser Team löscht Ihre Daten innerhalb von 72h.", { duration: 6000 });
-    router.push("/");
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST" });
+      if (!res.ok) throw new Error("Server-Fehler");
+      toast("Account-Löschung durchgeführt. Ihre Daten werden innerhalb von 72 h vollständig gelöscht.", {
+        duration: 8000,
+      });
+      router.push("/");
+    } catch {
+      toast.error("Fehler beim Löschen des Accounts. Bitte versuchen Sie es erneut.");
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
   };
 
   const Toggle = ({ label, desc, checked, onChange }: { label: string; desc: string; checked: boolean; onChange: (v: boolean) => void }) => (
@@ -129,7 +127,9 @@ export function EinstellungenFormular({
           <div>
             <p className="text-sm font-medium mb-1">Meine Daten exportieren</p>
             <p className="text-xs text-[--muted-foreground] mb-2">Laden Sie alle Ihre bei xcare gespeicherten Daten herunter (DSGVO Art. 20).</p>
-            <Button variant="outline" size="sm" onClick={exportData}>Daten herunterladen (JSON)</Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/api/profil/export" download>Daten herunterladen (JSON)</a>
+            </Button>
           </div>
           <div className="pt-3 border-t border-[--border]">
             <p className="text-sm font-medium text-red-600 mb-1 flex items-center gap-1.5">

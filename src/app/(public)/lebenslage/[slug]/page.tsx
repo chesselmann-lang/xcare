@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { PlzSuche } from "@/components/lebenslage/PlzSuche";
 import type { Metadata } from "next";
+import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 const LEBENSLAGE_CONFIG: Record<string, {
   label: string;
@@ -199,6 +200,13 @@ export default async function LebenslagePage({
 
   return (
     <div className="min-h-screen bg-[--background]">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Startseite", href: "/" },
+          { name: "Lebenslagen", href: "/lebenslage" },
+          { name: config.label, href: `/lebenslage/${slug}` },
+        ]}
+      />
       {/* Hero */}
       <div className="bg-gradient-to-br from-[--primary] to-[--primary-dark] text-white py-14 px-4">
         <div className="max-w-4xl mx-auto">

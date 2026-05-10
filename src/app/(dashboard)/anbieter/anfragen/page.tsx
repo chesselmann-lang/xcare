@@ -1,13 +1,14 @@
 ﻿import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Clock, MessageSquare, Download, MessageCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, MessageSquare, Download, MessageCircle, Inbox } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatRelative } from "@/lib/utils";
 import { AnfragenFilter } from "@/components/anfragen/AnfragenFilter";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AnfragenBulkAktionen } from "@/components/anfragen/AnfragenBulkAktionen";
 import { AnfrageQuickActions } from "@/components/anfragen/AnfrageQuickActions";
 import { StatusWechselSelect } from "@/components/anfragen/StatusWechselSelect";
@@ -252,12 +253,11 @@ export default async function AnbieterAnfragenPage({
               {sorted.map((a) => <AnfrageCard key={a.id} anfrage={a} />)}
             </div>
           ) : (
-            <Card>
-              <CardContent className="py-10 text-center text-[--muted-foreground]">
-                <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                <p>Keine Anfragen mit diesem Status</p>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={Inbox}
+              title="Keine Anfragen"
+              description="Keine Anfragen mit diesem Status gefunden."
+            />
           )}
         </section>
       )}

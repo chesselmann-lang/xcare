@@ -3,6 +3,8 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { CookieBanner } from "@/components/cookie/CookieBanner";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
@@ -37,6 +39,7 @@ export const metadata: Metadata = {
   },
 };
 
+
 export default function RootLayout({
   children,
 }: {
@@ -44,6 +47,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de" className={`${geist.variable} h-full antialiased`}>
+      <head>
+        {/* Preconnect to Supabase (auth, DB, storage) */}
+        <link
+          rel="preconnect"
+          href={process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://supabase.co"}
+        />
+        <link
+          rel="dns-prefetch"
+          href={process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://supabase.co"}
+        />
+        {/* Preconnect to OpenStreetMap tile servers (MapLibre) */}
+        <link rel="preconnect" href="https://tile.openstreetmap.org" />
+        <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
+        {/* Preconnect to Google Fonts (Geist is self-hosted, but CDN assets) */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body className="min-h-full bg-[--background] text-[--foreground]">
         {children}
         <Toaster
@@ -54,6 +74,8 @@ export default function RootLayout({
           }}
         />
         <CookieBanner />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

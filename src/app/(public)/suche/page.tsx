@@ -9,8 +9,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { AnbieterKarte } from "@/components/suche/AnbieterKarte";
-import { KartenAnsicht } from "@/components/suche/KartenAnsicht";
+import dynamic from "next/dynamic";
+const AnbieterKarte = dynamic(
+  () => import("@/components/suche/AnbieterKarte").then((m) => m.AnbieterKarte),
+  { ssr: false, loading: () => <div className="flex-1 bg-[--muted] animate-pulse rounded-xl" /> }
+);
+const KartenAnsicht = dynamic(
+  () => import("@/components/suche/KartenAnsicht").then((m) => m.KartenAnsicht),
+  { ssr: false, loading: () => <div className="h-96 bg-[--muted] animate-pulse rounded-xl" /> }
+);
 import { VergleichBar } from "@/components/vergleich/VergleichBar";
 import { createClient } from "@/lib/supabase/client";
 import { KOSTENTRAEGER, UMKREIS_OPTIONEN } from "@/lib/constants";

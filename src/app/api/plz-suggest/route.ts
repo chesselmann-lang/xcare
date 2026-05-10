@@ -34,5 +34,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json(results.slice(0, 6));
+  const response = NextResponse.json(results.slice(0, 6));
+  // Cache PLZ suggestions publicly for 5 minutes — data changes rarely
+  response.headers.set(
+    "Cache-Control",
+    "public, s-maxage=300, stale-while-revalidate=60"
+  );
+  return response;
 }

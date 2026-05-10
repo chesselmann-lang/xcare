@@ -13,6 +13,26 @@ const STATUS_LABEL: Record<AnfrageStatus, string> = {
   abgeschlossen:  "Abgeschlossen",
 };
 
+/**
+ * Legal status transitions for the Anbieter role.
+ *
+ * Business rules:
+ *  offen        → in_bearbeitung, angeboten, abgelehnt
+ *  in_bearbeitung → angeboten, abgelehnt, abgeschlossen
+ *  angeboten    → bestaetigt, abgelehnt, abgeschlossen
+ *  bestaetigt   → abgeschlossen, abgelehnt
+ *  abgelehnt    → (terminal — no further transitions)
+ *  abgeschlossen → (terminal — no further transitions)
+ */
+const ALLOWED_TRANSITIONS: Record<AnfrageStatus, AnfrageStatus[]> = {
+  offen:          ["in_bearbeitung", "angeboten", "abgelehnt"],
+  in_bearbeitung: ["angeboten", "abgelehnt", "abgeschlossen"],
+  angeboten:      ["bestaetigt", "abgelehnt", "abgeschlossen"],
+  bestaetigt:     ["abgeschlossen", "abgelehnt"],
+  abgelehnt:      [],
+  abgeschlossen:  [],
+};
+
 const STATUS_NACHRICHT: Partial<Record<AnfrageStatus, string>> = {
   in_bearbeitung: "Ihre Anfrage wird jetzt bearbeitet.",
   angeboten:      "Sie haben ein neues Angebot erhalten.",
@@ -55,6 +75,14 @@ export async function statusAendern(anfrageId: string, neuerStatus: AnfrageStatu
   if (anfrage.status === neuerStatus) return { success: true }; // no-op
 
   const alterStatus = anfrage.status as AnfrageStatus;
+
+  // State-machine guard — reject illegal transitions
+  const allowedNext = ALLOWED_TRANSITIONS[alterStatus] ?? [];
+  if (!allowedNext.includes(neuerStatus)) {
+    return {
+      error: `Statuswechsel von „${STATUS_LABEL[alterStatus]}" zu „${STATUS_LABEL[neuerStatus]}" ist nicht erlaubt.`,
+    };
+  }
 
   // Update status
   const { error: updateError } = await supabase

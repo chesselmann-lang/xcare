@@ -3,9 +3,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowLeft, Archive, FileText, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AnfragenFilter } from "@/components/anfragen/AnfragenFilter";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FamilieAnfragenVergleich } from "@/components/anfragen/FamilieAnfragenVergleich";
 import { AnfragenListeClient } from "@/components/anfragen/AnfragenListeClient";
 import type { AnfrageStatus } from "@/lib/types";
@@ -215,32 +215,19 @@ export default async function FamilieAnfragenPage({
       <section>
         {sorted.length > 0 ? (
           <AnfragenListeClient anfragen={sorted} isArchiv={isArchiv} />
+        ) : isArchiv ? (
+          <EmptyState
+            icon={Archive}
+            title="Archiv ist leer"
+            description="Abgeschlossene und abgelehnte Anfragen erscheinen hier."
+          />
         ) : (
-          <Card>
-            <CardContent className="py-14 text-center text-[--muted-foreground]">
-              {isArchiv ? (
-                <>
-                  <Archive className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                  <p className="font-medium mb-1">Archiv ist leer</p>
-                  <p className="text-sm">Abgeschlossene und abgelehnte Anfragen erscheinen hier.</p>
-                </>
-              ) : (
-                <>
-                  <FileText className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                  <p className="font-medium mb-3">
-                    {filterStatus ? "Keine Anfragen mit diesem Status" : "Keine aktiven Anfragen"}
-                  </p>
-                  {!filterStatus && (
-                    <Link href="/lotse">
-                      <Button size="sm" className="gap-1.5">
-                        <Plus className="h-4 w-4" /> KI-Lotsen starten
-                      </Button>
-                    </Link>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={FileText}
+            title={filterStatus ? "Keine Anfragen mit diesem Status" : "Keine aktiven Anfragen"}
+            description={filterStatus ? undefined : "Nutzen Sie den KI-Lotsen, um passende Anbieter zu finden."}
+            action={filterStatus ? undefined : { label: "KI-Lotsen starten", href: "/lotse" }}
+          />
         )}
       </section>
     </div>

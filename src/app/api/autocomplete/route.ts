@@ -43,5 +43,12 @@ export async function GET(req: NextRequest) {
     })),
   ];
 
-  return NextResponse.json({ results });
+  const response = NextResponse.json({ results });
+  // Cache autocomplete results at the CDN edge for 30 seconds — anbieter names
+  // update infrequently but freshness matters more than for static PLZ data.
+  response.headers.set(
+    "Cache-Control",
+    "public, s-maxage=30, stale-while-revalidate=10"
+  );
+  return response;
 }

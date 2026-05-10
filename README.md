@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# xcare
 
-## Getting Started
+**xcare** ist ein digitales Pflege-Ökosystem für Deutschland — KI-gestützte Beratung, Anbietersuche und Fallmanagement für Familien, Pflegebedürftige und Sozialdienstleister.
 
-First, run the development server:
+> 🌐 Produktion: [xcare-git-main-mindry.vercel.app](https://xcare-git-main-mindry.vercel.app)  
+> 📖 Deployment-Runbook: [DEPLOY.md](./DEPLOY.md)
+
+---
+
+## Tech Stack
+
+| Schicht | Technologie |
+|---|---|
+| Framework | Next.js 15 (App Router, React 19) |
+| Datenbank | Supabase (PostgreSQL + Auth + Storage) |
+| Styling | Tailwind CSS v4 + shadcn/ui |
+| KI | Anthropic Claude (via Vercel AI SDK) |
+| Hintergrundprozesse | Inngest |
+| Zahlungen | Stripe |
+| E-Mail | Resend |
+| Karten | MapLibre GL + OpenStreetMap |
+| Analytics | Vercel Analytics + Speed Insights |
+| Deployment | Vercel (auto-deploy auf `main`) |
+
+---
+
+## Lokale Entwicklung
+
+### Voraussetzungen
+
+- Node.js ≥ 20
+- npm ≥ 10
+- Supabase CLI (für lokale DB)
+
+### Setup
 
 ```bash
+# Repository klonen
+git clone <repo-url>
+cd xcare
+
+# Abhängigkeiten installieren
+npm install
+
+# Umgebungsvariablen einrichten
+cp .env.example .env.local
+# .env.local mit den echten Werten befüllen (siehe DEPLOY.md § 2)
+
+# Entwicklungsserver starten
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Öffne [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Lokale Supabase-Datenbank
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Supabase lokal starten
+supabase start
 
-## Learn More
+# Migrationen anwenden
+supabase db push
 
-To learn more about Next.js, take a look at the following resources:
+# TypeScript-Typen aus DB-Schema generieren
+npm run db:generate
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Verfügbare Skripte
 
-## Deploy on Vercel
+```bash
+npm run dev          # Entwicklungsserver (Next.js)
+npm run build        # Produktions-Build
+npm run start        # Produktionsserver lokal starten
+npm run lint         # ESLint
+npm run type-check   # TypeScript-Prüfung ohne Kompilierung
+npm run audit        # npm-Sicherheits-Audit (moderate+)
+npm run audit:fix    # Automatische Behebung bekannter Schwachstellen
+npm run db:generate  # Supabase TypeScript-Typen neu generieren
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Projektstruktur
+
+```
+xcare/
+├── src/
+│   ├── app/
+│   │   ├── (public)/          # Öffentliche Seiten (Suche, Anbieter, Lebenslagen)
+│   │   ├── (dashboard)/       # Eingeloggte Benutzer (Familien, Anbieter)
+│   │   ├── (auth)/            # Login, Registrierung
+│   │   ├── api/               # API-Routen (Bewertungen, Export, Stripe, Inngest …)
+│   │   ├── layout.tsx         # Root-Layout mit Metadaten + Resource Hints
+│   │   └── sitemap.ts         # Dynamische Sitemap (alle aktiven Anbieter)
+│   ├── components/            # Wiederverwendbare UI-Komponenten
+│   ├── lib/                   # Supabase-Client, Stripe-Helpers, Logger …
+│   └── types/                 # Globale TypeScript-Typen
+├── supabase/
+│   └── migrations/            # SQL-Migrationen (chronologisch nummeriert)
+├── DEPLOY.md                  # Production Deployment Runbook
+└── package.json
+```
+
+---
+
+## Wichtige API-Routen
+
+| Route | Methode | Beschreibung |
+|---|---|---|
+| `/api/chat` | POST | KI-Beratungs-Chat (Anthropic Claude) |
+| `/api/bewertungen` | POST | Bewertung abgeben (1 pro Anfrage) |
+| `/api/profil/export` | GET | DSGVO Art. 20 Datensatz-Export (JSON) |
+| `/api/account/delete` | POST | Account-Löschung (Soft-Delete) |
+| `/api/stripe/webhook` | POST | Stripe-Webhook-Handler |
+| `/api/inngest` | POST | Inngest-Event-Endpoint |
+
+---
+
+## Sicherheit
+
+- Alle API-Routen prüfen die Supabase-Session serverseitig
+- RLS (Row Level Security) auf allen Tabellen aktiviert
+- `npm overrides` für transitive Abhängigkeiten mit bekannten CVEs
+- GDPR-konforme Datenlöschung (Soft-Delete + 72h-Frist)
+- Stripe-Webhooks mit Signaturverifikation
+
+---
+
+## Deployment
+
+→ Siehe [DEPLOY.md](./DEPLOY.md) für vollständiges Runbook inkl. Rollback-Prozedur, Monitoring und häufige Fehler.

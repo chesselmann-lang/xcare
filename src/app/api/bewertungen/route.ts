@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid, maxLen, trimOrNull } from "@/lib/validate";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -35,14 +36,46 @@ export async function POST(request: Request) {
       .single();
     if (!anfrage || anfrage.status !== "abgeschlossen")
       return NextResponse.json({ error: "Anfrage muss abgeschlossen sein" }, { status: 400 });
+
+    // One-per-Anfrage enforcement: reject if a bewertung already exists for this anfrage
+    const { data: existing } = await supabase
+      .from("bewertungen")
+      .select("id")
+      .eq("anfrage_id", anfrage_id)
+      .maybeSingle();
+    if (existing) {
+      return NextResponse.json(
+        { error: "Für diese Anfrage wurde bereits eine Bewertung abgegeben." },
+        { status: 409 }
+      );
+    }
   }
 
   const { data, error } = await supabase.from("bewertungen")
-    .upsert({ anbieter_id, familie_id: profile.id, anfrage_id: anfrage_id ?? null, sterne, kommentar: trimOrNull(kommentar) },
-      { onConflict: "familie_id,anbieter_id" })
-    .select().single();
+    .upsert(
+      {
+        anbieter_id,
+        familie_id: profile.id,
+        anfrage_id: anfrage_id ?? null,
+        sterne,
+        kommentar: trimOrNull(kommentar),
+      },
+      { onConflict: "familie_id,anbieter_id" }
+    )
+    .select()
+    .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    // Handle DB-level unique violation on anfrage_id (belt-and-suspenders)
+    if (error.code === "23505" && error.message.includes("bewertungen_anfrage_id")) {
+      return NextResponse.json(
+        { error: "Für diese Anfrage wurde bereits eine Bewertung abgegeben." },
+        { status: 409 }
+      );
+    }
+    logger.error("bewertungen POST: insert error", { error: error.message });
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   // Bust cache so the public anbieter profile and testimonials carousel
   // reflect the new/updated bewertung without waiting for the TTL.

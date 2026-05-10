@@ -1,0 +1,10 @@
+Contact: mailto:security@xcare.de
+Expires: 2027-01-01T00:00:00.000Z
+Preferred-Languages: de, en
+Canonical: https://xcare.de/.well-known/security.txt
+Policy: https://xcare.de/datenschutz
+
+# xcare security disclosure policy
+# Please report security vulnerabilities responsibly.
+# We will acknowledge your report within 5 business days
+# and aim to release a fix within 30 days.

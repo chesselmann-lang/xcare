@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
+import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
   title: "Lebenslagen – Pflegeangebote nach Thema | xcare",
@@ -71,6 +72,12 @@ const KATEGORIEN = [
 export default function LebenslagenIndexPage() {
   return (
     <div className="min-h-screen bg-[--background]">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Startseite", href: "/" },
+          { name: "Lebenslagen", href: "/lebenslage" },
+        ]}
+      />
       {/* Hero */}
       <div className="bg-gradient-to-br from-[--primary] to-[--primary-dark] text-white py-14 px-4">
         <div className="max-w-3xl mx-auto text-center">
