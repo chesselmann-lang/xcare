@@ -1,5 +1,6 @@
 ﻿import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Compass, Search, FileText, Heart, ArrowRight, Clock, Bookmark,
   Sparkles, MapPin, Bell, CheckCircle2, MessageSquare,
@@ -486,8 +487,7 @@ export default async function FamilieDashboard() {
                   <div className="flex flex-col items-center gap-2 p-3 rounded-xl border border-[--border] hover:border-[--primary]/40 hover:bg-[--primary]/5 transition-all text-center">
                     {a.logo_url ? (
                       <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={a.logo_url} alt={a.name} className="w-full h-full object-cover" />
+                        <Image src={a.logo_url} alt={a.name} fill className="object-cover" sizes="40px" />
                       </div>
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center border border-indigo-100">

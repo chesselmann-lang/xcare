@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { createAdminClient } from "@/lib/supabase/service";
 import {
   MapPin, Phone, Globe, CheckCircle2, Mail,
   Package, Euro, Clock, ArrowLeft, Building2,
@@ -127,6 +128,30 @@ function OeffnungszeitenDisplay({ oeffnungszeiten }: { oeffnungszeiten: Oeffnung
     </div>
   );
 }
+
+/**
+ * Pre-generate the top 50 active anbieter at build time so the CDN has an
+ * initial HTML shell ready. Unknown IDs (new anbieter) are still accepted at
+ * runtime (dynamicParams = true) and get ISR on first hit.
+ */
+export async function generateStaticParams() {
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("anbieter")
+      .select("id")
+      .eq("aktiv", true)
+      .order("updated_at", { ascending: false })
+      .limit(50);
+    return (data ?? []).map((a) => ({ id: a.id }));
+  } catch {
+    // Don't fail the build if Supabase is unavailable
+    return [];
+  }
+}
+
+// Allow on-demand rendering for IDs not in the static list (new anbieter)
+export const dynamicParams = true;
 
 export async function generateMetadata({
   params,
