@@ -68,17 +68,37 @@ const notifyAnbieterNeueAnfrage = inngest.createFunction(
       anbieter_email: string; anbieter_name: string; familie_name: string;
       lebenslage: string; anfrage_id?: string;
     };
+
+    // Check email_prefs: skip if anbieter opted out of new request notifications
+    const supabase = getServiceClient();
+    const { data: anbieterProfile } = await supabase
+      .from("profiles")
+      .select("email_prefs")
+      .eq("email", anbieter_email)
+      .single();
+    const anbieterPrefs = (anbieterProfile?.email_prefs ?? {}) as Record<string, boolean>;
+    if (anbieterPrefs.neue_anfrage === false) return { skipped: true, reason: "opted out: neue_anfrage" };
+
+    // Build unsubscribe link (DSGVO / CAN-SPAM)
+    const unsubToken = await createUnsubscribeToken(anbieter_email, "neue_anfrage");
+    const unsubUrl = buildUnsubscribeUrl(appUrl, anbieter_email, "neue_anfrage", unsubToken);
+
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: fromEmail,
       to: anbieter_email,
       subject: `Neue Anfrage über xcare — ${familie_name}`,
+      headers: {
+        "List-Unsubscribe": `<${unsubUrl}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
       html: baseTemplate("Neue Anfrage", `
         <h2 style="color:#1A5276;margin-top:0;">Neue Anfrage eingegangen 📬</h2>
         <p style="color:#333;line-height:1.6;">Hallo <strong>${anbieter_name}</strong>,</p>
         <p style="color:#333;line-height:1.6;"><strong>${familie_name}</strong> hat eine Anfrage für <strong>${lebenslage.replace(/_/g, " ")}</strong> gestellt.</p>
         <p style="color:#555;font-size:13px;">Bitte antworten Sie zeitnah — Familien warten auf Ihre Rückmeldung.</p>
         ${btn("Anfrage ansehen", anfrage_id ? `${appUrl}/anbieter/anfragen/${anfrage_id}` : `${appUrl}/anbieter/anfragen`)}
+        <p style="color:#999;font-size:12px;margin-top:24px;"><a href="${unsubUrl}" style="color:#999;">Keine Anfragen-E-Mails mehr</a> · <a href="${appUrl}/anbieter/einstellungen" style="color:#999;">Einstellungen</a></p>
       `),
     });
   }
@@ -210,11 +230,29 @@ const remind48hAnbieter = inngest.createFunction(
 
     if (!shouldSend) return { skipped: true, reason: "anfrage already handled" };
 
+    // Check email_prefs: skip if anbieter opted out of neue_anfrage reminders
+    const supabase48h = getServiceClient();
+    const { data: anbieterProfile48h } = await supabase48h
+      .from("profiles")
+      .select("email_prefs")
+      .eq("email", anbieter_email)
+      .single();
+    const prefs48h = (anbieterProfile48h?.email_prefs ?? {}) as Record<string, boolean>;
+    if (prefs48h.neue_anfrage === false) return { skipped: true, reason: "opted out: neue_anfrage" };
+
+    // Build unsubscribe link
+    const unsubToken48h = await createUnsubscribeToken(anbieter_email, "neue_anfrage");
+    const unsubUrl48h = buildUnsubscribeUrl(appUrl, anbieter_email, "neue_anfrage", unsubToken48h);
+
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: fromEmail,
       to: anbieter_email,
       subject: `⏰ Erinnerung: Offene Anfrage von ${familie_name}`,
+      headers: {
+        "List-Unsubscribe": `<${unsubUrl48h}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
       html: baseTemplate("Erinnerung", `
         <h2 style="color:#1A5276;margin-top:0;">Offene Anfrage — Erinnerung</h2>
         <p style="color:#333;line-height:1.6;">Hallo <strong>${anbieter_name}</strong>,</p>
@@ -223,6 +261,7 @@ const remind48hAnbieter = inngest.createFunction(
           <p style="margin:0;color:#7D6608;font-size:13px;">Schnelle Antworten verbessern Ihre Bewertung auf xcare.</p>
         </div>
         ${btn("Jetzt bearbeiten", anfrage_id ? `${appUrl}/anbieter/anfragen/${anfrage_id}` : `${appUrl}/anbieter/anfragen`)}
+        <p style="color:#999;font-size:12px;margin-top:24px;"><a href="${unsubUrl48h}" style="color:#999;">Keine Erinnerungs-E-Mails mehr</a> · <a href="${appUrl}/anbieter/einstellungen" style="color:#999;">Einstellungen</a></p>
       `),
     });
 
@@ -263,18 +302,36 @@ const requestBewertungNachAbschluss = inngest.createFunction(
 
     if (alreadyRated) return { skipped: true, reason: "already rated" };
 
+    // Check email_prefs: skip if familie opted out of review reminder emails
+    const supabaseBew = getServiceClient();
+    const { data: familieProfileBew } = await supabaseBew
+      .from("profiles")
+      .select("email_prefs")
+      .eq("email", familie_email)
+      .single();
+    const prefsBew = (familieProfileBew?.email_prefs ?? {}) as Record<string, boolean>;
+    if (prefsBew.bewertung === false) return { skipped: true, reason: "opted out: bewertung" };
+
+    // Build unsubscribe link
+    const unsubTokenBew = await createUnsubscribeToken(familie_email, "bewertung");
+    const unsubUrlBew = buildUnsubscribeUrl(appUrl, familie_email, "bewertung", unsubTokenBew);
+
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: fromEmail,
       to: familie_email,
       subject: `Wie war Ihre Erfahrung mit ${anbieter_name}? ⭐`,
+      headers: {
+        "List-Unsubscribe": `<${unsubUrlBew}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
       html: baseTemplate("Bewertung abgeben", `
         <h2 style="color:#1A5276;margin-top:0;">Helfen Sie anderen Familien ⭐</h2>
         <p style="color:#333;line-height:1.6;">Hallo <strong>${familie_name}</strong>,</p>
         <p style="color:#333;line-height:1.6;">Ihre Anfrage bei <strong>${anbieter_name}</strong> wurde abgeschlossen. Möchten Sie Ihre Erfahrung teilen?</p>
         <p style="color:#555;font-size:13px;">Eine Bewertung hilft anderen Familien, den richtigen Anbieter zu finden — es dauert nur 1 Minute.</p>
         ${btn("Jetzt bewerten", anfrage_id ? `${appUrl}/familie/anfragen/${anfrage_id}` : `${appUrl}/familie/anfragen`)}
-        <p style="color:#999;font-size:12px;margin-top:24px;">Wenn Sie bereits bewertet haben, können Sie diese E-Mail ignorieren.</p>
+        <p style="color:#999;font-size:12px;margin-top:24px;">Wenn Sie bereits bewertet haben, können Sie diese E-Mail ignorieren. · <a href="${unsubUrlBew}" style="color:#999;">Keine Bewertungs-Erinnerungen mehr</a></p>
       `),
     });
   }
@@ -359,6 +416,20 @@ const remind48hFamilieAngebot = inngest.createFunction(
 
     if (!stillPending) return { skipped: true, reason: "angebot already responded to" };
 
+    // Check email_prefs: skip if familie opted out of status update emails
+    const supabaseAngebot = getServiceClient();
+    const { data: familieProfileAngebot } = await supabaseAngebot
+      .from("profiles")
+      .select("email_prefs")
+      .eq("email", familie_email)
+      .single();
+    const prefsAngebot = (familieProfileAngebot?.email_prefs ?? {}) as Record<string, boolean>;
+    if (prefsAngebot.statusupdate === false) return { skipped: true, reason: "opted out: statusupdate" };
+
+    // Build unsubscribe link
+    const unsubTokenAngebot = await createUnsubscribeToken(familie_email, "statusupdate");
+    const unsubUrlAngebot = buildUnsubscribeUrl(appUrl, familie_email, "statusupdate", unsubTokenAngebot);
+
     const resend = new Resend(process.env.RESEND_API_KEY);
     const anfragenUrl = anfrage_id
       ? `${appUrl}/familie/anfragen/${anfrage_id}`
@@ -368,6 +439,10 @@ const remind48hFamilieAngebot = inngest.createFunction(
       from: fromEmail,
       to: familie_email,
       subject: `⏳ Erinnerung: Angebot von ${anbieter_name} wartet auf Ihre Antwort`,
+      headers: {
+        "List-Unsubscribe": `<${unsubUrlAngebot}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
       html: baseTemplate("Angebot wartet", `
         <h2 style="color:#1A5276;margin-top:0;">Offenes Angebot — Erinnerung</h2>
         <p style="color:#333;line-height:1.6;">Hallo <strong>${familie_name}</strong>,</p>
@@ -376,7 +451,7 @@ const remind48hFamilieAngebot = inngest.createFunction(
           <p style="margin:0;color:#1A5276;font-size:13px;">Bestätigen oder lehnen Sie das Angebot ab — damit der Anbieter planen kann.</p>
         </div>
         ${btn("Angebot jetzt ansehen", anfragenUrl)}
-        <p style="color:#999;font-size:12px;margin-top:24px;">Falls Sie bereits geantwortet haben, können Sie diese E-Mail ignorieren.</p>
+        <p style="color:#999;font-size:12px;margin-top:24px;">Falls Sie bereits geantwortet haben, können Sie diese E-Mail ignorieren. · <a href="${unsubUrlAngebot}" style="color:#999;">Keine Erinnerungs-E-Mails mehr</a></p>
       `),
     });
 
@@ -413,11 +488,29 @@ const remind7dAnbieterOffen = inngest.createFunction(
 
     if (!shouldSend) return { skipped: true, reason: "anfrage no longer offen after 7d" };
 
+    // Check email_prefs: skip if anbieter opted out of neue_anfrage reminders
+    const supabase7d = getServiceClient();
+    const { data: anbieterProfile7d } = await supabase7d
+      .from("profiles")
+      .select("email_prefs")
+      .eq("email", anbieter_email)
+      .single();
+    const prefs7d = (anbieterProfile7d?.email_prefs ?? {}) as Record<string, boolean>;
+    if (prefs7d.neue_anfrage === false) return { skipped: true, reason: "opted out: neue_anfrage" };
+
+    // Build unsubscribe link
+    const unsubToken7d = await createUnsubscribeToken(anbieter_email, "neue_anfrage");
+    const unsubUrl7d = buildUnsubscribeUrl(appUrl, anbieter_email, "neue_anfrage", unsubToken7d);
+
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: fromEmail,
       to: anbieter_email,
       subject: `📋 Letzte Erinnerung: Anfrage von ${familie_name} seit 7 Tagen offen`,
+      headers: {
+        "List-Unsubscribe": `<${unsubUrl7d}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
       html: baseTemplate("7-Tage-Erinnerung", `
         <h2 style="color:#1A5276;margin-top:0;">Anfrage seit 7 Tagen unbeantwortet</h2>
         <p style="color:#333;line-height:1.6;">Hallo <strong>${anbieter_name}</strong>,</p>
@@ -427,6 +520,7 @@ const remind7dAnbieterOffen = inngest.createFunction(
         </div>
         <p style="color:#555;font-size:13px;">Bitte bearbeiten oder lehnen Sie die Anfrage ab, damit die Familie Alternativanbieter kontaktieren kann.</p>
         ${btn("Anfrage jetzt bearbeiten", anfrage_id ? `${appUrl}/anbieter/anfragen/${anfrage_id}` : `${appUrl}/anbieter/anfragen`)}
+        <p style="color:#999;font-size:12px;margin-top:24px;"><a href="${unsubUrl7d}" style="color:#999;">Keine Erinnerungs-E-Mails mehr</a> · <a href="${appUrl}/anbieter/einstellungen" style="color:#999;">Einstellungen</a></p>
       `),
     });
 
