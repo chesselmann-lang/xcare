@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://xcare.de";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.vercel.app";
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
