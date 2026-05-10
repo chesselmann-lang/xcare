@@ -31,32 +31,20 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Öffentliche Anbieter-Profile (/anbieter/[uuid] und Sub-Pfade) sind frei zugänglich
+  // Öffentliche Anbieter-Seiten sind frei zugänglich:
+  // - /anbieter           (Verzeichnis-Listing)
+  // - /anbieter/[uuid]    (Profil-Seite)
+  // - /anbieter/[uuid]/*  (z.B. /bewertungen)
   const UUID_RE = /^\/anbieter\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
-  const isPublicAnbieterProfile = UUID_RE.test(pathname);
+  const isPublicAnbieterPage =
+    pathname === "/anbieter" || UUID_RE.test(pathname);
 
-  // Geschützte Routen
+  // Geschützte Routen (Dashboard-Bereiche)
   const protectedPaths = ["/familie", "/anbieter"];
   const isProtected =
-    !isPublicAnbieterProfile &&
+    !isPublicAnbieterPage &&
     protectedPaths.some((p) => pathname.startsWith(p));
 
   if (isProtected && !user) {
     const redirectUrl = new URL("/login", request.url);
-    redirectUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  // Auth-Seiten bei eingeloggtem User umleiten
-  if ((pathname === "/login" || pathname === "/register") && user) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  return supabaseResponse;
-}
-
-export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/inngest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
-};
+    redirectUrl.searchParams.s
