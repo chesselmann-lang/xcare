@@ -38,8 +38,10 @@ export function ForgotPasswordForm() {
   async function onSubmit(data: FormData) {
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
+    // Redirect to the PKCE callback handler which exchanges the code,
+    // then forwards the user to the update-password form.
     await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${baseUrl}/auth/update-password`,
+      redirectTo: `${baseUrl}/auth/callback?next=/auth/update-password`,
     });
     // Always show success to avoid email enumeration
     setSentEmail(data.email);
