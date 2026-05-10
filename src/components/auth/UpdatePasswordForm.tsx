@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,17 +9,28 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 
-const schema = z.object({
-  email: z.string().email("Bitte eine gültige E-Mail-Adresse eingeben"),
-  password: z.string().min(8, "Mindestens 8 Zeichen"),
-});
+const schema = z
+  .object({
+    password: z.string().min(8, "Mindestens 8 Zeichen"),
+    confirm: z.string(),
+  })
+  .refine((d) => d.password === d.confirm, {
+    message: "Passwörter stimmen nicht überein",
+    path: ["confirm"],
+  });
 
 type FormData = z.infer<typeof schema>;
 
-export function LoginForm({ next, updated }: { next?: string; updated?: boolean }) {
+export function UpdatePasswordForm() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -34,46 +44,34 @@ export function LoginForm({ next, updated }: { next?: string; updated?: boolean 
 
   async function onSubmit(data: FormData) {
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
+    const { error } = await supabase.auth.updateUser({
       password: data.password,
     });
     if (error) {
-      setError("E-Mail oder Passwort ungültig.");
+      setError("Passwort konnte nicht geändert werden. Bitte versuche es erneut.");
       return;
     }
-    router.push(next ?? "/");
-    router.refresh();
+    router.push("/login?updated=1");
   }
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Willkommen zurück</CardTitle>
-        <CardDescription>Melde dich bei xcare an</CardDescription>
+        <CardTitle className="text-2xl">Neues Passwort setzen</CardTitle>
+        <CardDescription>
+          Wähle ein sicheres Passwort mit mindestens 8 Zeichen.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="email">E-Mail</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@example.de"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-xs text-[--danger]">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Passwort</Label>
+            <Label htmlFor="password">Neues Passwort</Label>
             <div className="relative">
               <Input
                 id="password"
                 type={showPw ? "text" : "password"}
                 placeholder="••••••••"
+                autoFocus
                 {...register("password")}
               />
               <button
@@ -81,27 +79,30 @@ export function LoginForm({ next, updated }: { next?: string; updated?: boolean 
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[--muted-foreground] hover:text-[--foreground]"
                 onClick={() => setShowPw(!showPw)}
               >
-                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPw ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
             {errors.password && (
               <p className="text-xs text-[--danger]">{errors.password.message}</p>
             )}
-            <div className="flex justify-end">
-              <Link
-                href="/login/passwort-vergessen"
-                className="text-xs text-[--muted-foreground] hover:text-[--primary] hover:underline"
-              >
-                Passwort vergessen?
-              </Link>
-            </div>
           </div>
 
-          {updated && (
-            <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-              ✓ Passwort erfolgreich geändert. Bitte jetzt anmelden.
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="confirm">Passwort bestätigen</Label>
+            <Input
+              id="confirm"
+              type={showPw ? "text" : "password"}
+              placeholder="••••••••"
+              {...register("confirm")}
+            />
+            {errors.confirm && (
+              <p className="text-xs text-[--danger]">{errors.confirm.message}</p>
+            )}
+          </div>
 
           {error && (
             <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -111,21 +112,15 @@ export function LoginForm({ next, updated }: { next?: string; updated?: boolean 
 
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Anmelden…</>
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Speichere…
+              </>
             ) : (
-              "Anmelden"
+              "Passwort speichern"
             )}
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="justify-center">
-        <p className="text-sm text-[--muted-foreground]">
-          Noch kein Konto?{" "}
-          <Link href="/register" className="text-[--primary] hover:underline font-medium">
-            Jetzt registrieren
-          </Link>
-        </p>
-      </CardFooter>
     </Card>
   );
 }

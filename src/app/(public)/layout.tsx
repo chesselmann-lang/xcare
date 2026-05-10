@@ -39,6 +39,7 @@ export default async function PublicLayout({
             <a href="/suche" className="hover:text-[--foreground] transition-colors">Anbieter suchen</a>
             <a href="/lotse" className="hover:text-[--foreground] transition-colors">KI-Lotse</a>
             <a href="/register" className="hover:text-[--foreground] transition-colors">Registrieren</a>
+            <a href="/agb" className="hover:text-[--foreground] transition-colors">AGB</a>
             <a href="/datenschutz" className="hover:text-[--foreground] transition-colors">Datenschutz</a>
             <a href="/impressum" className="hover:text-[--foreground] transition-colors">Impressum</a>
           </div>
