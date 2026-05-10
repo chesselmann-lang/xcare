@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 5 new Anfragen per 5 minutes per IP to prevent spam
+  const rl = await rateLimit(req, { limit: 5, window: 300 });
+  if (!rl.success) return rateLimitResponse(rl.resetAt);
+
   try {
     const supabase = await createClient();
     const {

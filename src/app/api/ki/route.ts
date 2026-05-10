@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { streamLotseAntwort } from "@/lib/ai/lotse";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import type { LebenslageTyp, WizardAntwort } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 15 requests per minute per IP (KI-Lotse is expensive)
+  const rl = await rateLimit(req, { limit: 15, window: 60 });
+  if (!rl.success) return rateLimitResponse(rl.resetAt);
+
   try {
     const body = await req.json();
     const {

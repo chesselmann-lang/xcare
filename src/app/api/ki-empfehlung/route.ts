@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -8,6 +9,10 @@ export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 20 requests per minute per IP (authenticated endpoint but still guards AI cost)
+  const rl = await rateLimit(req, { limit: 20, window: 60 });
+  if (!rl.success) return rateLimitResponse(rl.resetAt);
+
   try {
     // Auth: only for logged-in families
     const supabase = await createClient();
