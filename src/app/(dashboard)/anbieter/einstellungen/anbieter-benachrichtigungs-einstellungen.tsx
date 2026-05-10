@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Bell, BellOff } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Bell, BellOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+// Keys that map to email_prefs in the DB (subset — others are in-app only)
+const DB_KEYS = new Set(["digest", "neue_anfrage", "statusupdate", "neue_nachricht", "bewertung", "wiedervorlage"]);
 
 type NotifType =
   | "neue_anfrage"
@@ -10,48 +13,46 @@ type NotifType =
   | "neue_nachricht"
   | "bewertung"
   | "wiedervorlage"
-  | "wochentlicher_digest"
+  | "digest"
   | "system";
 
 const NOTIF_TYPEN: { key: NotifType; label: string; beschreibung: string }[] = [
   {
     key: "neue_anfrage",
     label: "Neue Anfragen",
-    beschreibung: "Sofort benachrichtigt werden, wenn eine neue Anfrage eingeht.",
+    beschreibung: "Sofort per E-Mail benachrichtigt werden, wenn eine neue Anfrage eingeht.",
   },
   {
     key: "statusupdate",
     label: "Status-Änderungen",
-    beschreibung: "Wenn eine Familie den Status einer Anfrage ändert.",
+    beschreibung: "E-Mail wenn eine Familie den Status einer Anfrage ändert.",
   },
   {
     key: "neue_nachricht",
     label: "Neue Nachrichten",
-    beschreibung: "Wenn eine Familie Ihnen eine Nachricht sendet.",
+    beschreibung: "E-Mail wenn eine Familie Ihnen eine Nachricht sendet.",
   },
   {
     key: "bewertung",
     label: "Neue Bewertungen",
-    beschreibung: "Wenn ein Kunde eine Bewertung über Ihren Dienst abgibt.",
+    beschreibung: "E-Mail wenn ein Kunde eine Bewertung abgibt.",
   },
   {
     key: "wiedervorlage",
     label: "Wiedervorlagen-Erinnerungen",
-    beschreibung: "Erinnerungen an fällige Wiedervorlagen.",
+    beschreibung: "Tägliche Erinnerung an fällige Wiedervorlagen.",
   },
   {
-    key: "wochentlicher_digest",
+    key: "digest",
     label: "Wöchentlicher Digest",
-    beschreibung: "Zusammenfassung Ihrer Anfragen und Aktivitäten per E-Mail.",
+    beschreibung: "Montags: Zusammenfassung Ihrer Anfragen und Aktivitäten.",
   },
   {
     key: "system",
     label: "System-Hinweise",
-    beschreibung: "Wichtige Plattform-Updates und Wartungshinweise.",
+    beschreibung: "Wichtige Plattform-Updates (immer an, kann nicht deaktiviert werden).",
   },
 ];
-
-const STORAGE_KEY = "xcare_anbieter_notif_prefs";
 
 function getDefaults(): Record<NotifType, boolean> {
   return {
@@ -60,42 +61,71 @@ function getDefaults(): Record<NotifType, boolean> {
     neue_nachricht: true,
     bewertung: true,
     wiedervorlage: true,
-    wochentlicher_digest: true,
+    digest: true,
     system: true,
   };
 }
 
-function loadPrefs(): Record<NotifType, boolean> {
-  if (typeof window === "undefined") return getDefaults();
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return { ...getDefaults(), ...JSON.parse(stored) };
-  } catch { /* ignore */ }
-  return getDefaults();
-}
-
 export function AnbieterBenachrichtigungsEinstellungen() {
   const [prefs, setPrefs] = useState<Record<NotifType, boolean>>(getDefaults);
-  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<NotifType | null>(null);
 
-  useEffect(() => {
-    setPrefs(loadPrefs());
-    setMounted(true);
+  // Load preferences from DB on mount
+  const loadPrefs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/profil/email-prefs");
+      if (res.ok) {
+        const { prefs: dbPrefs } = await res.json();
+        setPrefs({ ...getDefaults(), ...dbPrefs });
+      }
+    } catch { /* use defaults */ }
+    setLoading(false);
   }, []);
 
-  function toggle(key: NotifType) {
+  useEffect(() => { loadPrefs(); }, [loadPrefs]);
+
+  async function toggle(key: NotifType) {
+    if (key === "system") return; // system notifications cannot be disabled
     const next = { ...prefs, [key]: !prefs[key] };
-    setPrefs(next);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
-    toast.success(next[key] ? "Benachrichtigung aktiviert" : "Benachrichtigung deaktiviert", { duration: 1500 });
+    setPrefs(next); // optimistic update
+    setSaving(key);
+
+    // Persist to DB if this key is tracked server-side
+    if (DB_KEYS.has(key)) {
+      try {
+        const res = await fetch("/api/profil/email-prefs", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [key]: next[key] }),
+        });
+        if (!res.ok) throw new Error("save failed");
+        toast.success(next[key] ? "Benachrichtigung aktiviert" : "Benachrichtigung deaktiviert", { duration: 1500 });
+      } catch {
+        setPrefs(prefs); // revert on error
+        toast.error("Einstellung konnte nicht gespeichert werden.");
+      }
+    } else {
+      toast.success(next[key] ? "Benachrichtigung aktiviert" : "Benachrichtigung deaktiviert", { duration: 1500 });
+    }
+    setSaving(null);
   }
 
-  if (!mounted) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 py-4 text-[--muted-foreground]">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span className="text-sm">Einstellungen werden geladen…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-1">
       {NOTIF_TYPEN.map(({ key, label, beschreibung }) => {
         const enabled = prefs[key];
+        const isSystem = key === "system";
+        const isSaving = saving === key;
         return (
           <div
             key={key}
@@ -110,20 +140,28 @@ export function AnbieterBenachrichtigungsEinstellungen() {
               </div>
               <p className="text-xs text-[--muted-foreground] mt-0.5 pl-5">{beschreibung}</p>
             </div>
-            <button
-              onClick={() => toggle(key)}
-              aria-label={enabled ? `${label} deaktivieren` : `${label} aktivieren`}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--primary] ${
-                enabled ? "bg-[--primary]" : "bg-gray-200"
-              }`}
-            >
-              <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${enabled ? "translate-x-4" : "translate-x-0"}`} />
-            </button>
+            {isSystem ? (
+              <span className="text-xs text-[--muted-foreground]">Pflicht</span>
+            ) : (
+              <button
+                onClick={() => toggle(key)}
+                disabled={isSaving}
+                aria-label={enabled ? `${label} deaktivieren` : `${label} aktivieren`}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--primary] disabled:opacity-60 ${
+                  enabled ? "bg-[--primary]" : "bg-gray-200"
+                }`}
+              >
+                {isSaving
+                  ? <Loader2 className="absolute inset-0 m-auto h-3 w-3 animate-spin text-white" />
+                  : <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${enabled ? "translate-x-4" : "translate-x-0"}`} />
+                }
+              </button>
+            )}
           </div>
         );
       })}
       <p className="text-xs text-[--muted-foreground] pt-2">
-        Diese Einstellungen gelten für In-App-Benachrichtigungen und werden lokal gespeichert.
+        E-Mail-Einstellungen werden in Ihrem Konto gespeichert und gelten geräteübergreifend.
       </p>
     </div>
   );

@@ -2,6 +2,7 @@ import { serve } from "inngest/next";
 import { Inngest } from "inngest";
 import { Resend } from "resend";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { createUnsubscribeToken, buildUnsubscribeUrl } from "@/lib/unsubscribe";
 
 export const inngest = new Inngest({ id: "xcare" });
 
@@ -417,20 +418,19 @@ const weeklyDigestAnbieter = inngest.createFunction(
 
     for (const anbieter of anbieterList) {
       await step.run(`digest-${anbieter.id}`, async () => {
-        // Get email from profiles
+        // Fetch email + email_prefs directly from profiles
         const { data: profile } = await supabase
           .from("profiles")
-          .select("email: user_id, vorname, nachname")
+          .select("email, email_prefs")
           .eq("id", anbieter.profile_id)
           .single();
 
-        // Get user email via auth
-        const { data: userData } = await supabase.auth.admin.getUserById(
-          profile?.email as string ?? ""
-        ).catch(() => ({ data: null }));
-
-        const email = (userData as { user?: { email?: string } })?.user?.email;
+        const email = profile?.email;
         if (!email) return;
+
+        // Respect email_prefs: skip if user opted out of digest
+        const prefs = (profile?.email_prefs ?? {}) as Record<string, boolean>;
+        if (prefs.digest === false) return;
 
         // Stats: new requests this week
         const { count: neueAnfragen } = await supabase
@@ -448,11 +448,19 @@ const weeklyDigestAnbieter = inngest.createFunction(
         // Skip if nothing interesting to report
         if (!neueAnfragen && !offeneAnfragen) return;
 
+        // Build unsubscribe link (DSGVO / CAN-SPAM requirement)
+        const unsubToken = await createUnsubscribeToken(email, "digest");
+        const unsubUrl = buildUnsubscribeUrl(appUrl, email, "digest", unsubToken);
+
         const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
           from: fromEmail,
           to: email,
           subject: `📊 Ihre xcare-Woche – ${neueAnfragen ?? 0} neue Anfrage${(neueAnfragen ?? 0) !== 1 ? "n" : ""}`,
+          headers: {
+            "List-Unsubscribe": `<${unsubUrl}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
           html: baseTemplate("Wöchentlicher Überblick", `
             <h2 style="color:#1A5276;margin-top:0;">Ihre Woche bei xcare 📊</h2>
             <p style="color:#333;line-height:1.6;">Hallo <strong>${anbieter.name}</strong>,</p>
@@ -477,7 +485,7 @@ const weeklyDigestAnbieter = inngest.createFunction(
               : `<p style="color:#1E8449;font-size:13px;">✅ Alle Anfragen sind bearbeitet – gut gemacht!</p>`
             }
             ${btn("Zum Dashboard", `${appUrl}/anbieter`)}
-            <p style="color:#999;font-size:12px;margin-top:24px;">Sie erhalten diesen Digest jeden Montag. Einstellungen unter <a href="${appUrl}/einstellungen" style="color:#1A5276;">Einstellungen</a>.</p>
+            <p style="color:#999;font-size:12px;margin-top:24px;">Sie erhalten diesen Digest jeden Montag. <a href="${appUrl}/anbieter/einstellungen" style="color:#1A5276;">Einstellungen anpassen</a> · <a href="${unsubUrl}" style="color:#999;">Abmelden</a></p>
           `),
         });
         sent++;
