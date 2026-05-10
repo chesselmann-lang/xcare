@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Compass, Search, FileText, Heart,
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
-  GitCompareArrows, SlidersHorizontal, Bell, Images
+  GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -28,6 +28,8 @@ interface SidebarProps {
 
 const FAMILIE_NAV = [
   { href: "/familie", label: "Übersicht", icon: LayoutDashboard, exact: true },
+  { href: "/familie/haushalt", label: "Haushalt & Vollmachten", icon: Home },
+  { href: "/familie/dokumente", label: "Dokumenten-Tresor", icon: Lock },
   { href: "/lotse", label: "KI-Lotse", icon: Compass },
   { href: "/suche", label: "Anbieter suchen", icon: Search },
   { href: "/familie/anfragen", label: "Meine Anfragen", icon: FileText },
@@ -37,6 +39,8 @@ const FAMILIE_NAV = [
   { href: "/familie/merkliste", label: "Merkliste", icon: BookmarkCheck },
   { href: "/familie/gespeicherte-suchen", label: "Gespeicherte Suchen", icon: Bookmark },
   { href: "/familie/vergleich", label: "Anbieter vergleichen", icon: GitCompareArrows },
+  { href: "/familie/gesundheit", label: "Gesundheits-Hub", icon: Activity },
+  { href: "/familie/copilot", label: "KI-Co-Pilot", icon: Bot },
   { href: "/familie/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
 ];
 
