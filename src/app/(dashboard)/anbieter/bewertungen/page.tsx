@@ -136,6 +136,7 @@ export default async function AnbieterBewertungenPage() {
               {/* Reply form */}
               <BewertungAntwortForm
                 bewertungId={b.id}
+                anbieterId={anbieter.id}
                 existingAntwort={b.antwort ?? null}
               />
             </div>

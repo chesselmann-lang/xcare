@@ -2,15 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { revalidateAnbieterCache } from "@/lib/cache-actions";
 import { MessageSquare, Send, Edit2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export function BewertungAntwortForm({
   bewertungId,
+  anbieterId,
   existingAntwort,
 }: {
   bewertungId: string;
+  anbieterId: string;
   existingAntwort: string | null;
 }) {
   const [open, setOpen] = useState(false);
@@ -32,6 +35,7 @@ export function BewertungAntwortForm({
         return;
       }
       toast.success(existingAntwort ? "Antwort aktualisiert" : "Antwort veröffentlicht");
+      await revalidateAnbieterCache(anbieterId);
       setOpen(false);
       router.refresh();
     });

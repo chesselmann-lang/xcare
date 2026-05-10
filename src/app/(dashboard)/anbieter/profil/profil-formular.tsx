@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Loader2, Clock, Share2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { revalidateAnbieterCache } from "@/lib/cache-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,6 +118,11 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
       }
 
       setSuccess(true);
+      // Bust the public profile cache so the anbieter profile page reflects
+      // the new data immediately instead of waiting for the 30-min TTL.
+      if (anbieter?.id) {
+        await revalidateAnbieterCache(anbieter.id);
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Fehler beim Speichern");

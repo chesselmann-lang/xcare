@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { revalidateBewertungCache, revalidateAnbieterCache } from "@/lib/cache-actions";
 import { Button } from "@/components/ui/button";
 
 interface BewertungModerationActionsProps {
@@ -31,6 +32,7 @@ export function BewertungModerationActions({
       toast.error("Löschen fehlgeschlagen", { description: error.message });
     } else {
       toast.success("Bewertung gelöscht");
+      await revalidateBewertungCache(anbieter_id);
       router.refresh();
     }
     setDeleting(false);
@@ -47,6 +49,7 @@ export function BewertungModerationActions({
       toast.error("Aktion fehlgeschlagen", { description: error.message });
     } else {
       toast.success(gemeldet ? "Markierung entfernt" : "Als gemeldet markiert");
+      await revalidateAnbieterCache(anbieter_id);
       router.refresh();
     }
     setToggling(false);

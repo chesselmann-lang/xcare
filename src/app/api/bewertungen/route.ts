@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -34,6 +35,13 @@ export async function POST(request: Request) {
     .select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Bust cache so the public anbieter profile and testimonials carousel
+  // reflect the new/updated bewertung without waiting for the TTL.
+  revalidateTag(`anbieter-${anbieter_id}`);
+  revalidateTag("anbieter-list");
+  revalidateTag("testimonials");
+
   return NextResponse.json({ data }, { status: 201 });
 }
 
