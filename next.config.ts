@@ -89,10 +89,19 @@ const nextConfig: NextConfig = {
           // Existing headers
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" },
 
-          // HSTS — enable once DNS/TLS are confirmed stable
-          // { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          // HSTS — Vercel always serves HTTPS, safe to enable.
+          // 2-year max-age. Add preload once domain is registered with HSTS preload list.
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+
+          // Prevent this origin's documents from sharing a browsing context group
+          // with cross-origin documents (e.g. prevents Spectre-style attacks).
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+
+          // Prevents cross-origin resources from being loaded in a different origin's
+          // context — limits cross-site resource leakage.
+          { key: "Cross-Origin-Resource-Policy", value: "same-site" },
 
           // X-Frame-Options is superseded by CSP frame-ancestors, but kept for legacy browsers
           { key: "X-Frame-Options", value: "DENY" },
