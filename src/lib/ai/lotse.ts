@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { LebenslageTyp, WizardAntwort } from "../types";
 import { LEBENSLAGEN } from "../constants";
+import { berechneAnsprueche, inputAusWizardAntworten } from "../anspruch/engine";
+import type { AnspruchsErgebnis } from "../anspruch/types";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -126,7 +128,35 @@ const REGELWERK: Record<
   },
 };
 
+// ── Anspruchs-Vorberechnung via deterministischer Engine ─────────────────────
+// Extrahiert Alter und Pflegegrad aus Wizard-Antworten für Engine-Aufruf
+function vorberechnungFuerLotse(
+  lebenslage: LebenslageTyp,
+  antworten: WizardAntwort[]
+): AnspruchsErgebnis | null {
+  try {
+    const alterAntwort = antworten.find((a) => a.schritt_id === "alter");
+    const pflegegradAntwort = antworten.find((a) => a.schritt_id === "pflegegrad");
+    const alter = alterAntwort ? Number(alterAntwort.wert) : 65;
+    const pflegegrad = pflegegradAntwort ? Number(pflegegradAntwort.wert) : undefined;
+
+    if (isNaN(alter)) return null;
+
+    const input = inputAusWizardAntworten({
+      lebenslage,
+      alter,
+      pflegegrad: pflegegrad && pflegegrad >= 1 && pflegegrad <= 5 ? pflegegrad as 1|2|3|4|5 : undefined,
+    });
+
+    return berechneAnsprueche(input);
+  } catch {
+    return null;
+  }
+}
+
 // ── Claude Streaming Lotse (Ebene 2) ─────────────────────────────────────────
+// COMPLIANCE: Der KI-Lotse darf nur ERKLÄREN und ORIENTIEREN.
+// Anspruchs-ENTSCHEIDUNGEN trifft ausschließlich die deterministische Engine.
 export async function* streamLotseAntwort(
   lebenslage: LebenslageTyp,
   antworten: WizardAntwort[],
@@ -136,17 +166,34 @@ export async function* streamLotseAntwort(
   const ll = LEBENSLAGEN[lebenslage];
   const regeln = regelEngine(lebenslage, antworten);
 
+  // Deterministische Vorberechnung — kein LLM entscheidet über Ansprüche (FB-31/FB-125)
+  const vorberechnung = vorberechnungFuerLotse(lebenslage, antworten);
+  const anspruchsKontext = vorberechnung
+    ? `
+DETERMINISTISCHE ANSPRUCHSBERECHNUNG (nicht halluzinieren — diese Werte sind faktisch berechnet):
+- Mögliche monatliche Leistungen: ${vorberechnung.gesamt_monatlich_eur} €/Monat
+- Jährliche Leistungen: ${vorberechnung.gesamt_jaehrlich_eur} €/Jahr
+- Steuerersparnis: ${vorberechnung.steuerersparnis_eur} €/Jahr
+- Top-Ansprüche: ${vorberechnung.ansprueche.filter(a => a.voraussetzungen_erfuellt && a.prioritaet === 1).map(a => a.titel).slice(0, 3).join(", ")}
+- Nächster Schritt: ${vorberechnung.naechste_schritte[0]?.titel ?? "Pflegestützpunkt aufsuchen"}
+
+WICHTIG: Du darfst diese Werte erwähnen aber NIEMALS eigenständig Ansprüche zusprechen oder verweigern.
+Die Berechnung ist bereits erfolgt — verweise auf den "Anspruchs-Rechner" für Details.`
+    : "";
+
   const systemPrompt = `Du bist der xcare Lebenslage-Lotse — ein einfühlsamer, kompetenter Sozialberater für Deutschland.
 Du hilfst Menschen in der Lebenslage "${ll.label}" (${ll.beschreibung}).
 
 Rechtsgrundlagen in diesem Fall: ${regeln.rechtsgrundlagen.join(", ")}
 Pflichtleistungen: ${regeln.pflichtleistungen.join(", ")}
 Relevante Anbieter in der Nähe: ${gefundeneAnbieter}
+${anspruchsKontext}
 
 Regeln:
 - Antworte immer auf Deutsch, warmherzig und klar verständlich
 - Nenne konkrete nächste Schritte mit Zeitangaben
 - Verweise auf Kostenträger (Kasse/Amt) und wie man Leistungen beantragt
+- Du darfst KEINE eigene Anspruchsentscheidung treffen — verweise auf den Anspruchs-Rechner für genaue Beträge
 - Bleibe stets korrekt nach aktuellem Sozialrecht (Stand 2025)
 - Keine medizinischen Diagnosen
 - Antwort max. 300 Wörter`;
