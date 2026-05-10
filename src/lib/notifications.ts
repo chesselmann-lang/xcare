@@ -3,6 +3,7 @@
  * Uses Supabase service-role client (bypasses RLS) to insert on behalf of any profile.
  */
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export type NotificationTyp =
   | "neue_anfrage"
@@ -31,7 +32,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
     });
   } catch (err) {
     // Non-critical — log but don't throw
-    console.error("[notifications]", err);
+    logger.error("createNotification failed", { error: err instanceof Error ? err.message : String(err) });
   }
 }
 
