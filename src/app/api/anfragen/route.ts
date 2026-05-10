@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { isUuid, isLebenslage, maxLen } from "@/lib/validate";
 
 export async function POST(req: NextRequest) {
   // Rate limit: 5 new Anfragen per 5 minutes per IP to prevent spam
@@ -21,9 +22,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { anbieter_id, leistung_id, lebenslage, beschreibung } = body;
 
-    if (!anbieter_id || !lebenslage || !beschreibung?.trim()) {
-      return NextResponse.json({ error: "Pflichtfelder fehlen" }, { status: 400 });
-    }
+    if (!isUuid(anbieter_id))
+      return NextResponse.json({ error: "Ungültige anbieter_id" }, { status: 400 });
+    if (!isLebenslage(lebenslage))
+      return NextResponse.json({ error: "Ungültige Lebenslage" }, { status: 400 });
+    if (!beschreibung?.trim())
+      return NextResponse.json({ error: "Beschreibung fehlt" }, { status: 400 });
+    if (!maxLen(beschreibung.trim(), 2000))
+      return NextResponse.json({ error: "Beschreibung zu lang (max. 2000 Zeichen)" }, { status: 400 });
+    if (leistung_id !== undefined && leistung_id !== null && !isUuid(leistung_id))
+      return NextResponse.json({ error: "Ungültige leistung_id" }, { status: 400 });
 
     // Get familie profile
     const { data: profile, error: profileErr } = await supabase

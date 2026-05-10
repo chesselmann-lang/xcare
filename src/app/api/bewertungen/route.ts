@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid, maxLen, trimOrNull } from "@/lib/validate";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -8,8 +9,15 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { anbieter_id, anfrage_id, sterne, kommentar } = await request.json();
-  if (!anbieter_id || !sterne || sterne < 1 || sterne > 5)
-    return NextResponse.json({ error: "Ungültige Bewertung" }, { status: 400 });
+
+  if (!isUuid(anbieter_id))
+    return NextResponse.json({ error: "Ungültige anbieter_id" }, { status: 400 });
+  if (!sterne || sterne < 1 || sterne > 5)
+    return NextResponse.json({ error: "Ungültige Bewertung (sterne 1–5)" }, { status: 400 });
+  if (kommentar !== undefined && kommentar !== null && !maxLen(kommentar, 1000))
+    return NextResponse.json({ error: "Kommentar zu lang (max. 1000 Zeichen)" }, { status: 400 });
+  if (anfrage_id !== undefined && anfrage_id !== null && !isUuid(anfrage_id))
+    return NextResponse.json({ error: "Ungültige anfrage_id" }, { status: 400 });
 
   const { data: profile } = await supabase
     .from("profiles").select("id, role").eq("user_id", user.id).single();
@@ -30,7 +38,7 @@ export async function POST(request: Request) {
   }
 
   const { data, error } = await supabase.from("bewertungen")
-    .upsert({ anbieter_id, familie_id: profile.id, anfrage_id: anfrage_id ?? null, sterne, kommentar: kommentar?.trim() || null },
+    .upsert({ anbieter_id, familie_id: profile.id, anfrage_id: anfrage_id ?? null, sterne, kommentar: trimOrNull(kommentar) },
       { onConflict: "familie_id,anbieter_id" })
     .select().single();
 

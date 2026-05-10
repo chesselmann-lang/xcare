@@ -3,6 +3,7 @@ import { streamLotseAntwort } from "@/lib/ai/lotse";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { isLebenslage, maxLen, isPlz } from "@/lib/validate";
 import type { LebenslageTyp, WizardAntwort } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -27,12 +28,12 @@ export async function POST(req: NextRequest) {
       plz: string;
     } = body;
 
-    if (!lebenslage || !frage) {
-      return NextResponse.json(
-        { error: "lebenslage und frage sind pflicht" },
-        { status: 400 }
-      );
-    }
+    if (!isLebenslage(lebenslage))
+      return NextResponse.json({ error: "Ungültige Lebenslage" }, { status: 400 });
+    if (!maxLen(frage, 500))
+      return NextResponse.json({ error: "Frage fehlt oder zu lang (max. 500 Zeichen)" }, { status: 400 });
+    // plz is optional but must be valid when provided
+    const safePlz = isPlz(plz) ? plz : "";
 
     // Anzahl passender Anbieter ermitteln (für Kontext)
     const supabase = await createClient();
@@ -40,10 +41,10 @@ export async function POST(req: NextRequest) {
       .from("anbieter")
       .select("*", { count: "exact", head: true })
       .eq("aktiv", true)
-      .eq("plz", plz.substring(0, 2) + "%"); // vereinfacht
+      .ilike("plz", (safePlz ? safePlz.substring(0, 2) : "") + "%");
 
     const stream = streamLotseAntwort(
-      lebenslage,
+      lebenslage as LebenslageTyp,
       antworten ?? [],
       frage,
       count ?? 0
