@@ -21,10 +21,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Nachricht zu lang (max. 2000 Zeichen)" }, { status: 400 });
     }
 
-    // Get current profile
+    // Get current profile (include name fields for notification sender label)
     const { data: profile } = await supabase
       .from("profiles")
-      .select("id, role")
+      .select("id, role, vorname, nachname")
       .eq("user_id", user.id)
       .single();
 
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         let empfaengerEmail: string | null = null;
         let empfaengerName: string | null = null;
 
-        const senderName = `${(profile as { vorname?: string; nachname?: string }).vorname ?? ""} ${(profile as { nachname?: string }).nachname ?? ""}`.trim() || "xcare-Nutzer";
+        const senderName = `${profile.vorname ?? ""} ${profile.nachname ?? ""}`.trim() || "xcare-Nutzer";
 
         if (profile.role === "familie") {
           // Sender is familie → notify anbieter
