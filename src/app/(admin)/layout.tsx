@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { Shield, LayoutDashboard, Building2, Users, BarChart3, LogOut, Star, FileText, PieChart, ShieldCheck } from "lucide-react";
+import { Shield, LayoutDashboard, Building2, Users, BarChart3, LogOut, Star, FileText, PieChart, ShieldCheck, CreditCard } from "lucide-react";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "christian@whatsdigital.de";
 
@@ -29,6 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             { href: "/admin/nutzer", label: "Nutzer", icon: Users },
             { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
             { href: "/admin/statistiken", label: "Statistiken", icon: PieChart },
+            { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
             { href: "/admin/bewertungen", label: "Bewertungen", icon: Star },
             { href: "/admin/anfragen", label: "Anfragen", icon: FileText },
             { href: "/admin/compliance", label: "Compliance", icon: ShieldCheck },
@@ -56,10 +57,4 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 overflow-auto">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
-}
+        <div className

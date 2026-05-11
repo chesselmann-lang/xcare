@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Shield, Loader2 } from "lucide-react";
 
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function PlanOverride({ anbieterId, currentPlan }: Props) {
+  const router = useRouter();
   const [plan, setPlan] = useState<PlanValue>((currentPlan as PlanValue) ?? "free");
   const [expiresAt, setExpiresAt] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -40,6 +42,8 @@ export function PlanOverride({ anbieterId, currentPlan }: Props) {
       toast.success("Plan aktualisiert", {
         description: `Plan wurde auf „${plan}" gesetzt.`,
       });
+      // Refresh the server component so the Abo-Status card reflects the new plan
+      router.refresh();
     } catch (err) {
       toast.error("Fehler beim Aktualisieren", {
         description: err instanceof Error ? err.message : "Bitte erneut versuchen.",
@@ -114,12 +118,4 @@ export function PlanOverride({ anbieterId, currentPlan }: Props) {
             {loading ? "Speichern…" : "Plan setzen"}
           </button>
           {currentPlan && (
-            <span className="text-xs text-gray-400">
-              Aktuell: <span className="font-medium text-gray-600 capitalize">{currentPlan}</span>
-            </span>
-          )}
-        </div>
-      </form>
-    </div>
-  );
-}
+            <span className="text-xs text-gray-400
