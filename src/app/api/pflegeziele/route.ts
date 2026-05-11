@@ -34,6 +34,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Titel ist erforderlich" }, { status: 400 });
     }
 
+    const parsedPrioritaet = prioritaet ?? 2;
+    if (
+      typeof parsedPrioritaet !== "number" ||
+      !Number.isInteger(parsedPrioritaet) ||
+      parsedPrioritaet < 1 ||
+      parsedPrioritaet > 5
+    ) {
+      return NextResponse.json({ error: "Priorität muss zwischen 1 und 5 liegen" }, { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from("pflegeziele")
       .insert({
@@ -41,7 +51,7 @@ export async function POST(request: Request) {
         titel: titel.trim(),
         beschreibung: beschreibung?.trim() || null,
         kategorie: kategorie ?? "allgemein",
-        prioritaet: prioritaet ?? 2,
+        prioritaet: parsedPrioritaet,
         ziel_datum: ziel_datum || null,
         erreicht: false,
       })

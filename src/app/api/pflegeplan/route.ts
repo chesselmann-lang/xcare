@@ -62,6 +62,21 @@ export async function POST(request: Request) {
       );
     }
 
+    const VALID_TERMIN_TYPEN = [
+      "arzt",
+      "pflege",
+      "therapie",
+      "medikament",
+      "behörde",
+      "sonstiges",
+    ] as const;
+    if (!VALID_TERMIN_TYPEN.includes(termin_typ)) {
+      return NextResponse.json(
+        { error: `Ungültiger Termin-Typ. Erlaubt: ${VALID_TERMIN_TYPEN.join(", ")}` },
+        { status: 400 }
+      );
+    }
+
     const { data, error } = await supabase
       .from("pflegetermine")
       .insert({

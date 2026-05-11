@@ -12,10 +12,11 @@ export async function GET() {
     const { data: caller } = await supabase
       .from("profiles")
       .select("role")
-      .eq("id", user.id)
+      .eq("user_id", user.id)
       .single();
 
-    if (caller?.role !== "admin") {
+    const adminEmail = process.env.ADMIN_EMAIL ?? "christian@whatsdigital.de";
+    if (caller?.role !== "admin" && user.email !== adminEmail) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
