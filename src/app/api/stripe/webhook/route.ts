@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
+import { inngest } from "@/lib/inngest";
 
 /**
  * POST /api/stripe/webhook
@@ -168,10 +169,10 @@ export async function POST(req: NextRequest) {
         const planId = (session.metadata?.plan_id ?? "starter") as string;
 
         if (subscriptionId && profileId) {
-          // Look up anbieter via profile_id
+          // Look up anbieter + profile for email notification
           const { data: anbieter } = await supabase
             .from("anbieter")
-            .select("id")
+            .select("id, name, profile_id")
             .eq("profile_id", profileId)
             .single();
 
@@ -181,10 +182,31 @@ export async function POST(req: NextRequest) {
               stripe_subscription_id: subscriptionId,
               plan: planId,
             }).eq("id", anbieter.id);
-            if (error) logger.error("stripe/webhook checkout.session.completed db", { error: error.message });
-            else logger.info("stripe/webhook checkout.session.completed", {
-              anbieter_id: anbieter.id, plan: planId, subscription: subscriptionId,
-            });
+            if (error) {
+              logger.error("stripe/webhook checkout.session.completed db", { error: error.message });
+            } else {
+              logger.info("stripe/webhook checkout.session.completed", {
+                anbieter_id: anbieter.id, plan: planId, subscription: subscriptionId,
+              });
+              // Fetch profile email for upgrade notification
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("email, vorname")
+                .eq("id", profileId)
+                .single();
+              if (profile?.email) {
+                await inngest.send({
+                  name: "billing/plan.upgraded",
+                  data: {
+                    anbieter_id: anbieter.id,
+                    anbieter_name: anbieter.name ?? "",
+                    email: profile.email,
+                    vorname: profile.vorname ?? "",
+                    plan: planId,
+                  },
+                });
+              }
+            }
           } else {
             logger.error("stripe/webhook checkout.session.completed: anbieter not found", { profileId });
           }
@@ -262,58 +284,14 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object;
         const subId = invoice.subscription as string | null;
         const attemptCount = (invoice.attempt_count as number) ?? 1;
-        if (subId && attemptCount >= 3) {
-          const { error } = await supabase.from("anbieter").update({
-            plan: "free",
-          }).eq("stripe_subscription_id", subId);
-          if (error) logger.error("stripe/webhook invoice.payment_failed downgrade", { error: error.message });
-        }
-        logger.warn("stripe/webhook invoice.payment_failed", {
-          id: invoice.id, attempt: attemptCount, subscription: subId,
-        });
-        break;
-      }
 
-      case "payout.paid": {
-        const payout = event.data.object;
-        logger.info("stripe/webhook payout.paid (platform)", { id: payout.id, amount: payout.amount });
-        break;
-      }
+        if (subId) {
+          // Look up anbieter + profile for notification
+          const { data: anbieter } = await supabase
+            .from("anbieter")
+            .select("id, name, profile_id")
+            .eq("stripe_subscription_id", subId)
+            .single();
 
-      case "payout.failed": {
-        const payout = event.data.object;
-        logger.error("stripe/webhook payout.failed (platform)", {
-          id: payout.id, code: payout.failure_code, message: payout.failure_message,
-        });
-        break;
-      }
-
-      default:
-        logger.info(`stripe/webhook unhandled platform event: ${event.type}`);
-    }
-
-    return NextResponse.json({ received: true });
-
-  } catch (err) {
-    logger.error("stripe/webhook processing error", {
-      event: event?.type,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    // Always 200 to prevent Stripe from retrying handler bugs
-    return NextResponse.json({ received: true, error: "handler_error" });
-  }
-}
-
-/**
- * Map Stripe Price IDs to internal plan names.
- */
-function resolvePlanFromPriceId(priceId: string | undefined): string {
-  if (!priceId) return "starter";
-  const starterMonthly = process.env.STRIPE_PRICE_STARTER_MONTHLY;
-  const starterYearly = process.env.STRIPE_PRICE_STARTER_YEARLY;
-  const proMonthly = process.env.STRIPE_PRICE_PRO_MONTHLY;
-  const proYearly = process.env.STRIPE_PRICE_PRO_YEARLY;
-  if (priceId === starterMonthly || priceId === starterYearly) return "starter";
-  if (priceId === proMonthly || priceId === proYearly) return "professional";
-  return "starter";
-}
+          if (anbieter) {
+      

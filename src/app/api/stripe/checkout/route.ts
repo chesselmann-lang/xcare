@@ -89,5 +89,3 @@ export async function POST(req: NextRequest) {
       { error: "Interner Fehler" },
       { status: 500 }
     );
-  }
-}

@@ -272,29 +272,4 @@ export default function NeueLeistungPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="kapazitaet">Kapazität (Plätze)</Label>
-                <Input id="kapazitaet" name="kapazitaet" type="number" min="0" placeholder="z.B. 10" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="wartezeit_wochen">Wartezeit (Wochen)</Label>
-                <Input id="wartezeit_wochen" name="wartezeit_wochen" type="number" min="0" placeholder="0 = sofort" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {error && (
-          <p className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">{error}</p>
-        )}
-
-        <Button type="submit" disabled={loading} className="w-full gap-2">
-          {loading ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Wird gespeichert...</>
-          ) : (
-            <><CheckCircle2 className="h-4 w-4" /> Leistung speichern</>
-          )}
-        </Button>
-      </form>
-    </div>
-  );
-}
+                <Label htmlFor="kapazitaet">Kapazität (Plätze

@@ -1,11 +1,11 @@
 import { serve } from "inngest/next";
-import { Inngest } from "inngest";
 import { Resend } from "resend";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createUnsubscribeToken, buildUnsubscribeUrl } from "@/lib/unsubscribe";
 import { logger } from "@/lib/logger";
+import { inngest } from "@/lib/inngest";
 
-export const inngest = new Inngest({ id: "xcare" });
+export { inngest }; // re-export for legacy imports
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
 const fromEmail = process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de";
@@ -529,7 +529,7 @@ const remind7dAnbieterOffen = inngest.createFunction(
   }
 );
 
-// ─── 9. Wöchentlicher Digest für Anbieter (jeden Montag 08:00) ─────────────────────
+// ─── 9. Wöchentlicher Digest für Anbieter (jeden Montag 08:00) ─────────────────
 const weeklyDigestAnbieter = inngest.createFunction(
   { id: "weekly-digest-anbieter", concurrency: { limit: 10 } },
   { cron: "0 8 * * 1" }, // Every Monday at 08:00 UTC
@@ -628,7 +628,7 @@ const weeklyDigestAnbieter = inngest.createFunction(
   }
 );
 
-// ─── 10. Tägliche Wiedervorlagen-Erinnerung (07:00 UTC) ──────────────────────
+// ─── 10. Tägliche Wiedervorlagen-Erinnerung (07:00 UTC) ────────────────────────
 const dailyWiedervorlagenCheck = inngest.createFunction(
   { id: "daily-wiedervorlagen-check", concurrency: { limit: 5 } },
   { cron: "0 7 * * *" }, // Every day at 07:00 UTC
@@ -889,7 +889,7 @@ const ablaufdatenCheck = inngest.createFunction(
           if (!insertError) benachrichtigungenCount++;
         }
 
-        // ── E-Mail senden (wenn nicht abgemeldet) ────────────────────────────
+        // ── E-Mail senden (wenn nicht abgemeldet) ─────────────────────────────
         if (prefs.ablaufdaten === false) return;
 
         const vorname = profil.vorname ?? "Nutzer";
@@ -1067,9 +1067,121 @@ const impfungenErinnerung = inngest.createFunction(
   }
 );
 
-// ─── Dead-Letter / Failure Handler ───────────────────────────────────────────
-// Listens to the built-in `inngest/function.failed` system event which fires
-// after all automatic retries for a function are exhausted.
+// ─── 13. Stripe Abo-Upgrade-Bestätigung ──────────────────────────────────────
+// Ausgelöst durch: stripe/webhook → checkout.session.completed
+const notifyAboUpgrade = inngest.createFunction(
+  { id: "notify-abo-upgrade", name: "Abo-Upgrade Bestätigung" },
+  { event: "billing/plan.upgraded" },
+  async ({ event, step }) => {
+    const { anbieter_id, plan, email, vorname } = event.data as {
+      anbieter_id: string;
+      plan: string;
+      email: string;
+      vorname?: string;
+    };
+
+    await step.run("send-upgrade-email", async () => {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+      const planLabel = plan === "professional" ? "Professional" : plan === "starter" ? "Starter" : plan;
+
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
+        to: email,
+        subject: `Ihr xcare ${planLabel}-Plan ist jetzt aktiv ✅`,
+        html: `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;max-width:600px;"><tr><td style="background:#1A5276;padding:24px 32px;"><p style="margin:0;color:#fff;font-size:22px;font-weight:700;">❤️ xcare</p></td></tr><tr><td style="padding:32px;"><h2 style="color:#1A5276;margin-top:0;">Willkommen im ${planLabel}-Plan! 🎉</h2><p style="color:#333;line-height:1.6;">Hallo ${vorname ?? ""},</p><p style="color:#333;line-height:1.6;">Ihr Upgrade auf den <strong>${planLabel}-Plan</strong> war erfolgreich. Alle neuen Funktionen sind sofort verfügbar.</p><a href="${appUrl}/anbieter/abo" style="display:inline-block;background:#1A5276;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;margin:20px 0;">Mein Abo ansehen</a><p style="color:#999;font-size:12px;margin-top:24px;">Rechnungen und Zahlungsmethode verwalten Sie jederzeit im <a href="${appUrl}/anbieter/abo" style="color:#1A5276;">Abo-Portal</a>.</p></td></tr><tr><td style="background:#f8f9fa;padding:16px 32px;border-top:1px solid #e9ecef;"><p style="margin:0;color:#6c757d;font-size:12px;text-align:center;">© ${new Date().getFullYear()} xcare gemeinnützige GmbH</p></td></tr></table></td></tr></table></body></html>`,
+      });
+    });
+
+    logger.info("billing/plan.upgraded email sent", { anbieter_id, plan });
+    return { sent: true };
+  }
+);
+
+// ─── 14. Stripe Zahlung fehlgeschlagen ───────────────────────────────────────
+// Ausgelöst durch: stripe/webhook → invoice.payment_failed
+const notifyZahlungFehlgeschlagen = inngest.createFunction(
+  { id: "notify-zahlung-fehlgeschlagen", name: "Zahlung fehlgeschlagen" },
+  { event: "billing/payment.failed" },
+  async ({ event, step }) => {
+    const { anbieter_id, email, vorname, attempt_count } = event.data as {
+      anbieter_id: string;
+      email: string;
+      vorname?: string;
+      attempt_count: number;
+    };
+
+    await step.run("send-payment-failed-email", async () => {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
+        to: email,
+        subject: `xcare: Zahlung fehlgeschlagen (Versuch ${attempt_count}) ⚠️`,
+        html: `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;max-width:600px;"><tr><td style="background:#c0392b;padding:24px 32px;"><p style="margin:0;color:#fff;font-size:22px;font-weight:700;">❤️ xcare</p></td></tr><tr><td style="padding:32px;"><h2 style="color:#c0392b;margin-top:0;">Zahlung fehlgeschlagen ⚠️</h2><p style="color:#333;line-height:1.6;">Hallo ${vorname ?? ""},</p><p style="color:#333;line-height:1.6;">Leider konnte Ihre Abo-Zahlung nicht verarbeitet werden (Versuch ${attempt_count} von 3). Bitte aktualisieren Sie Ihre Zahlungsmethode, um eine Unterbrechung zu vermeiden.</p><a href="${appUrl}/anbieter/abo" style="display:inline-block;background:#c0392b;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;margin:20px 0;">Zahlungsmethode aktualisieren</a><p style="color:#666;font-size:13px;line-height:1.6;">Nach 3 fehlgeschlagenen Versuchen wird Ihr Konto auf den Free-Plan zurückgesetzt.</p></td></tr><tr><td style="background:#f8f9fa;padding:16px 32px;border-top:1px solid #e9ecef;"><p style="margin:0;color:#6c757d;font-size:12px;text-align:center;">© ${new Date().getFullYear()} xcare gemeinnützige GmbH</p></td></tr></table></td></tr></table></body></html>`,
+      });
+    });
+
+    logger.info("billing/payment.failed email sent", { anbieter_id, attempt_count });
+    return { sent: true };
+  }
+);
+
+// ─── 15. Abo-Verlängerungs-Erinnerung (7 Tage vor Ablauf, täglich 08:00) ─────
+const remindAboVerlaengerung = inngest.createFunction(
+  { id: "remind-abo-verlaengerung", name: "Abo-Verlängerungs-Erinnerung" },
+  { cron: "0 8 * * *" },
+  async ({ step }) => {
+    const supabase = getServiceClient();
+
+    const in7Tagen = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const heute = new Date().toISOString().split("T")[0];
+
+    const faelligeAnbieter = await step.run("fetch-expiring-subscriptions", async () => {
+      const { data } = await supabase
+        .from("anbieter")
+        .select(`
+          id, name, plan, plan_expires_at,
+          profiles!anbieter_profile_id_fkey (email, vorname)
+        `)
+        .not("plan", "eq", "free")
+        .gte("plan_expires_at", heute)
+        .lte("plan_expires_at", in7Tagen + "T23:59:59Z");
+      return data ?? [];
+    });
+
+    if (faelligeAnbieter.length === 0) return { reminders: 0 };
+
+    let count = 0;
+    for (const anbieter of faelligeAnbieter) {
+      await step.run(`remind-${anbieter.id}`, async () => {
+        const profil = Array.isArray(anbieter.profiles) ? anbieter.profiles[0] : anbieter.profiles;
+        if (!profil?.email) return;
+
+        const ablaufDatum = new Date(anbieter.plan_expires_at as string).toLocaleDateString("de-DE", {
+          day: "2-digit", month: "long", year: "numeric",
+        });
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+        const planLabel = anbieter.plan === "professional" ? "Professional" : "Starter";
+
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
+          to: profil.email,
+          subject: `xcare: Ihr ${planLabel}-Abo verlängert sich am ${ablaufDatum}`,
+          html: `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;max-width:600px;"><tr><td style="background:#1A5276;padding:24px 32px;"><p style="margin:0;color:#fff;font-size:22px;font-weight:700;">❤️ xcare</p></td></tr><tr><td style="padding:32px;"><h2 style="color:#1A5276;margin-top:0;">Ihr Abo verlängert sich bald 🔄</h2><p style="color:#333;line-height:1.6;">Hallo ${profil.vorname ?? ""},</p><p style="color:#333;line-height:1.6;">Ihr <strong>${planLabel}-Plan</strong> wird am <strong>${ablaufDatum}</strong> automatisch verlängert. Falls Sie kündigen möchten, tun Sie dies bitte vorher im Abo-Portal.</p><a href="${appUrl}/anbieter/abo" style="display:inline-block;background:#1A5276;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;margin:20px 0;">Abo verwalten</a></td></tr><tr><td style="background:#f8f9fa;padding:16px 32px;border-top:1px solid #e9ecef;"><p style="margin:0;color:#6c757d;font-size:12px;text-align:center;">© ${new Date().getFullYear()} xcare gemeinnützige GmbH</p></td></tr></table></td></tr></table></body></html>`,
+        });
+        count++;
+      });
+    }
+
+    logger.info("remind-abo-verlaengerung cron done", { reminders: count });
+    return { reminders: count };
+  }
+);
+
+// ─── Dead-Letter / Failure Handler ──────────────────────────────────────────
 const handleFunctionFailure = inngest.createFunction(
   { id: "handle-function-failure" },
   { event: "inngest/function.failed" },
@@ -1079,18 +1191,16 @@ const handleFunctionFailure = inngest.createFunction(
       run_id: string;
       error: { name?: string; message?: string; stack?: string };
     };
-
     logger.error("Inngest function permanently failed (dead-letter)", {
       function_id,
       run_id,
       error_name: error?.name ?? "UnknownError",
       error_message: error?.message ?? "no message",
-      // stack deliberately omitted from structured log — too noisy; visible in Inngest UI
     });
   }
 );
 
-// ─── Export (Inngest serve handler) ──────────────────────────────────────────
+// ─── Export (Inngest serve handler) ────────────────────────────────────────────
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
@@ -1107,6 +1217,9 @@ export const { GET, POST, PUT } = serve({
     // Phase 3D: Smart Reminders
     ablaufdatenCheck,
     impfungenErinnerung,
+    // Phase 13A: Billing Notifications
+    notifyAboUpgrade,
+    notifyZahlungFehlgeschlagen,
+    remindAboVerlaengerung,
     handleFunctionFailure,
   ],
-});

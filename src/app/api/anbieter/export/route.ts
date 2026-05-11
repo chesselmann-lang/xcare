@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { planFeatureGate } from "@/lib/stripe/features";
 
 function escapeCsv(val: string | number | null | undefined): string {
   if (val == null) return "";
@@ -24,8 +25,17 @@ export async function GET(req: NextRequest) {
   if (!profile || profile.role !== "anbieter") return new NextResponse("Forbidden", { status: 403 });
 
   const { data: anbieter } = await supabase
-    .from("anbieter").select("id, name").eq("profile_id", profile.id).single();
+    .from("anbieter").select("id, name, plan").eq("profile_id", profile.id).single();
   if (!anbieter) return new NextResponse("Not found", { status: 404 });
+
+  // Feature gate: CSV export requires Starter plan or higher
+  const gate = planFeatureGate(anbieter.plan);
+  if (!gate.canExportCsv) {
+    return NextResponse.json(
+      { error: "CSV-Export erfordert den Starter-Plan oder höher.", upgrade_url: "/anbieter/abo" },
+      { status: 403 }
+    );
+  }
 
   const { data: anfragen } = await supabase
     .from("anfragen")
@@ -53,17 +63,4 @@ export async function GET(req: NextRequest) {
       fam?.plz ?? "",
       fam?.ort ?? "",
       new Date(a.created_at).toLocaleDateString("de-DE"),
-      new Date(a.updated_at).toLocaleDateString("de-DE"),
-      a.beschreibung ?? "",
-    ]);
-  }
-
-  const filename = `xcare-anfragen-${anbieter.name.replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.csv`;
-
-  return new NextResponse(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-    },
-  });
-}
+      new Date(a.updated_at).toLoc

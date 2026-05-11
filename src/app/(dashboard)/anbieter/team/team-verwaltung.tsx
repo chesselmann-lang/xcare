@@ -39,11 +39,15 @@ export function TeamVerwaltung({
   anbieterName,
   currentProfileId,
   initialMitglieder,
+  maxTeamMembers = null,
+  currentMemberCount = 1,
 }: {
   anbieterId: string;
   anbieterName: string;
   currentProfileId: string;
   initialMitglieder: Mitglied[];
+  maxTeamMembers?: number | null;
+  currentMemberCount?: number;
 }) {
   const supabase = createClient();
   const [mitglieder, setMitglieder] = useState<Mitglied[]>(initialMitglieder);
@@ -51,6 +55,10 @@ export function TeamVerwaltung({
   const [rolle, setRolle] = useState<Rolle>("mitarbeiter");
   const [inviting, setInviting] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+
+  // Dynamic limit check (member count grows as we add members in state)
+  const liveCount = currentMemberCount - initialMitglieder.length + mitglieder.length;
+  const atLimit = maxTeamMembers !== null && liveCount >= maxTeamMembers;
 
   const einladen = async () => {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -139,34 +147,46 @@ export function TeamVerwaltung({
         <h2 className="font-semibold mb-4 flex items-center gap-2">
           <UserPlus className="h-4 w-4" /> Mitarbeiter einladen
         </h2>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground]" />
-            <Input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="E-Mail-Adresse"
-              type="email"
-              className="pl-9"
-              onKeyDown={(e) => e.key === "Enter" && einladen()}
-            />
+
+        {atLimit ? (
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+            Sie haben das Mitgliederlimit Ihres Plans erreicht.{" "}
+            <a href="/anbieter/abo" className="font-semibold underline hover:no-underline">
+              Jetzt upgraden →
+            </a>
           </div>
-          <select
-            value={rolle}
-            onChange={(e) => setRolle(e.target.value as Rolle)}
-            className="flex h-10 w-36 rounded-lg border border-[--input] bg-[--background] px-3 text-sm"
-          >
-            <option value="mitarbeiter">Mitarbeiter</option>
-            <option value="admin">Admin</option>
-          </select>
-          <Button onClick={einladen} disabled={inviting} className="gap-2">
-            {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-            Einladen
-          </Button>
-        </div>
-        <p className="text-xs text-[--muted-foreground] mt-2">
-          Die Person muss bereits ein xcare-Konto besitzen. Admins können Anfragen bearbeiten und Leistungen verwalten.
-        </p>
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground]" />
+                <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="E-Mail-Adresse"
+                  type="email"
+                  className="pl-9"
+                  onKeyDown={(e) => e.key === "Enter" && einladen()}
+                />
+              </div>
+              <select
+                value={rolle}
+                onChange={(e) => setRolle(e.target.value as Rolle)}
+                className="flex h-10 w-36 rounded-lg border border-[--input] bg-[--background] px-3 text-sm"
+              >
+                <option value="mitarbeiter">Mitarbeiter</option>
+                <option value="admin">Admin</option>
+              </select>
+              <Button onClick={einladen} disabled={inviting} className="gap-2">
+                {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                Einladen
+              </Button>
+            </div>
+            <p className="text-xs text-[--muted-foreground] mt-2">
+              Die Person muss bereits ein xcare-Konto besitzen. Admins können Anfragen bearbeiten und Leistungen verwalten.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Mitgliederliste */}
@@ -209,29 +229,4 @@ export function TeamVerwaltung({
                       value={m.rolle}
                       onChange={(e) => rolleAendern(m, e.target.value as Rolle)}
                       className="text-xs h-7 rounded-lg border border-[--input] bg-[--background] px-2"
-                    >
-                      <option value="mitarbeiter">Mitarbeiter</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                    <button
-                      onClick={() => entfernen(m)}
-                      disabled={removing === m.id}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
-                      title="Entfernen"
-                    >
-                      {removing === m.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+                

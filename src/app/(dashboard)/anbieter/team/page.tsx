@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { TeamVerwaltung } from "./team-verwaltung";
+import { planFeatureGate } from "@/lib/stripe/features";
+import Link from "next/link";
 
 export const metadata = { title: "Team – xcare" };
 
@@ -19,11 +21,13 @@ export default async function TeamPage() {
 
   const { data: anbieter } = await supabase
     .from("anbieter")
-    .select("id, name")
+    .select("id, name, plan")
     .eq("profile_id", profile.id)
     .single();
 
   if (!anbieter) redirect("/anbieter/profil");
+
+  const gate = planFeatureGate(anbieter.plan);
 
   const { data: mitglieder } = await supabase
     .from("anbieter_mitglieder")
@@ -31,18 +35,10 @@ export default async function TeamPage() {
     .eq("anbieter_id", anbieter.id)
     .order("created_at");
 
+  const currentCount = (mitglieder ?? []).length + 1; // +1 for owner
+  const atLimit = gate.maxTeamMembers !== null && currentCount >= gate.maxTeamMembers;
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold mb-1">Team verwalten</h1>
-      <p className="text-[--muted-foreground] text-sm mb-8">
-        Laden Sie Mitarbeiter ein, die Anfragen bearbeiten können.
-      </p>
-      <TeamVerwaltung
-        anbieterId={anbieter.id}
-        anbieterName={anbieter.name}
-        currentProfileId={profile.id}
-        initialMitglieder={mitglieder ?? []}
-      />
-    </div>
-  );
-}
+      <p className="text-[--muted-foregroun

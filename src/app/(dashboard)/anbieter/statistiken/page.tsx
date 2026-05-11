@@ -1,5 +1,6 @@
 ﻿import { redirect } from "next/navigation";
 import Link from "next/link";
+import { planFeatureGate } from "@/lib/stripe/features";
 import {
   BarChart3, TrendingUp, TrendingDown, Minus, Star,
   Users, CheckCircle2, Clock, ArrowLeft, MessageSquare,
@@ -76,11 +77,32 @@ export default async function StatistikenPage() {
 
   const { data: anbieter } = await supabase
     .from("anbieter")
-    .select("id, name, verifiziert, created_at")
+    .select("id, name, verifiziert, created_at, plan")
     .eq("profile_id", profile.id)
     .single();
 
   if (!anbieter) redirect("/anbieter/dashboard");
+
+  // Feature gate: Statistiken requires Starter plan or higher
+  const gate = planFeatureGate(anbieter.plan);
+  if (!gate.canViewStatistiken) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-20 text-center">
+        <BarChart3 className="h-16 w-16 mx-auto mb-4 text-[--muted-foreground] opacity-40" />
+        <h1 className="text-2xl font-bold mb-2">Statistiken nicht verfügbar</h1>
+        <p className="text-[--muted-foreground] mb-6">
+          Detaillierte Statistiken sind ab dem <strong>Starter-Plan</strong> verfügbar.
+          Upgraden Sie jetzt, um Anfragen-Trends, Bewertungen und Profil-Aufrufe zu sehen.
+        </p>
+        <Link
+          href="/anbieter/abo"
+          className="inline-flex items-center gap-2 bg-[--primary] text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+        >
+          Jetzt upgraden →
+        </Link>
+      </div>
+    );
+  }
 
   // ── Load all anfragen ────────────────────────────────────────────────────
   const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -667,28 +689,4 @@ export default async function StatistikenPage() {
                       <td className="py-2.5 pr-4">{m.total}</td>
                       <td className="py-2.5 pr-4">{m.abgeschlossen}</td>
                       <td className="py-2.5 pr-4">
-                        <span className={`font-medium ${m.rate >= 50 ? "text-green-600" : m.rate >= 25 ? "text-amber-600" : m.total > 0 ? "text-red-600" : "text-[--muted-foreground]"}`}>
-                          {m.total > 0 ? `${m.rate}%` : "—"}
-                        </span>
-                      </td>
-                      <td className="py-2.5">
-                        {prev !== undefined ? (
-                          <span className={`flex items-center gap-1 text-xs ${trendColor(diff)}`}>
-                            {trendIcon(diff)}
-                            {diff !== 0 ? `${diff > 0 ? "+" : ""}${diff}` : "="}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-[--muted-foreground]">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+                        <span classNam

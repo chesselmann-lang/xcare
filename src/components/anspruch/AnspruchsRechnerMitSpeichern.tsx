@@ -202,7 +202,7 @@ export function AnspruchsRechnerMitSpeichern({ lebenslage }: Props) {
               type="text"
               value={bezeichnung}
               onChange={(e) => setBezeichnung(e.target.value)}
-              placeholder={'Bezeichnung (z.B. „Mutter, PG 3“)'}
+              placeholder="Bezeichnung (z.B. „Mutter, PG 3")"
               className="flex-1 border border-blue-200 rounded-md px-3 py-1.5 text-sm bg-white"
               maxLength={100}
             />
