@@ -3,6 +3,7 @@ import type { LebenslageTyp, WizardAntwort } from "../types";
 import { LEBENSLAGEN } from "../constants";
 import { berechneAnsprueche, inputAusWizardAntworten } from "../anspruch/engine";
 import type { AnspruchsErgebnis } from "../anspruch/types";
+import { logKiAudit, hashPrompt } from "../ki-audit";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -161,7 +162,8 @@ export async function* streamLotseAntwort(
   lebenslage: LebenslageTyp,
   antworten: WizardAntwort[],
   frage: string,
-  gefundeneAnbieter: number
+  gefundeneAnbieter: number,
+  userId?: string
 ): AsyncGenerator<string> {
   const ll = LEBENSLAGEN[lebenslage];
   const regeln = regelEngine(lebenslage, antworten);
@@ -202,6 +204,10 @@ Regeln:
 Situation: ${frage}
 Benutzerantworten: ${JSON.stringify(antworten)}`;
 
+  const start = Date.now();
+  let tokensIn = 0;
+  let tokensOut = 0;
+
   const stream = await anthropic.messages.stream({
     model: "claude-sonnet-4-6",
     max_tokens: 600,
@@ -210,11 +216,4 @@ Benutzerantworten: ${JSON.stringify(antworten)}`;
   });
 
   for await (const chunk of stream) {
-    if (
-      chunk.type === "content_block_delta" &&
-      chunk.delta.type === "text_delta"
-    ) {
-      yield chunk.delta.text;
-    }
-  }
-}
+  

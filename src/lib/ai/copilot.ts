@@ -6,6 +6,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { XCARE_TOOLS } from "./tools";
 import * as handlers from "./tool-handlers";
+import { logKiAudit } from "../ki-audit";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -46,7 +47,8 @@ export type CopilotChunk =
 export async function* streamCopilotAntwort(
   frage: string,
   kontext: CopilotKontext,
-  verlauf: Array<{ rolle: "user" | "assistant"; inhalt: string }> = []
+  verlauf: Array<{ rolle: "user" | "assistant"; inhalt: string }> = [],
+  userId?: string
 ): AsyncGenerator<CopilotChunk> {
   const TOOL_LABELS: Record<string, string> = {
     check_eligibility: "Prüfe Ansprüche…",
@@ -71,6 +73,7 @@ export async function* streamCopilotAntwort(
   ];
 
   // Agentic Loop
+  const auditStart = Date.now();
   let continueLoop = true;
   while (continueLoop) {
     let response: Anthropic.Message;
@@ -141,11 +144,4 @@ export async function* streamCopilotAntwort(
         if (block.type === "text") {
           const words = block.text.split(" ");
           for (const word of words) {
-            yield { type: "text", content: word + " " };
-          }
-        }
-      }
-      continueLoop = false;
-    }
-  }
-}
+            yield { type: "text",

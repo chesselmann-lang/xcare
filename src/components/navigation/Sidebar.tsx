@@ -7,7 +7,7 @@ import {
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
   GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList, Wallet, Euro,
-  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope
+  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -55,6 +55,13 @@ const FAMILIE_NAV = [
   { href: "/familie/copilot", label: "KI-Co-Pilot", icon: Bot },
   { href: "/familie/leistungen", label: "Leistungen & Ansprüche", icon: Euro },
   { href: "/familie/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
+];
+
+const TRAEGER_NAV = [
+  { href: "/traeger/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/traeger/klienten", label: "Klienten", icon: Users },
+  { href: "/traeger/massenpruefung", label: "Massenprüfung (CSV)", icon: Upload },
+  { href: "/traeger/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
 ];
 
 const ANBIETER_NAV = [
@@ -151,7 +158,10 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
   const badgeCount = entityId ? realtimeCount : offeneAnfragenCount;
   const supabase = createClient();
 
-  const navItems = profile.role === "anbieter" ? ANBIETER_NAV : FAMILIE_NAV;
+  const navItems =
+    profile.role === "anbieter" ? ANBIETER_NAV :
+    profile.role === "traeger" ? TRAEGER_NAV :
+    FAMILIE_NAV;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -182,7 +192,7 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
               {profile.vorname ? `${profile.vorname} ${profile.nachname ?? ""}`.trim() : profile.email}
             </p>
             <p className="text-xs text-[--muted-foreground] capitalize">
-              {profile.role === "anbieter" ? "Anbieter" : "Familie"}
+              {profile.role === "anbieter" ? "Anbieter" : profile.role === "traeger" ? "Träger / Kommune" : "Familie"}
             </p>
           </div>
           {profileId && (
@@ -212,12 +222,4 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
             Profil
           </button>
         </Link>
-        <Link href="/einstellungen" onClick={closeMobile}>
-          <button className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm text-[--muted-foreground] hover:bg-[--muted] hover:text-[--foreground] transition-all">
-            <Settings className="h-4 w-4" />
-            Einstellungen
-          </button>
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm text-[--muted-foreground] hover:bg-red-50 hover:text-red-600 tran
+        <Link href="/einstellungen" onClick
