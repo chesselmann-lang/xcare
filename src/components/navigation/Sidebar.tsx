@@ -18,22 +18,22 @@ import type { Profile } from "@/lib/types";
 interface SidebarProps {
   profile: Profile;
   offeneAnfragenCount?: number;
-  /** anbieter.id or profile.id depending on role — for realtime subscription */
+  /** anbieter.id or profile.id depending on role â for realtime subscription */
   entityId?: string;
   /** profile.id for in-app notification bell */
   profileId?: string;
   initialUnreadCount?: number;
-  /** Unread direct-message count — shown as badge on Nachrichten nav item */
+  /** Unread direct-message count â shown as badge on Nachrichten nav item */
   unreadNachrichten?: number;
 }
 
 const FAMILIE_NAV = [
-  { href: "/familie", label: "Übersicht", icon: LayoutDashboard, exact: true },
+  { href: "/familie", label: "Ãbersicht", icon: LayoutDashboard, exact: true },
   { href: "/familie/haushalt", label: "Haushalt & Vollmachten", icon: Home },
   { href: "/familie/dokumente", label: "Dokumenten-Tresor", icon: Lock },
   { href: "/lotse", label: "KI-Lotse", icon: Compass },
   { href: "/suche", label: "Anbieter suchen", icon: Search },
-  { href: "/pflegekraefte", label: "Pflegekräfte finden", icon: Users },
+  { href: "/pflegekraefte", label: "PflegekrÃ¤fte finden", icon: Users },
   { href: "/familie/anfragen", label: "Meine Anfragen", icon: FileText },
   { href: "/familie/nachrichten", label: "Nachrichten", icon: Inbox, nachrichtenBadge: true },
   { href: "/familie/benachrichtigungen", label: "Benachrichtigungen", icon: Bell },
@@ -46,21 +46,21 @@ const FAMILIE_NAV = [
   { href: "/familie/wohlbefinden", label: "Wohlbefinden", icon: Heart },
   { href: "/familie/notfall", label: "Notfallplan", icon: AlertTriangle },
   { href: "/familie/pflegegrad", label: "Pflegegrad", icon: Stethoscope },
-  { href: "/familie/uebergabe", label: "Übergaben", icon: RefreshCcw },
+  { href: "/familie/uebergabe", label: "Ãbergaben", icon: RefreshCcw },
   { href: "/familie/pinnwand", label: "Pinnwand", icon: PinIcon },
   { href: "/familie/medikamente", label: "Medikamente", icon: Pill },
   { href: "/familie/zahlungen", label: "Zahlungen", icon: CreditCard },
   { href: "/familie/finanzen", label: "Finanz-Hub", icon: Wallet },
   { href: "/familie/gesundheit", label: "Gesundheits-Hub", icon: Activity },
   { href: "/familie/copilot", label: "KI-Co-Pilot", icon: Bot },
-  { href: "/familie/leistungen", label: "Leistungen & Ansprüche", icon: Euro },
+  { href: "/familie/leistungen", label: "Leistungen & AnsprÃ¼che", icon: Euro },
   { href: "/familie/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
 ];
 
 const TRAEGER_NAV = [
   { href: "/traeger/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/traeger/klienten", label: "Klienten", icon: Users },
-  { href: "/traeger/massenpruefung", label: "Massenprüfung (CSV)", icon: Upload },
+  { href: "/traeger/massenpruefung", label: "MassenprÃ¼fung (CSV)", icon: Upload },
   { href: "/traeger/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
 ];
 
@@ -76,7 +76,7 @@ const ANBIETER_NAV = [
   { href: "/anbieter/schichtplan", label: "Schichtplanung", icon: ClipboardList },
   { href: "/anbieter/dokumentation", label: "Pflegedokumentation", icon: FileText },
   { href: "/anbieter/compliance", label: "MDK-Compliance", icon: Activity },
-  { href: "/anbieter/uebergabe", label: "Übergabe", icon: RefreshCcw },
+  { href: "/anbieter/uebergabe", label: "Ãbergabe", icon: RefreshCcw },
   { href: "/anbieter/wohlbefinden", label: "Wohlbefinden", icon: Heart },
   { href: "/anbieter/pflegegrad", label: "Pflegegrad", icon: Stethoscope },
   { href: "/anbieter/notfall", label: "Notfall", icon: AlertTriangle },
@@ -88,7 +88,7 @@ const ANBIETER_NAV = [
   { href: "/anbieter/galerie", label: "Galerie", icon: Images },
   { href: "/anbieter/dokumente", label: "Dokumente", icon: FolderOpen },
   { href: "/anbieter/statistiken", label: "Statistiken", icon: BarChart3 },
-  { href: "/anbieter/abo", label: "Abo & Pläne", icon: CreditCard },
+  { href: "/anbieter/abo", label: "Abo & PlÃ¤ne", icon: CreditCard },
   { href: "/anbieter/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
 ];
 
@@ -149,7 +149,7 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
 
-  // Realtime count — falls back to server-rendered count if no entityId
+  // Realtime count â falls back to server-rendered count if no entityId
   const realtimeCount = useRealtimeAnfragenCount(
     entityId
       ? { anbieterIdOrFamilieId: entityId, role: profile.role as "anbieter" | "familie", initialCount: offeneAnfragenCount }
@@ -192,7 +192,7 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
               {profile.vorname ? `${profile.vorname} ${profile.nachname ?? ""}`.trim() : profile.email}
             </p>
             <p className="text-xs text-[--muted-foreground] capitalize">
-              {profile.role === "anbieter" ? "Anbieter" : profile.role === "traeger" ? "Träger / Kommune" : "Familie"}
+              {profile.role === "anbieter" ? "Anbieter" : profile.role === "traeger" ? "TrÃ¤ger / Kommune" : "Familie"}
             </p>
           </div>
           {profileId && (
@@ -278,4 +278,11 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
               className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[--muted]"
             >
               <X className="h-5 w-5" />
-         
+            </button>
+            <SidebarContent />
+          </aside>
+        </div>
+      )}
+    </>
+  );
+}
