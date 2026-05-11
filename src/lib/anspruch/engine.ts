@@ -17,6 +17,11 @@ import { berechneSgbXI } from "./sgb-xi";
 import { berechneSgbXII } from "./sgb-xii";
 import { berechneEstg35a } from "./estg-35a";
 import { berechneSgbVIII, berechneSgbIX } from "./sgb-viii-ix";
+import { berechneSgbII } from "./sgb-ii";
+import { berechneBeeg } from "./beeg";
+import { berechneWoGG } from "./wogg";
+import { berechneSgbV } from "./sgb-v";
+import { berechneSgbVI } from "./sgb-vi";
 
 /**
  * Haupteinstiegspunkt der Anspruchs-Engine.
@@ -25,13 +30,21 @@ import { berechneSgbVIII, berechneSgbIX } from "./sgb-viii-ix";
  */
 export function berechneAnsprueche(input: AnspruchsInput): AnspruchsErgebnis {
   // 1. Alle Regel-Module ausführen
-  const sgbXI = berechneSgbXI(input);
+  const sgbXI  = berechneSgbXI(input);
   const sgbXII = berechneSgbXII(input);
-  const estg = berechneEstg35a(input);
+  const estg   = berechneEstg35a(input);
   const sgbVIII = berechneSgbVIII(input);
-  const sgbIX = berechneSgbIX(input);
+  const sgbIX  = berechneSgbIX(input);
+  const sgbII  = berechneSgbII(input);
+  const beeg   = berechneBeeg(input);
+  const wogg   = berechneWoGG(input);
+  const sgbV   = berechneSgbV(input);
+  const sgbVI  = berechneSgbVI(input);
 
-  const alle: Anspruch[] = [...sgbXI, ...sgbXII, ...estg, ...sgbVIII, ...sgbIX];
+  const alle: Anspruch[] = [
+    ...sgbXI, ...sgbXII, ...estg, ...sgbVIII, ...sgbIX,
+    ...sgbII, ...beeg, ...wogg, ...sgbV, ...sgbVI,
+  ];
 
   // 2. Monatliche und jährliche Summen berechnen
   const { monatlich, jaehrlich, steuer } = berechneGesamtbetraege(alle);

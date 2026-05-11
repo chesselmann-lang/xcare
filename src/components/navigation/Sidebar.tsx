@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Compass, Search, FileText, Heart,
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
-  GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList, Wallet
+  GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList, Wallet, Euro
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -43,6 +43,7 @@ const FAMILIE_NAV = [
   { href: "/familie/finanzen", label: "Finanz-Hub", icon: Wallet },
   { href: "/familie/gesundheit", label: "Gesundheits-Hub", icon: Activity },
   { href: "/familie/copilot", label: "KI-Co-Pilot", icon: Bot },
+  { href: "/familie/leistungen", label: "Leistungen & Ansprüche", icon: Euro },
   { href: "/familie/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
 ];
 
