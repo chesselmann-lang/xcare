@@ -37,6 +37,7 @@ export default async function PublicLayout({
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-[--muted-foreground] mb-4">
             <a href="/anbieter" className="hover:text-[--foreground] transition-colors">Anbieter-Verzeichnis</a>
             <a href="/suche" className="hover:text-[--foreground] transition-colors">Anbieter suchen</a>
+            <a href="/pflegekraefte" className="hover:text-[--foreground] transition-colors">Pflegekräfte finden</a>
             <a href="/lotse" className="hover:text-[--foreground] transition-colors">KI-Lotse</a>
             <a href="/register" className="hover:text-[--foreground] transition-colors">Registrieren</a>
             <a href="/agb" className="hover:text-[--foreground] transition-colors">AGB</a>
