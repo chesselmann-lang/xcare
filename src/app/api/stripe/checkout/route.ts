@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: user.email,
       client_reference_id: profile?.id ?? user.id,
-      metadata: { planId, interval, profileId: profile?.id ?? user.id },
+      metadata: { plan_id: planId, interval, profile_id: profile?.id ?? user.id },
       success_url: `${baseUrl}/anbieter/abo?success=1&plan=${planId}`,
       cancel_url: `${baseUrl}/anbieter/abo?canceled=1`,
       locale: "de",

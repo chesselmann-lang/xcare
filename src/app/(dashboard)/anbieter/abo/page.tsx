@@ -1,8 +1,9 @@
 ﻿import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PLANS, formatPrice, type PlanId } from "@/lib/stripe/plans";
-import { CheckCircle2, XCircle, Zap, Building2, Users, ArrowRight } from "lucide-react";
+import { CheckCircle2, XCircle, Zap, Building2, Users, ArrowRight, CreditCard } from "lucide-react";
 import { UpgradeButton } from "./upgrade-button";
+import { ManageSubscriptionButton } from "./manage-button";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -28,12 +29,13 @@ export default async function AboPage({
 
   const { data: anbieter } = await supabase
     .from("anbieter")
-    .select("id, name, plan, verifiziert")
+    .select("id, name, plan, verifiziert, stripe_customer_id, stripe_subscription_id, plan_expires_at")
     .eq("profile_id", profile.id)
     .single();
   if (!anbieter) redirect("/anbieter/dashboard");
 
   const currentPlanId: PlanId = (anbieter.plan as PlanId) ?? "free";
+  const hasActiveSubscription = !!anbieter.stripe_customer_id && currentPlanId !== "free";
 
   // Count current leistungen and team members for usage display
   const [{ count: leistungenCount }, { count: teamCount }] = await Promise.all([
@@ -61,12 +63,38 @@ export default async function AboPage({
       )}
 
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[--foreground]">Mein Abo</h1>
-        <p className="text-[--muted-foreground] text-sm mt-1">
-          Wählen Sie den passenden Plan für {anbieter.name}
-        </p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[--foreground]">Mein Abo</h1>
+          <p className="text-[--muted-foreground] text-sm mt-1">
+            Wählen Sie den passenden Plan für {anbieter.name}
+          </p>
+        </div>
+        {hasActiveSubscription && <ManageSubscriptionButton />}
       </div>
+
+      {/* Active subscription info card */}
+      {hasActiveSubscription && (
+        <div className="mb-6 flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-800">
+          <CreditCard className="h-5 w-5 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-sm">Aktives Abonnement</p>
+            <p className="text-xs mt-0.5">
+              Sie sind im <span className="font-medium capitalize">{currentPlanId}</span>-Plan.
+              {anbieter.plan_expires_at && (
+                <> Nächste Verlängerung:{" "}
+                  <span className="font-medium">
+                    {new Date(anbieter.plan_expires_at).toLocaleDateString("de-DE", {
+                      day: "2-digit", month: "long", year: "numeric",
+                    })}
+                  </span>
+                </>
+              )}
+              {" "}Zahlungsmethode ändern, Rechnungen herunterladen oder kündigen Sie über das Abo-Portal.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Current usage */}
       <div className="mb-8 grid grid-cols-2 md:grid-cols-3 gap-4">

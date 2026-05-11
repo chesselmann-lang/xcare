@@ -163,32 +163,41 @@ export async function POST(req: NextRequest) {
         const session = event.data.object;
         const customerId = session.customer as string;
         const subscriptionId = session.subscription as string | null;
-        const anbieterProfileId = session.metadata?.anbieter_profil_id;
-        const planId = session.metadata?.plan_id ?? "starter";
+        // metadata keys set by /api/stripe/checkout: profile_id, plan_id
+        const profileId = session.metadata?.profile_id;
+        const planId = (session.metadata?.plan_id ?? "starter") as string;
 
-        if (subscriptionId && anbieterProfileId) {
-          const { error } = await supabase.from("anbieter_profile").update({
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            abo_plan: planId,
-            abo_status: "active",
-            abo_aktiv_seit: new Date().toISOString(),
-          }).eq("id", anbieterProfileId);
-          if (error) logger.error("stripe/webhook checkout.session.completed", { error: error.message });
-          else logger.info("stripe/webhook checkout.session.completed", {
-            anbieter: anbieterProfileId, plan: planId, subscription: subscriptionId,
-          });
+        if (subscriptionId && profileId) {
+          // Look up anbieter via profile_id
+          const { data: anbieter } = await supabase
+            .from("anbieter")
+            .select("id")
+            .eq("profile_id", profileId)
+            .single();
+
+          if (anbieter) {
+            const { error } = await supabase.from("anbieter").update({
+              stripe_customer_id: customerId,
+              stripe_subscription_id: subscriptionId,
+              plan: planId,
+            }).eq("id", anbieter.id);
+            if (error) logger.error("stripe/webhook checkout.session.completed db", { error: error.message });
+            else logger.info("stripe/webhook checkout.session.completed", {
+              anbieter_id: anbieter.id, plan: planId, subscription: subscriptionId,
+            });
+          } else {
+            logger.error("stripe/webhook checkout.session.completed: anbieter not found", { profileId });
+          }
         }
         break;
       }
 
       case "customer.subscription.created": {
         const sub = event.data.object;
-        const { error } = await supabase.from("anbieter_profile").update({
+        const periodEnd = new Date(sub.current_period_end * 1000).toISOString();
+        const { error } = await supabase.from("anbieter").update({
           stripe_subscription_id: sub.id,
-          abo_status: sub.status,
-          abo_periode_start: new Date(sub.current_period_start * 1000).toISOString(),
-          abo_periode_ende: new Date(sub.current_period_end * 1000).toISOString(),
+          plan_expires_at: periodEnd,
         }).eq("stripe_customer_id", sub.customer);
         if (error) logger.error("stripe/webhook customer.subscription.created", { error: error.message });
         else logger.info("stripe/webhook customer.subscription.created", { id: sub.id, status: sub.status });
@@ -199,24 +208,27 @@ export async function POST(req: NextRequest) {
         const sub = event.data.object;
         const priceId = sub.items?.data?.[0]?.price?.id as string | undefined;
         const planId = resolvePlanFromPriceId(priceId);
-        const { error } = await supabase.from("anbieter_profile").update({
-          abo_plan: planId,
-          abo_status: sub.status,
-          abo_periode_start: new Date(sub.current_period_start * 1000).toISOString(),
-          abo_periode_ende: new Date(sub.current_period_end * 1000).toISOString(),
+        const periodEnd = new Date(sub.current_period_end * 1000).toISOString();
+        // If subscription canceled (at period end), keep plan until period ends
+        const newPlan = sub.cancel_at_period_end ? planId : planId;
+        const { error } = await supabase.from("anbieter").update({
+          plan: newPlan,
+          plan_expires_at: periodEnd,
         }).eq("stripe_subscription_id", sub.id);
         if (error) logger.error("stripe/webhook customer.subscription.updated", { error: error.message });
         else logger.info("stripe/webhook customer.subscription.updated", {
-          id: sub.id, status: sub.status, plan: planId,
+          id: sub.id, status: sub.status, plan: planId, cancel_at_period_end: sub.cancel_at_period_end,
         });
         break;
       }
 
       case "customer.subscription.deleted": {
+        // Subscription fully ended — downgrade to free
         const sub = event.data.object;
-        const { error } = await supabase.from("anbieter_profile").update({
-          abo_plan: "free",
-          abo_status: "canceled",
+        const { error } = await supabase.from("anbieter").update({
+          plan: "free",
+          stripe_subscription_id: null,
+          plan_expires_at: null,
         }).eq("stripe_subscription_id", sub.id);
         if (error) logger.error("stripe/webhook customer.subscription.deleted", { error: error.message });
         else logger.info("stripe/webhook customer.subscription.deleted", { id: sub.id });
@@ -224,13 +236,20 @@ export async function POST(req: NextRequest) {
       }
 
       case "invoice.paid": {
+        // Renewal: extend plan_expires_at to next period end
         const invoice = event.data.object;
         const subId = invoice.subscription as string | null;
         if (subId) {
-          const { error } = await supabase.from("anbieter_profile").update({
-            abo_status: "active",
-          }).eq("stripe_subscription_id", subId);
-          if (error) logger.error("stripe/webhook invoice.paid", { error: error.message });
+          // Fetch subscription period end from Stripe
+          const periodEnd = invoice.lines?.data?.[0]?.period?.end
+            ? new Date(invoice.lines.data[0].period.end * 1000).toISOString()
+            : null;
+          const update: Record<string, unknown> = {};
+          if (periodEnd) update.plan_expires_at = periodEnd;
+          if (Object.keys(update).length > 0) {
+            const { error } = await supabase.from("anbieter").update(update).eq("stripe_subscription_id", subId);
+            if (error) logger.error("stripe/webhook invoice.paid", { error: error.message });
+          }
         }
         logger.info("stripe/webhook invoice.paid", {
           id: invoice.id, amount: invoice.amount_paid, subscription: subId,
@@ -239,15 +258,15 @@ export async function POST(req: NextRequest) {
       }
 
       case "invoice.payment_failed": {
+        // Payment failed: downgrade to free after 3+ attempts
         const invoice = event.data.object;
         const subId = invoice.subscription as string | null;
         const attemptCount = (invoice.attempt_count as number) ?? 1;
-        if (subId) {
-          const newStatus = attemptCount >= 3 ? "past_due" : "payment_failed";
-          const { error } = await supabase.from("anbieter_profile").update({
-            abo_status: newStatus,
+        if (subId && attemptCount >= 3) {
+          const { error } = await supabase.from("anbieter").update({
+            plan: "free",
           }).eq("stripe_subscription_id", subId);
-          if (error) logger.error("stripe/webhook invoice.payment_failed", { error: error.message });
+          if (error) logger.error("stripe/webhook invoice.payment_failed downgrade", { error: error.message });
         }
         logger.warn("stripe/webhook invoice.payment_failed", {
           id: invoice.id, attempt: attemptCount, subscription: subId,

@@ -81,12 +81,34 @@ export default function NeueLeistungPage() {
     const { data: profile } = await supabase
       .from("profiles").select("id").eq("user_id", user.id).single();
     const { data: anbieter } = await supabase
-      .from("anbieter").select("id").eq("profile_id", profile?.id).single();
+      .from("anbieter").select("id, plan").eq("profile_id", profile?.id).single();
 
     if (!anbieter) {
       setError("Bitte zuerst das Profil vollständig ausfüllen.");
       setLoading(false);
       return;
+    }
+
+    // ── Plan gate: check leistungen limit ────────────────────────────────────
+    const PLAN_LIMITS: Record<string, number | null> = {
+      free: 1, starter: 5, professional: null, enterprise: null,
+    };
+    const limit = PLAN_LIMITS[anbieter.plan ?? "free"];
+    if (limit !== null) {
+      const { count } = await supabase
+        .from("leistungen")
+        .select("*", { count: "exact", head: true })
+        .eq("anbieter_id", anbieter.id)
+        .eq("aktiv", true);
+      if ((count ?? 0) >= limit) {
+        const planName = anbieter.plan === "free" ? "Free" : "Starter";
+        setError(
+          `Ihr ${planName}-Plan erlaubt maximal ${limit} aktive Leistung${limit > 1 ? "en" : ""}. ` +
+          `Upgrade auf einen höheren Plan unter „Mein Abo".`
+        );
+        setLoading(false);
+        return;
+      }
     }
 
     const preisVon = formData.get("preis_von") as string;
