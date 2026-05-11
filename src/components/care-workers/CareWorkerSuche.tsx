@@ -272,5 +272,3 @@ export function CareWorkerSuche() {
         </div>
       )}
     </div>
-  );
-}

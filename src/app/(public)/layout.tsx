@@ -45,10 +45,4 @@ export default async function PublicLayout({
             <a href="/impressum" className="hover:text-[--foreground] transition-colors">Impressum</a>
           </div>
           <p className="text-center text-xs text-[--muted-foreground]">
-            © {new Date().getFullYear()} xcare gemeinnützige GmbH · Entwickelt mit ❤️ für ein besseres Pflege-Ökosystem in Deutschland
-          </p>
-        </div>
-      </footer>
-    </div>
-  );
-}
+            © {new Date().getFullYear()} xcare gemeinnützige GmbH · Entwickelt mit ❤�

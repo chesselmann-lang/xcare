@@ -343,15 +343,4 @@ export function inputAusWizardAntworten(params: {
     pflegegrad: params.pflegegrad as AnspruchsInput["pflegegrad"],
     gdb: params.gdb as AnspruchsInput["gdb"],
     kinder:
-      params.kinderAnzahl && params.kinderAnzahl > 0
-        ? Array.from({ length: params.kinderAnzahl }, (_, i) => ({
-            alter: Math.floor(Math.random() * 10) + 1, // Platzhalter
-          }))
-        : undefined,
-    haushaltshilfe_aufwendungen_eur: params.haushaltshilfeEur,
-    pflege_aufwendungen_eur: params.pflegeAufwendungenEur,
-    zu_versteuerndes_einkommen_eur: params.zvE,
-    erwerbstaetig: !!params.zvE && params.zvE > 0,
-    pflege_durch_angehoerige: true,
-  };
-}
+      params.kinderAnzahl && pa
