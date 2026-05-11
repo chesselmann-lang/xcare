@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Compass, Search, FileText, Heart,
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
-  GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList
+  GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList, Wallet
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -40,6 +40,7 @@ const FAMILIE_NAV = [
   { href: "/familie/gespeicherte-suchen", label: "Gespeicherte Suchen", icon: Bookmark },
   { href: "/familie/vergleich", label: "Anbieter vergleichen", icon: GitCompareArrows },
   { href: "/familie/pflegeplan", label: "Pflegeplan & Termine", icon: ClipboardList },
+  { href: "/familie/finanzen", label: "Finanz-Hub", icon: Wallet },
   { href: "/familie/gesundheit", label: "Gesundheits-Hub", icon: Activity },
   { href: "/familie/copilot", label: "KI-Co-Pilot", icon: Bot },
   { href: "/familie/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
@@ -244,11 +245,4 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
               className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[--muted]"
             >
               <X className="h-5 w-5" />
-            </button>
-            <SidebarContent />
-          </aside>
-        </div>
-      )}
-    </>
-  );
-}
+         

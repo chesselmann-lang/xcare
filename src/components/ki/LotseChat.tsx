@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Send, Loader2, Sparkles } from "lucide-react";
+import { SprachEingabe } from "@/components/lotse/SprachEingabe";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { LebenslageTyp, WizardAntwort } from "@/lib/types";
@@ -151,6 +152,10 @@ export function LotseChat({ lebenslage, antworten, plz, initialMessage }: LotseC
               sendMessage(input);
             }
           }}
+        />
+        <SprachEingabe
+          onTranscript={(t) => setInput((prev) => prev + t)}
+          disabled={isLoading}
         />
         <Button
           onClick={() => sendMessage(input)}

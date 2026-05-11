@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/navigation/Sidebar";
+import { UiModusProvider } from "@/components/ui-modus/UiModusProvider";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 
 export default async function DashboardLayout({
@@ -83,6 +84,7 @@ export default async function DashboardLayout({
   }
 
   return (
+    <UiModusProvider profile={profile}>
     <div className="flex min-h-screen bg-[--background]">
       {/* Skip link for keyboard users */}
       <a
@@ -104,5 +106,6 @@ export default async function DashboardLayout({
       </main>
       <MobileBottomNav role={profile.role} badgeCount={offeneAnfragenCount} />
     </div>
+    </UiModusProvider>
   );
 }

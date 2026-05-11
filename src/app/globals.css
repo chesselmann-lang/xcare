@@ -150,3 +150,32 @@ body {
     padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ============================================
+   UI-Modi
+   ============================================ */
+
+/* Senior-Modus */
+[data-modus="senior"] {
+  --font-size-base: 1.125rem;
+  --font-size-sm: 1rem;
+  --font-size-xs: 0.875rem;
+  font-size: var(--font-size-base);
+  --radius: 1rem;
+  --primary: #1a5f3f;
+}
+[data-modus="senior"] .text-sm { font-size: var(--font-size-sm) !important; }
+[data-modus="senior"] .text-xs { font-size: var(--font-size-xs) !important; }
+[data-modus="senior"] nav a { padding: 0.875rem 1rem !important; }
+[data-modus="senior"] button { min-height: 3rem; font-size: 1rem; }
+
+/* Profi-Modus */
+[data-modus="profi"] {
+  --font-size-base: 0.875rem;
+}
+
+/* Familie-Modus */
+[data-modus="familie"] {
+  --primary: #2563eb;
+  --primary-light: #eff6ff;
+}

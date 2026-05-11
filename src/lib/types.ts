@@ -17,6 +17,7 @@ export interface Profile {
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
+  ui_modus: 'senior' | 'standard' | 'profi' | 'familie';
 }
 
 export interface Anbieter {
@@ -164,3 +165,6 @@ export interface AnbieterMitLeistungen extends Anbieter {
   leistungen: Leistung[];
   entfernung_km?: number;
 }
+
+// UI-Modus
+export type UiModus = 'senior' | 'standard' | 'profi' | 'familie';

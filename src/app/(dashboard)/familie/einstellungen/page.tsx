@@ -1,10 +1,11 @@
 ﻿import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Bell, Shield, KeyRound, ExternalLink } from "lucide-react";
+import { User, Bell, Shield, KeyRound, ExternalLink, Monitor } from "lucide-react";
 import Link from "next/link";
 import { FamilieProfilFormular } from "./familie-profil-formular";
 import { BenachrichtigungsEinstellungen } from "./benachrichtigungs-einstellungen";
+import { ModusWechsler } from "@/components/ui-modus/ModusWechsler";
 
 export const metadata = {
   title: "Einstellungen | xcare Familie",
@@ -56,6 +57,21 @@ export default async function FamilieEinstellungenPage() {
         </CardHeader>
         <CardContent>
           <BenachrichtigungsEinstellungen />
+        </CardContent>
+      </Card>
+
+      {/* Anzeigemodus */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Monitor className="h-4 w-4 text-[--primary]" /> Anzeigemodus
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-[--muted-foreground] mb-3">
+            Passen Sie die Darstellung an Ihre Bedürfnisse an.
+          </p>
+          <ModusWechsler />
         </CardContent>
       </Card>
 
