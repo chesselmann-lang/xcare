@@ -24,8 +24,9 @@ export default async function GalerieModerationPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const { data: adminProfile } = await supabase.from("profiles").select("role").eq("user_id", user.id).single();
   const adminEmail = process.env.ADMIN_EMAIL ?? "christian@whatsdigital.de";
-  if (user.email !== adminEmail) redirect("/");
+  if (adminProfile?.role !== "admin" && user.email !== adminEmail) redirect("/");
 
   // Build query
   let query = supabase

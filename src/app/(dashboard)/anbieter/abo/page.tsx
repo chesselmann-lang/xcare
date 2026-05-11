@@ -173,4 +173,41 @@ export default async function AboPage({
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-xs text-[--foreground]">
                     <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0 mt-px" />
-  
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              {isCurrent ? (
+                <div className="w-full text-center py-2 rounded-lg text-xs font-medium bg-[--muted] text-[--muted-foreground]">
+                  Aktueller Plan
+                </div>
+              ) : isEnterprise ? (
+                <a
+                  href="mailto:enterprise@xcare.de?subject=Enterprise-Anfrage"
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium bg-[--muted] text-[--foreground] hover:bg-[--border] transition-colors"
+                >
+                  Kontakt aufnehmen
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </a>
+              ) : (
+                <UpgradeButton
+                  planId={plan.id}
+                  planName={plan.name}
+                  highlight={plan.highlight}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer note */}
+      <p className="mt-8 text-center text-xs text-[--muted-foreground]">
+        Alle Preise zzgl. gesetzlicher MwSt. · Monatlich kündbar · Sichere Zahlung über Stripe ·{" "}
+        <a href="/agb" className="underline hover:text-[--foreground]">AGB</a> ·{" "}
+        <a href="/datenschutz" className="underline hover:text-[--foreground]">Datenschutz</a>
+      </p>
+    </div>
+  );
+}

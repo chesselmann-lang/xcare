@@ -229,4 +229,29 @@ export function TeamVerwaltung({
                       value={m.rolle}
                       onChange={(e) => rolleAendern(m, e.target.value as Rolle)}
                       className="text-xs h-7 rounded-lg border border-[--input] bg-[--background] px-2"
-                
+                    >
+                      <option value="mitarbeiter">Mitarbeiter</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <button
+                      onClick={() => entfernen(m)}
+                      disabled={removing === m.id}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                      title="Entfernen"
+                    >
+                      {removing === m.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

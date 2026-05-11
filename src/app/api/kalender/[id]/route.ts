@@ -39,16 +39,27 @@ export async function GET(
   const { id } = await params;
   const supabase = await createClient();
 
+  // Require authenticated user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
   // Verify the anbieter exists and is active
   const { data: anbieter } = await supabase
     .from("anbieter")
-    .select("id, name")
+    .select("id, name, profil_id")
     .eq("id", id)
     .eq("aktiv", true)
     .single();
 
   if (!anbieter) {
     return new NextResponse("Not Found", { status: 404 });
+  }
+
+  // Only the anbieter's own profile may access the calendar
+  if (anbieter.profil_id !== user.id) {
+    return new NextResponse("Forbidden", { status: 403 });
   }
 
   // Fetch bestätigte Anfragen

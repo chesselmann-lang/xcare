@@ -689,4 +689,28 @@ export default async function StatistikenPage() {
                       <td className="py-2.5 pr-4">{m.total}</td>
                       <td className="py-2.5 pr-4">{m.abgeschlossen}</td>
                       <td className="py-2.5 pr-4">
-                        <span classNam
+                        <span className={`font-medium ${m.rate >= 50 ? "text-green-600" : m.rate >= 25 ? "text-amber-600" : m.total > 0 ? "text-red-600" : "text-[--muted-foreground]"}`}>
+                          {m.total > 0 ? `${m.rate}%` : "—"}
+                        </span>
+                      </td>
+                      <td className="py-2.5">
+                        {prev !== undefined ? (
+                          <span className={`flex items-center gap-1 text-xs ${trendColor(diff)}`}>
+                            {trendIcon(diff)}
+                            {diff !== 0 ? `${diff > 0 ? "+" : ""}${diff}` : "="}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[--muted-foreground]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

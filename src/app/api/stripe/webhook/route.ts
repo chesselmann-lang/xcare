@@ -294,4 +294,85 @@ export async function POST(req: NextRequest) {
             .single();
 
           if (anbieter) {
-      
+            if (attemptCount >= 3) {
+              const { error } = await supabase.from("anbieter").update({
+                plan: "free",
+              }).eq("stripe_subscription_id", subId);
+              if (error) logger.error("stripe/webhook invoice.payment_failed downgrade", { error: error.message });
+            }
+            // Fire payment-failed notification for every attempt
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("email, vorname")
+              .eq("id", anbieter.profile_id)
+              .single();
+            if (profile?.email) {
+              await inngest.send({
+                name: "billing/payment.failed",
+                data: {
+                  anbieter_id: anbieter.id,
+                  anbieter_name: anbieter.name ?? "",
+                  email: profile.email,
+                  vorname: profile.vorname ?? "",
+                  attempt_count: attemptCount,
+                },
+              });
+            }
+          } else if (attemptCount >= 3) {
+            // fallback: downgrade without notification
+            const { error } = await supabase.from("anbieter").update({
+              plan: "free",
+            }).eq("stripe_subscription_id", subId);
+            if (error) logger.error("stripe/webhook invoice.payment_failed downgrade", { error: error.message });
+          }
+        }
+
+        logger.warn("stripe/webhook invoice.payment_failed", {
+          id: invoice.id, attempt: attemptCount, subscription: subId,
+        });
+        break;
+      }
+
+      case "payout.paid": {
+        const payout = event.data.object;
+        logger.info("stripe/webhook payout.paid (platform)", { id: payout.id, amount: payout.amount });
+        break;
+      }
+
+      case "payout.failed": {
+        const payout = event.data.object;
+        logger.error("stripe/webhook payout.failed (platform)", {
+          id: payout.id, code: payout.failure_code, message: payout.failure_message,
+        });
+        break;
+      }
+
+      default:
+        logger.info(`stripe/webhook unhandled platform event: ${event.type}`);
+    }
+
+    return NextResponse.json({ received: true });
+
+  } catch (err) {
+    logger.error("stripe/webhook processing error", {
+      event: event?.type,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    // Always 200 to prevent Stripe from retrying handler bugs
+    return NextResponse.json({ received: true, error: "handler_error" });
+  }
+}
+
+/**
+ * Map Stripe Price IDs to internal plan names.
+ */
+function resolvePlanFromPriceId(priceId: string | undefined): string {
+  if (!priceId) return "starter";
+  const starterMonthly = process.env.STRIPE_PRICE_STARTER_MONTHLY;
+  const starterYearly = process.env.STRIPE_PRICE_STARTER_YEARLY;
+  const proMonthly = process.env.STRIPE_PRICE_PRO_MONTHLY;
+  const proYearly = process.env.STRIPE_PRICE_PRO_YEARLY;
+  if (priceId === starterMonthly || priceId === starterYearly) return "starter";
+  if (priceId === proMonthly || priceId === proYearly) return "professional";
+  return "starter";
+}

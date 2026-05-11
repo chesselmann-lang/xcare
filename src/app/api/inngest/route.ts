@@ -1223,3 +1223,4 @@ export const { GET, POST, PUT } = serve({
     remindAboVerlaengerung,
     handleFunctionFailure,
   ],
+});

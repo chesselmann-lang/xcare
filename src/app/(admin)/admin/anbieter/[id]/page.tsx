@@ -244,4 +244,48 @@ export default async function AdminAnbieterDetailPage({
           <h2 className="font-semibold text-gray-800 mb-3 text-sm">Abo-Status</h2>
           <dl className="grid grid-cols-2 gap-3 text-sm mb-0">
             <div>
-              <dt className="text-xs text-gray-400 font-medium
+              <dt className="text-xs text-gray-400 font-medium">Plan</dt>
+              <dd className="font-medium text-gray-800 capitalize mt-0.5">
+                {(anbieter as { plan?: string }).plan ?? "Free"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-gray-400 font-medium">Stripe Customer</dt>
+              <dd className="font-mono text-xs text-gray-600 mt-0.5 truncate">
+                {(anbieter as { stripe_customer_id?: string }).stripe_customer_id ?? "—"}
+              </dd>
+            </div>
+            {(anbieter as { plan_expires_at?: string }).plan_expires_at && (
+              <div className="col-span-2">
+                <dt className="text-xs text-gray-400 font-medium">Plan-Ablauf</dt>
+                <dd className="text-gray-700 mt-0.5">
+                  {new Date((anbieter as { plan_expires_at: string }).plan_expires_at).toLocaleDateString("de-DE", {
+                    day: "2-digit", month: "long", year: "numeric",
+                  })}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </div>
+
+        {/* Admin Plan Override */}
+        <PlanOverride
+          anbieterId={id}
+          currentPlan={(anbieter as { plan?: string }).plan ?? "free"}
+        />
+
+        {/* Public Profile Link */}
+        <div className="flex justify-end">
+          <Link
+            href={`/anbieter/${id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+          >
+            <Globe className="h-3 w-3" /> Öffentliches Profil anzeigen
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

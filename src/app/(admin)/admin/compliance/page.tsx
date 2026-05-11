@@ -14,10 +14,10 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "christian@whatsdigital.de";
 export default async function CompliancePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  if (!user || user.email !== ADMIN_EMAIL) {
-    redirect("/admin");
-  }
+  const { data: profile } = await supabase.from("profiles").select("role").eq("user_id", user.id).single();
+  if (profile?.role !== "admin" && user.email !== ADMIN_EMAIL) redirect("/admin");
 
   return (
     <div>

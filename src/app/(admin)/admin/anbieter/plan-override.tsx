@@ -118,4 +118,12 @@ export function PlanOverride({ anbieterId, currentPlan }: Props) {
             {loading ? "Speichern…" : "Plan setzen"}
           </button>
           {currentPlan && (
-            <span className="text-xs text-gray-400
+            <span className="text-xs text-gray-400">
+              Aktuell: <span className="font-medium text-gray-600 capitalize">{currentPlan}</span>
+            </span>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}

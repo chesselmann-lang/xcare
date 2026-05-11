@@ -280,4 +280,10 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
             >
               <X className="h-5 w-5" />
             </button>
-        
+            <SidebarContent />
+          </aside>
+        </div>
+      )}
+    </>
+  );
+}

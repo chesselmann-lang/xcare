@@ -15,6 +15,7 @@ import { StatusWechselSelect } from "@/components/anfragen/StatusWechselSelect";
 import { WartelisteExportButton } from "@/components/anfragen/WartelisteExportButton";
 import { AnfragePrioritaetToggle } from "@/components/anfragen/AnfragePrioritaetToggle";
 import type { AnfrageStatus } from "@/lib/types";
+import { planFeatureGate } from "@/lib/stripe/features";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
   offen: "warning",
@@ -69,9 +70,11 @@ export default async function AnbieterAnfragenPage({
 
   const { data: anbieter } = await supabase
     .from("anbieter")
-    .select("id")
+    .select("id, plan")
     .eq("profile_id", profile?.id)
     .single();
+
+  const gate = planFeatureGate(anbieter?.plan);
 
   const { data: anfragen } = await supabase
     .from("anfragen")
@@ -151,12 +154,21 @@ export default async function AnbieterAnfragenPage({
         {enriched.length > 0 && (
           <div className="flex items-center gap-2">
             <WartelisteExportButton />
-            <a href="/api/anbieter/export">
-              <Button variant="outline" size="sm" className="gap-2 text-xs">
-                <Download className="h-3.5 w-3.5" />
-                Alle exportieren
-              </Button>
-            </a>
+            {gate.canExportCsv ? (
+              <a href="/api/anbieter/export">
+                <Button variant="outline" size="sm" className="gap-2 text-xs">
+                  <Download className="h-3.5 w-3.5" />
+                  Alle exportieren
+                </Button>
+              </a>
+            ) : (
+              <a href="/anbieter/abo">
+                <Button variant="outline" size="sm" className="gap-2 text-xs text-[--muted-foreground]" title={`CSV-Export ab ${gate.requiredPlanLabel}`}>
+                  <Download className="h-3.5 w-3.5 opacity-50" />
+                  Export (ab {gate.requiredPlanLabel})
+                </Button>
+              </a>
+            )}
           </div>
         )}
       </div>
