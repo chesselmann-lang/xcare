@@ -6,6 +6,7 @@ import {
   FileText, Star, CheckCircle2, Clock, AlertCircle,
 } from "lucide-react";
 import { VerifizierungsButtons } from "../verifizierungs-buttons";
+import { PlanOverride } from "../plan-override";
 import { formatDate } from "@/lib/utils";
 import { LEISTUNGSKATEGORIEN } from "@/lib/constants";
 import type { LeistungsKategorie } from "@/lib/types";
@@ -29,7 +30,7 @@ export default async function AdminAnbieterDetailPage({
 
   const { data: anbieter } = await supabase
     .from("anbieter")
-    .select("*, profiles(email, vorname, nachname, telefon), leistungen(*)")
+    .select("*, plan, plan_expires_at, stripe_customer_id, profiles(email, vorname, nachname, telefon), leistungen(*)")
     .eq("id", id)
     .single();
 
@@ -238,18 +239,9 @@ export default async function AdminAnbieterDetailPage({
           </div>
         )}
 
-        {/* Public Profile Link */}
-        <div className="flex justify-end">
-          <Link
-            href={`/anbieter/${id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-          >
-            <Globe className="h-3 w-3" /> Öffentliches Profil anzeigen
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
+        {/* Plan-Info Card */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <h2 className="font-semibold text-gray-800 mb-3 text-sm">Abo-Status</h2>
+          <dl className="grid grid-cols-2 gap-3 text-sm mb-0">
+            <div>
+              <dt className="text-xs text-gray-400 font-medium

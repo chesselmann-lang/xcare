@@ -7,7 +7,7 @@ import {
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
   GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList, Wallet, Euro,
-  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building
+  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -89,6 +89,7 @@ const ANBIETER_NAV = [
   { href: "/anbieter/dokumente", label: "Dokumente", icon: FolderOpen },
   { href: "/anbieter/statistiken", label: "Statistiken", icon: BarChart3 },
   { href: "/anbieter/abo", label: "Abo & Pläne", icon: CreditCard },
+  { href: "/anbieter/rechnungen", label: "Rechnungen", icon: Receipt },
   { href: "/anbieter/einstellungen", label: "Einstellungen", icon: SlidersHorizontal },
 ];
 
@@ -279,10 +280,4 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
             >
               <X className="h-5 w-5" />
             </button>
-            <SidebarContent />
-          </aside>
-        </div>
-      )}
-    </>
-  );
-}
+        
