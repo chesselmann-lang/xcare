@@ -144,4 +144,24 @@ export async function* streamCopilotAntwort(
         if (block.type === "text") {
           const words = block.text.split(" ");
           for (const word of words) {
-            yield { type: "text",
+            yield { type: "text", content: word + " " };
+          }
+        }
+      }
+      continueLoop = false;
+    }
+  }
+
+  // EU AI Act Audit-Log
+  if (userId) {
+    logKiAudit({
+      userId,
+      modelVersion: "claude-sonnet-4-6",
+      endpoint: "/api/copilot",
+      promptText: frage,
+      inputSchema: JSON.stringify({ kontextKeys: Object.keys(kontext), verlaufLength: verlauf.length }),
+      latencyMs: Date.now() - auditStart,
+      success: true,
+    }).catch(() => {});
+  }
+}

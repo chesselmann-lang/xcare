@@ -106,4 +106,8 @@ export default async function DashboardLayout({
       <main id="dashboard-main" className="flex-1 min-w-0 overflow-auto pb-16 md:pb-0" tabIndex={-1}>
         {children}
       </main>
-      <MobileBottomNav role={profile.role} badgeCo
+      <MobileBottomNav role={profile.role} badgeCount={offeneAnfragenCount} />
+    </div>
+    </UiModusProvider>
+  );
+}

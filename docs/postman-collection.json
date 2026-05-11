@@ -1,0 +1,259 @@
+{
+  "info": {
+    "_postman_id": "xcare-api-v3",
+    "name": "xcare API v3.0.0",
+    "description": "xcare Pflege-Ökosystem REST API\n\n## Authentifizierung\nSetzen Sie den `Authorization`-Header auf `Bearer {{supabase_token}}`.\n\nEinen Token erhalten Sie via:\n```\nPOST {{base_url}}/auth/v1/token?grant_type=password\nContent-Type: application/json\n{ \"email\": \"...\", \"password\": \"...\" }\n```\n\nSpeichern Sie den `access_token` als Collection-Variable `supabase_token`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://xcare.de", "type": "string" },
+    { "key": "supabase_token", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{supabase_token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/health", "host": ["{{base_url}}"], "path": ["api", "health"] }
+          }
+        },
+        {
+          "name": "API Spec (OpenAPI 3.1)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/docs", "host": ["{{base_url}}"], "path": ["api", "docs"] }
+          }
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/docs/ui", "host": ["{{base_url}}"], "path": ["api", "docs", "ui"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Anspruch",
+      "item": [
+        {
+          "name": "Anspruch berechnen",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pflegegrad\": 3,\n  \"lebenslage\": \"alter\",\n  \"haushalt\": { \"mitglieder\": 2 }\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/anspruch", "host": ["{{base_url}}"], "path": ["api", "anspruch"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "KI-Beratung",
+      "item": [
+        {
+          "name": "KI-Lotse (Streaming)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    { \"role\": \"user\", \"content\": \"Welche Leistungen stehen mir bei Pflegegrad 3 zu?\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/ki", "host": ["{{base_url}}"], "path": ["api", "ki"] }
+          }
+        },
+        {
+          "name": "KI-Co-Pilot (Tool-Use)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    { \"role\": \"user\", \"content\": \"Finde Anbieter in München und berechne meinen Anspruch\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/copilot", "host": ["{{base_url}}"], "path": ["api", "copilot"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Träger-API",
+      "item": [
+        {
+          "name": "Anspruch prüfen (authentifiziert)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pflegegrad\": 2,\n  \"lebenslage\": \"alter\",\n  \"geburtsjahr\": 1945\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/traeger/anspruch-pruefen", "host": ["{{base_url}}"], "path": ["api", "traeger", "anspruch-pruefen"] }
+          }
+        },
+        {
+          "name": "Anspruch prüfen (anonym)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pflegegrad\": 1,\n  \"lebenslage\": \"chronische_erkrankung\",\n  \"geburtsjahr\": 1960\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/traeger/anspruch-pruefen-anonym", "host": ["{{base_url}}"], "path": ["api", "traeger", "anspruch-pruefen-anonym"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Behörden-Adapter (AP5)",
+      "item": [
+        {
+          "name": "Elster-Adapter",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/behoerden/elster", "host": ["{{base_url}}"], "path": ["api", "behoerden", "elster"] }
+          }
+        },
+        {
+          "name": "BundID-Adapter",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/behoerden/bundid", "host": ["{{base_url}}"], "path": ["api", "behoerden", "bundid"] }
+          }
+        },
+        {
+          "name": "Wohngeld-Adapter",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/behoerden/wohngeld", "host": ["{{base_url}}"], "path": ["api", "behoerden", "wohngeld"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Nachrichten",
+      "item": [
+        {
+          "name": "Nachrichten abrufen",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/nachrichten?anfrage_id={{anfrage_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "nachrichten"],
+              "query": [{ "key": "anfrage_id", "value": "{{anfrage_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Nachricht senden",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"anfrage_id\": \"{{anfrage_id}}\",\n  \"inhalt\": \"Guten Tag, ich hätte eine Frage zu Ihren Leistungen.\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/nachrichten", "host": ["{{base_url}}"], "path": ["api", "nachrichten"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stripe",
+      "item": [
+        {
+          "name": "Checkout-Session (Abo)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_id\": \"professional\",\n  \"billing_period\": \"monthly\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/stripe/checkout", "host": ["{{base_url}}"], "path": ["api", "stripe", "checkout"] }
+          }
+        },
+        {
+          "name": "Connect Onboarding",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/stripe/connect", "host": ["{{base_url}}"], "path": ["api", "stripe", "connect"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profil & Datenschutz",
+      "item": [
+        {
+          "name": "Datenexport (DSGVO Art. 20)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/profil/export", "host": ["{{base_url}}"], "path": ["api", "profil", "export"] }
+          }
+        },
+        {
+          "name": "E-Mail abmelden",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/unsubscribe?token={{unsubscribe_token}}&typ=alle",
+              "host": ["{{base_url}}"],
+              "path": ["api", "unsubscribe"],
+              "query": [
+                { "key": "token", "value": "{{unsubscribe_token}}" },
+                { "key": "typ", "value": "alle" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Suche & Autocomplete",
+      "item": [
+        {
+          "name": "Anbieter-Autocomplete",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/autocomplete?q=Pflege",
+              "host": ["{{base_url}}"],
+              "path": ["api", "autocomplete"],
+              "query": [{ "key": "q", "value": "Pflege" }]
+            }
+          }
+        },
+        {
+          "name": "PLZ-Suggest",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/plz-suggest?q=801",
+              "host": ["{{base_url}}"],
+              "path": ["api", "plz-suggest"],
+              "query": [{ "key": "q", "value": "801" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

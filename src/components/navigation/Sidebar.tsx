@@ -222,4 +222,60 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
             Profil
           </button>
         </Link>
-        <Link href="/einstellungen" onClick
+        <Link href="/einstellungen" onClick={closeMobile}>
+          <button className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm text-[--muted-foreground] hover:bg-[--muted] hover:text-[--foreground] transition-all">
+            <Settings className="h-4 w-4" />
+            Einstellungen
+          </button>
+        </Link>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm text-[--muted-foreground] hover:bg-red-50 hover:text-red-600 transition-all"
+        >
+          <LogOut className="h-4 w-4" />
+          Abmelden
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-[--border] bg-[--card] h-screen sticky top-0 overflow-hidden" aria-label="Seitennavigation">
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile: Top Bar */}
+      <div className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-14 border-b border-[--border] bg-[--background]/95 backdrop-blur">
+        <Link href="/" className="flex items-center gap-2 font-bold text-[--primary]">
+          <Heart className="h-5 w-5 fill-[--primary]" />
+          <span className="text-lg">xcare</span>
+        </Link>
+        <div className="flex items-center gap-1">
+          {profileId && (
+            <NotificationBell profileId={profileId} initialCount={initialUnreadCount} />
+          )}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="p-2 rounded-lg hover:bg-[--muted]"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Slide-Out */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeMobile}
+          />
+          <aside className="relative w-72 bg-[--card] h-full shadow-2xl overflow-y-auto">
+            <button
+              onClick={closeMobile}
+              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[--muted]"
+            >
+              <X className="h-5 w-5" />
+         

@@ -8,9 +8,15 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "audit": "npm audit --audit-level=moderate",
     "audit:fix": "npm audit fix",
-    "db:generate": "supabase gen types typescript --local > src/lib/supabase/database.types.ts"
+    "db:generate": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
+    "analyze": "ANALYZE=true next build"
   },
   "overrides": {
     "path-to-regexp": "^8.0.0",
@@ -23,6 +29,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
+    "@sentry/nextjs": "^8.0.0",
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
     "@hookform/resolvers": "^3.9.1",
@@ -59,13 +66,18 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.44.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^2.0.0",
+    "@next/bundle-analyzer": "^15.0.0",
     "eslint": "^9",
     "eslint-config-next": "^15.3.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.0.0",
+    "@vitejs/plugin-react": "^4.0.0"
   }
 }

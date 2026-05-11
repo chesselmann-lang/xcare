@@ -1,15 +1,21 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
+import withBundleAnalyzerFactory from "@next/bundle-analyzer";
+
+const withBundleAnalyzer = withBundleAnalyzerFactory({
+  enabled: process.env.ANALYZE === "true",
+  openAnalyzer: false,
+});
 
 /**
  * Content Security Policy
  *
  * Notes:
  * - 'unsafe-inline' for scripts is required by Next.js (inline hydration scripts)
- * - 'unsafe-eval' is required by Next.js dev mode; in production it can be removed,
- *   but since we ship a single binary we leave it and rely on other defences.
  * - Supabase realtime uses WSS; we allow wss://*.supabase.co for Supabase Realtime.
  * - Maplibre/Mapbox tiles come from tile CDNs.
  * - Stripe.js loads from js.stripe.com.
+ * - Sentry tunnel proxies events through /api/monitoring/tunnel (no external CSP needed).
  */
 const CSP = [
   "default-src 'self'",
@@ -77,46 +83,51 @@ const nextConfig: NextConfig = {
     deviceSizes: [390, 640, 768, 1024, 1280, 1536],
   },
 
+  // Optimierung: Tree-shake bekannte Heavy-Dependencies
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "@radix-ui/react-accordion",
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-label",
+      "@radix-ui/react-progress",
+      "@radix-ui/react-select",
+      "@radix-ui/react-separator",
+      "@radix-ui/react-slot",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-toast",
+      "date-fns",
+      "ai",
+    ],
+  },
+
   // Security headers
   async headers() {
     return [
       {
         source: "/(.*)",
         headers: [
-          // Content Security Policy
           { key: "Content-Security-Policy", value: CSP },
-
-          // Existing headers
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" },
-
-          // HSTS — Vercel always serves HTTPS, safe to enable.
-          // 2-year max-age. Add preload once domain is registered with HSTS preload list.
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
-
-          // Prevent this origin's documents from sharing a browsing context group
-          // with cross-origin documents (e.g. prevents Spectre-style attacks).
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-
-          // Prevents cross-origin resources from being loaded in a different origin's
-          // context — limits cross-site resource leakage.
           { key: "Cross-Origin-Resource-Policy", value: "same-site" },
-
-          // X-Frame-Options is superseded by CSP frame-ancestors, but kept for legacy browsers
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
         ],
       },
       {
-        // API routes: no CSP needed, ensure no caching of sensitive responses
         source: "/api/(.*)",
         headers: [
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
         ],
       },
       {
-        // Aggressive caching for immutable static assets
         source: "/(.*)\\.(ico|png|jpg|jpeg|webp|avif|svg|woff2?)",
         headers: [
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
@@ -125,8 +136,27 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Compress responses
   compress: true,
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(withSentryConfig(nextConfig, {
+  // Sentry-Organisation + Projekt (aus SENTRY_ORG/SENTRY_PROJECT env vars)
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // Source Maps: nur auf Sentry hochladen, nicht öffentlich ausliefern
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+
+  // Sentry Tunnel — Events über eigene Domain proxyen (vermeidet Ad-Blocker)
+  tunnelRoute: "/api/monitoring/tunnel",
+
+  // Tree-Shaking für Sentry in Client-Bundle
+  disableLogger: true,
+
+  // Automatisches Instrumentation für Server Components
+  autoInstrumentServerFunctions: true,
+  autoInstrumentMiddleware: true,
+  autoInstrumentAppDirectory: true,
+}));

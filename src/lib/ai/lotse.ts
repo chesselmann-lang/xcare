@@ -216,4 +216,32 @@ Benutzerantworten: ${JSON.stringify(antworten)}`;
   });
 
   for await (const chunk of stream) {
-  
+    if (
+      chunk.type === "content_block_delta" &&
+      chunk.delta.type === "text_delta"
+    ) {
+      yield chunk.delta.text;
+    }
+    if (chunk.type === "message_delta" && chunk.usage) {
+      tokensOut = chunk.usage.output_tokens;
+    }
+    if (chunk.type === "message_start" && chunk.message.usage) {
+      tokensIn = chunk.message.usage.input_tokens;
+    }
+  }
+
+  // EU AI Act Audit-Log — fire and forget
+  if (userId) {
+    logKiAudit({
+      userId,
+      modelVersion: "claude-sonnet-4-6",
+      endpoint: "/api/lotse",
+      promptText: userContent,
+      inputSchema: JSON.stringify({ lebenslage, fragenCount: antworten.length }),
+      tokensIn,
+      tokensOut,
+      latencyMs: Date.now() - start,
+      success: true,
+    }).catch(() => {});
+  }
+}

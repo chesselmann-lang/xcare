@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { CheckCircle, Globe, Palette, Settings } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle, Globe, Palette, Settings, Plus, Pencil, Eye } from "lucide-react";
+import { toggleWhiteLabelAktiv } from "./actions";
 
 export const metadata = { title: "White-Label | Admin xcare" };
 
@@ -25,13 +27,37 @@ export default async function AdminWhiteLabelPage() {
           <h1 className="text-2xl font-bold text-gray-900">White-Label Partner</h1>
           <p className="text-sm text-gray-500 mt-1">GKV/Versicherungspartner Konfigurationen</p>
         </div>
-        <span className="text-sm px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full font-medium">
-          {configs?.length ?? 0} Partner
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full font-medium">
+            {configs?.length ?? 0} Partner
+          </span>
+          <Link
+            href="/admin/white-label/neu"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            Partner anlegen
+          </Link>
+        </div>
       </div>
 
       {/* Partner Cards */}
       <div className="grid gap-4">
+        {(configs ?? []).length === 0 && (
+          <div className="text-center py-16 text-gray-400">
+            <Globe className="h-10 w-10 mx-auto mb-3 opacity-40" />
+            <p className="font-medium text-gray-500">Noch keine White-Label Partner</p>
+            <p className="text-sm mt-1">Lege den ersten GKV- oder Versicherungspartner an.</p>
+            <Link
+              href="/admin/white-label/neu"
+              className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4" />
+              Jetzt Partner anlegen
+            </Link>
+          </div>
+        )}
+
         {(configs ?? []).map((c) => {
           const features = c.features as Record<string, boolean>;
           const activeFeatures = Object.entries(features).filter(([, v]) => v).length;
@@ -91,16 +117,52 @@ export default async function AdminWhiteLabelPage() {
                   </div>
                 </div>
 
-                {/* Color Swatches */}
-                <div className="flex gap-1.5 shrink-0">
-                  {[c.color_primary, c.color_secondary, c.color_accent].map((color, i) => (
-                    <div
-                      key={i}
-                      className="w-6 h-6 rounded-full border border-white shadow-sm"
-                      style={{ background: color }}
-                      title={color}
-                    />
-                  ))}
+                {/* Right: Color Swatches + Actions */}
+                <div className="flex flex-col items-end gap-3 shrink-0">
+                  <div className="flex gap-1.5">
+                    {[c.color_primary, c.color_secondary, c.color_accent].map((color, i) => (
+                      <div
+                        key={i}
+                        className="w-6 h-6 rounded-full border border-white shadow-sm"
+                        style={{ background: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <form
+                      action={async () => {
+                        "use server";
+                        await toggleWhiteLabelAktiv(c.id, !c.aktiv);
+                      }}
+                    >
+                      <button
+                        type="submit"
+                        className={`text-xs px-2.5 py-1 rounded-lg border font-medium ${
+                          c.aktiv
+                            ? "border-amber-200 text-amber-700 hover:bg-amber-50"
+                            : "border-green-200 text-green-700 hover:bg-green-50"
+                        }`}
+                      >
+                        {c.aktiv ? "Deaktivieren" : "Aktivieren"}
+                      </button>
+                    </form>
+                    <Link
+                      href={`/wl/${c.slug}?admin=1`}
+                      target="_blank"
+                      className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Vorschau
+                    </Link>
+                    <Link
+                      href={`/admin/white-label/${c.id}/bearbeiten`}
+                      className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Bearbeiten
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

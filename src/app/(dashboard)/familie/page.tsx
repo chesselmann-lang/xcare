@@ -775,4 +775,14 @@ export default async function FamilieDashboard() {
                       </p>
                       <p className="text-xs text-[--muted-foreground]">{item.desc}</p>
                     </div>
-                    <ArrowRight className="h-3 w-3 text-[--muted-foreground] gr
+                    <ArrowRight className="h-3 w-3 text-[--muted-foreground] group-hover:text-[--primary] transition-colors shrink-0" />
+                  </div>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
