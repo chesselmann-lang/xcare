@@ -1,1 +1,6561 @@
-{"types":"export type Json =\n  | string\n  | number\n  | boolean\n  | null\n  | { [key: string]: Json | undefined }\n  | Json[]\n\nexport type Database = {\n  // Allows to automatically instantiate createClient with right options\n  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)\n  __InternalSupabase: {\n    PostgrestVersion: \"14.5\"\n  }\n  public: {\n    Tables: {\n      anbieter: {\n        Row: {\n          abwesend: boolean\n          abwesend_bis: string | null\n          abwesend_notiz: string | null\n          aktiv: boolean\n          beschreibung: string | null\n          created_at: string\n          email: string | null\n          foto_url: string | null\n          geo: unknown\n          id: string\n          lat: number | null\n          lng: number | null\n          logo_url: string | null\n          name: string\n          oeffnungszeiten: Json | null\n          ort: string | null\n          plan: string\n          plan_expires_at: string | null\n          plz: string | null\n          profile_id: string\n          search_vector: unknown\n          social_media: Json | null\n          strasse: string | null\n          stripe_customer_id: string | null\n          stripe_subscription_id: string | null\n          telefon: string | null\n          traeger: string | null\n          updated_at: string\n          verfuegbarkeit: string | null\n          verifiziert: boolean\n          views_total: number\n          website: string | null\n          zertifiziert: boolean\n        }\n        Insert: {\n          abwesend?: boolean\n          abwesend_bis?: string | null\n          abwesend_notiz?: string | null\n          aktiv?: boolean\n          beschreibung?: string | null\n          created_at?: string\n          email?: string | null\n          foto_url?: string | null\n          geo?: unknown\n          id?: string\n          lat?: number | null\n          lng?: number | null\n          logo_url?: string | null\n          name: string\n          oeffnungszeiten?: Json | null\n          ort?: string | null\n          plan?: string\n          plan_expires_at?: string | null\n          plz?: string | null\n          profile_id: string\n          search_vector?: unknown\n          social_media?: Json | null\n          strasse?: string | null\n          stripe_customer_id?: string | null\n          stripe_subscription_id?: string | null\n          telefon?: string | null\n          traeger?: string | null\n          updated_at?: string\n          verfuegbarkeit?: string | null\n          verifiziert?: boolean\n          views_total?: number\n          website?: string | null\n          zertifiziert?: boolean\n        }\n        Update: {\n          abwesend?: boolean\n          abwesend_bis?: string | null\n          abwesend_notiz?: string | null\n          aktiv?: boolean\n          beschreibung?: string | null\n          created_at?: string\n          email?: string | null\n          foto_url?: string | null\n          geo?: unknown\n          id?: string\n          lat?: number | null\n          lng?: number | null\n          logo_url?: string | null\n          name?: string\n          oeffnungszeiten?: Json | null\n          ort?: string | null\n          plan?: string\n          plan_expires_at?: string | null\n          plz?: string | null\n          profile_id?: string\n          search_vector?: unknown\n          social_media?: Json | null\n          strasse?: string | null\n          stripe_customer_id?: string | null\n          stripe_subscription_id?: string | null\n          telefon?: string | null\n          traeger?: string | null\n          updated_at?: string\n          verfuegbarkeit?: string | null\n          verifiziert?: boolean\n          views_total?: number\n          website?: string | null\n          zertifiziert?: boolean\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anbieter_profile_id_fkey\"\n            columns: [\"profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      anbieter_dokumente: {\n        Row: {\n          anbieter_id: string\n          created_at: string\n          id: string\n          name: string\n          oeffentlich: boolean\n          path: string\n          size: number\n          typ: string\n        }\n        Insert: {\n          anbieter_id: string\n          created_at?: string\n          id?: string\n          name: string\n          oeffentlich?: boolean\n          path: string\n          size?: number\n          typ?: string\n        }\n        Update: {\n          anbieter_id?: string\n          created_at?: string\n          id?: string\n          name?: string\n          oeffentlich?: boolean\n          path?: string\n          size?: number\n          typ?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anbieter_dokumente_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_dokumente_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_dokumente_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n        ]\n      }\n      anbieter_galerie: {\n        Row: {\n          alt_text: string | null\n          anbieter_id: string\n          created_at: string\n          id: string\n          position: number\n          storage_pfad: string\n        }\n        Insert: {\n          alt_text?: string | null\n          anbieter_id: string\n          created_at?: string\n          id?: string\n          position?: number\n          storage_pfad: string\n        }\n        Update: {\n          alt_text?: string | null\n          anbieter_id?: string\n          created_at?: string\n          id?: string\n          position?: number\n          storage_pfad?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anbieter_galerie_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_galerie_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_galerie_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n        ]\n      }\n      anbieter_mitglieder: {\n        Row: {\n          anbieter_id: string\n          created_at: string\n          id: string\n          profile_id: string\n          rolle: string\n        }\n        Insert: {\n          anbieter_id: string\n          created_at?: string\n          id?: string\n          profile_id: string\n          rolle?: string\n        }\n        Update: {\n          anbieter_id?: string\n          created_at?: string\n          id?: string\n          profile_id?: string\n          rolle?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anbieter_mitglieder_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_mitglieder_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_mitglieder_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_mitglieder_profile_id_fkey\"\n            columns: [\"profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      anbieter_profil_aufrufe: {\n        Row: {\n          anbieter_id: string\n          created_at: string\n          id: string\n          referrer: string | null\n        }\n        Insert: {\n          anbieter_id: string\n          created_at?: string\n          id?: string\n          referrer?: string | null\n        }\n        Update: {\n          anbieter_id?: string\n          created_at?: string\n          id?: string\n          referrer?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anbieter_profil_aufrufe_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_profil_aufrufe_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_profil_aufrufe_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n        ]\n      }\n      anbieter_team: {\n        Row: {\n          anbieter_id: string\n          created_at: string\n          id: string\n          profile_id: string\n          rolle: string\n        }\n        Insert: {\n          anbieter_id: string\n          created_at?: string\n          id?: string\n          profile_id: string\n          rolle?: string\n        }\n        Update: {\n          anbieter_id?: string\n          created_at?: string\n          id?: string\n          profile_id?: string\n          rolle?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anbieter_team_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_team_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_team_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_team_profile_id_fkey\"\n            columns: [\"profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      anbieter_zuletzt_angesehen: {\n        Row: {\n          anbieter_id: string\n          familie_id: string\n          gesehen_am: string\n          id: string\n        }\n        Insert: {\n          anbieter_id: string\n          familie_id: string\n          gesehen_am?: string\n          id?: string\n        }\n        Update: {\n          anbieter_id?: string\n          familie_id?: string\n          gesehen_am?: string\n          id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anbieter_zuletzt_angesehen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_zuletzt_angesehen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_zuletzt_angesehen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anbieter_zuletzt_angesehen_familie_id_fkey\"\n            columns: [\"familie_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      anfrage_dokumente: {\n        Row: {\n          anfrage_id: string\n          created_at: string\n          dateiname: string\n          familie_id: string\n          groesse_bytes: number\n          id: string\n          mime_typ: string\n          storage_pfad: string\n        }\n        Insert: {\n          anfrage_id: string\n          created_at?: string\n          dateiname: string\n          familie_id: string\n          groesse_bytes?: number\n          id?: string\n          mime_typ?: string\n          storage_pfad: string\n        }\n        Update: {\n          anfrage_id?: string\n          created_at?: string\n          dateiname?: string\n          familie_id?: string\n          groesse_bytes?: number\n          id?: string\n          mime_typ?: string\n          storage_pfad?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anfrage_dokumente_anfrage_id_fkey\"\n            columns: [\"anfrage_id\"]\n            isOneToOne: false\n            referencedRelation: \"anfragen\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anfrage_dokumente_familie_id_fkey\"\n            columns: [\"familie_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      anfrage_notizen: {\n        Row: {\n          anbieter_id: string\n          anfrage_id: string\n          created_at: string\n          id: string\n          inhalt: string\n          tag: string | null\n          updated_at: string\n        }\n        Insert: {\n          anbieter_id: string\n          anfrage_id: string\n          created_at?: string\n          id?: string\n          inhalt: string\n          tag?: string | null\n          updated_at?: string\n        }\n        Update: {\n          anbieter_id?: string\n          anfrage_id?: string\n          created_at?: string\n          id?: string\n          inhalt?: string\n          tag?: string | null\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anfrage_notizen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anfrage_notizen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anfrage_notizen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anfrage_notizen_anfrage_id_fkey\"\n            columns: [\"anfrage_id\"]\n            isOneToOne: false\n            referencedRelation: \"anfragen\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      anfragen: {\n        Row: {\n          anbieter_id: string | null\n          beschreibung: string\n          created_at: string\n          crm_tags: string[]\n          familie_id: string\n          id: string\n          ki_empfehlung: string | null\n          lebenslage: string\n          leistung_id: string | null\n          status: string\n          updated_at: string\n          wichtig: boolean\n        }\n        Insert: {\n          anbieter_id?: string | null\n          beschreibung: string\n          created_at?: string\n          crm_tags?: string[]\n          familie_id: string\n          id?: string\n          ki_empfehlung?: string | null\n          lebenslage: string\n          leistung_id?: string | null\n          status?: string\n          updated_at?: string\n          wichtig?: boolean\n        }\n        Update: {\n          anbieter_id?: string | null\n          beschreibung?: string\n          created_at?: string\n          crm_tags?: string[]\n          familie_id?: string\n          id?: string\n          ki_empfehlung?: string | null\n          lebenslage?: string\n          leistung_id?: string | null\n          status?: string\n          updated_at?: string\n          wichtig?: boolean\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anfragen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anfragen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anfragen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"anfragen_familie_id_fkey\"\n            columns: [\"familie_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anfragen_leistung_id_fkey\"\n            columns: [\"leistung_id\"]\n            isOneToOne: false\n            referencedRelation: \"leistungen\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      anfragen_historie: {\n        Row: {\n          alter_status: string | null\n          anfrage_id: string\n          created_at: string\n          geaendert_von: string | null\n          id: string\n          neuer_status: string\n          notiz: string | null\n        }\n        Insert: {\n          alter_status?: string | null\n          anfrage_id: string\n          created_at?: string\n          geaendert_von?: string | null\n          id?: string\n          neuer_status: string\n          notiz?: string | null\n        }\n        Update: {\n          alter_status?: string | null\n          anfrage_id?: string\n          created_at?: string\n          geaendert_von?: string | null\n          id?: string\n          neuer_status?: string\n          notiz?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anfragen_historie_anfrage_id_fkey\"\n            columns: [\"anfrage_id\"]\n            isOneToOne: false\n            referencedRelation: \"anfragen\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anfragen_historie_geaendert_von_fkey\"\n            columns: [\"geaendert_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      anfragen_statusverlauf: {\n        Row: {\n          alter_status: string | null\n          anfrage_id: string\n          created_at: string\n          geaendert_von: string | null\n          id: string\n          kommentar: string | null\n          neuer_status: string\n        }\n        Insert: {\n          alter_status?: string | null\n          anfrage_id: string\n          created_at?: string\n          geaendert_von?: string | null\n          id?: string\n          kommentar?: string | null\n          neuer_status: string\n        }\n        Update: {\n          alter_status?: string | null\n          anfrage_id?: string\n          created_at?: string\n          geaendert_von?: string | null\n          id?: string\n          kommentar?: string | null\n          neuer_status?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"anfragen_statusverlauf_anfrage_id_fkey\"\n            columns: [\"anfrage_id\"]\n            isOneToOne: false\n            referencedRelation: \"anfragen\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"anfragen_statusverlauf_geaendert_von_fkey\"\n            columns: [\"geaendert_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      anspruchs_profile: {\n        Row: {\n          bezeichnung: string | null\n          created_at: string\n          ergebnis: Json\n          gesamt_jaehrlich_eur: number | null\n          gesamt_monatlich_eur: number | null\n          id: string\n          lebenslage: string\n          updated_at: string\n          user_id: string\n        }\n        Insert: {\n          bezeichnung?: string | null\n          created_at?: string\n          ergebnis: Json\n          gesamt_jaehrlich_eur?: number | null\n          gesamt_monatlich_eur?: number | null\n          id?: string\n          lebenslage: string\n          updated_at?: string\n          user_id: string\n        }\n        Update: {\n          bezeichnung?: string | null\n          created_at?: string\n          ergebnis?: Json\n          gesamt_jaehrlich_eur?: number | null\n          gesamt_monatlich_eur?: number | null\n          id?: string\n          lebenslage?: string\n          updated_at?: string\n          user_id?: string\n        }\n        Relationships: []\n      }\n      avv_partner: {\n        Row: {\n          avv_unterzeichnet: boolean\n          created_at: string\n          dienst: string\n          id: string\n          naechste_pruefung: string | null\n          name: string\n          notizen: string | null\n          unterzeichnet_am: string | null\n          updated_at: string\n        }\n        Insert: {\n          avv_unterzeichnet?: boolean\n          created_at?: string\n          dienst: string\n          id?: string\n          naechste_pruefung?: string | null\n          name: string\n          notizen?: string | null\n          unterzeichnet_am?: string | null\n          updated_at?: string\n        }\n        Update: {\n          avv_unterzeichnet?: boolean\n          created_at?: string\n          dienst?: string\n          id?: string\n          naechste_pruefung?: string | null\n          name?: string\n          notizen?: string | null\n          unterzeichnet_am?: string | null\n          updated_at?: string\n        }\n        Relationships: []\n      }\n      benachrichtigungen: {\n        Row: {\n          created_at: string\n          gelesen: boolean\n          id: string\n          link: string | null\n          nachricht: string\n          profile_id: string\n          titel: string\n          typ: string\n        }\n        Insert: {\n          created_at?: string\n          gelesen?: boolean\n          id?: string\n          link?: string | null\n          nachricht: string\n          profile_id: string\n          titel: string\n          typ: string\n        }\n        Update: {\n          created_at?: string\n          gelesen?: boolean\n          id?: string\n          link?: string | null\n          nachricht?: string\n          profile_id?: string\n          titel?: string\n          typ?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"benachrichtigungen_profile_id_fkey\"\n            columns: [\"profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      beschwerden: {\n        Row: {\n          anbieter_id: string\n          beschreibung: string\n          created_at: string\n          eingegangen_am: string\n          ergebnis: string | null\n          erstellt_von: string | null\n          familie_profile_id: string | null\n          frist_am: string\n          geloest_am: string | null\n          id: string\n          kategorie: string\n          massnahmen: string | null\n          schweregrad: string\n          status: string\n          updated_at: string\n        }\n        Insert: {\n          anbieter_id: string\n          beschreibung: string\n          created_at?: string\n          eingegangen_am?: string\n          ergebnis?: string | null\n          erstellt_von?: string | null\n          familie_profile_id?: string | null\n          frist_am?: string\n          geloest_am?: string | null\n          id?: string\n          kategorie: string\n          massnahmen?: string | null\n          schweregrad?: string\n          status?: string\n          updated_at?: string\n        }\n        Update: {\n          anbieter_id?: string\n          beschreibung?: string\n          created_at?: string\n          eingegangen_am?: string\n          ergebnis?: string | null\n          erstellt_von?: string | null\n          familie_profile_id?: string | null\n          frist_am?: string\n          geloest_am?: string | null\n          id?: string\n          kategorie?: string\n          massnahmen?: string | null\n          schweregrad?: string\n          status?: string\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"beschwerden_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"beschwerden_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"beschwerden_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"beschwerden_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"beschwerden_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      bewertungen: {\n        Row: {\n          anbieter_id: string\n          anfrage_id: string | null\n          antwort: string | null\n          antwort_at: string | null\n          created_at: string\n          familie_id: string\n          gemeldet: boolean\n          id: string\n          kommentar: string | null\n          sterne: number\n        }\n        Insert: {\n          anbieter_id: string\n          anfrage_id?: string | null\n          antwort?: string | null\n          antwort_at?: string | null\n          created_at?: string\n          familie_id: string\n          gemeldet?: boolean\n          id?: string\n          kommentar?: string | null\n          sterne: number\n        }\n        Update: {\n          anbieter_id?: string\n          anfrage_id?: string | null\n          antwort?: string | null\n          antwort_at?: string | null\n          created_at?: string\n          familie_id?: string\n          gemeldet?: boolean\n          id?: string\n          kommentar?: string | null\n          sterne?: number\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"bewertungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"bewertungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"bewertungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"bewertungen_anfrage_id_fkey\"\n            columns: [\"anfrage_id\"]\n            isOneToOne: false\n            referencedRelation: \"anfragen\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"bewertungen_familie_id_fkey\"\n            columns: [\"familie_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      budget_transaktionen: {\n        Row: {\n          beleg_url: string | null\n          beschreibung: string | null\n          betrag: number\n          budget_id: string\n          created_at: string\n          datum: string\n          id: string\n        }\n        Insert: {\n          beleg_url?: string | null\n          beschreibung?: string | null\n          betrag: number\n          budget_id: string\n          created_at?: string\n          datum?: string\n          id?: string\n        }\n        Update: {\n          beleg_url?: string | null\n          beschreibung?: string | null\n          betrag?: number\n          budget_id?: string\n          created_at?: string\n          datum?: string\n          id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"budget_transaktionen_budget_id_fkey\"\n            columns: [\"budget_id\"]\n            isOneToOne: false\n            referencedRelation: \"pflegekassen_budgets\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      care_worker_anfragen: {\n        Row: {\n          anbieter_id: string\n          care_worker_id: string\n          created_at: string\n          familie_id: string | null\n          id: string\n          nachricht: string | null\n          start_datum: string | null\n          status: string\n          stunden_pro_woche: number | null\n        }\n        Insert: {\n          anbieter_id: string\n          care_worker_id: string\n          created_at?: string\n          familie_id?: string | null\n          id?: string\n          nachricht?: string | null\n          start_datum?: string | null\n          status?: string\n          stunden_pro_woche?: number | null\n        }\n        Update: {\n          anbieter_id?: string\n          care_worker_id?: string\n          created_at?: string\n          familie_id?: string | null\n          id?: string\n          nachricht?: string | null\n          start_datum?: string | null\n          status?: string\n          stunden_pro_woche?: number | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"care_worker_anfragen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"care_worker_anfragen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"care_worker_anfragen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"care_worker_anfragen_care_worker_id_fkey\"\n            columns: [\"care_worker_id\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"care_worker_anfragen_familie_id_fkey\"\n            columns: [\"familie_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      care_worker_zertifikate: {\n        Row: {\n          anbieter_id: string\n          ausgestellt_am: string | null\n          ausstellende_stelle: string | null\n          bezeichnung: string\n          care_worker_id: string\n          created_at: string\n          dokument_url: string | null\n          gueltig_bis: string | null\n          id: string\n          typ: string\n          zertifikat_nr: string | null\n        }\n        Insert: {\n          anbieter_id: string\n          ausgestellt_am?: string | null\n          ausstellende_stelle?: string | null\n          bezeichnung: string\n          care_worker_id: string\n          created_at?: string\n          dokument_url?: string | null\n          gueltig_bis?: string | null\n          id?: string\n          typ?: string\n          zertifikat_nr?: string | null\n        }\n        Update: {\n          anbieter_id?: string\n          ausgestellt_am?: string | null\n          ausstellende_stelle?: string | null\n          bezeichnung?: string\n          care_worker_id?: string\n          created_at?: string\n          dokument_url?: string | null\n          gueltig_bis?: string | null\n          id?: string\n          typ?: string\n          zertifikat_nr?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"care_worker_zertifikate_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"care_worker_zertifikate_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"care_worker_zertifikate_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"care_worker_zertifikate_care_worker_id_fkey\"\n            columns: [\"care_worker_id\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      care_workers: {\n        Row: {\n          abwesend_bis: string | null\n          aktiv: boolean\n          anbieter_id: string\n          berufserfahrung_jahre: number | null\n          bio: string | null\n          created_at: string\n          fuehrungszeugnis_datum: string | null\n          fuehrungszeugnis_vorhanden: boolean\n          geburtsjahr: number | null\n          id: string\n          max_stunden_woche: number | null\n          nachname: string\n          ort: string | null\n          plz: string | null\n          qualifikationen: string[] | null\n          sprachen: string[] | null\n          standort: unknown\n          stundensatz_ct: number\n          updated_at: string\n          verfuegbar_ab: string | null\n          vorname: string\n          zertifikate: string[] | null\n        }\n        Insert: {\n          abwesend_bis?: string | null\n          aktiv?: boolean\n          anbieter_id: string\n          berufserfahrung_jahre?: number | null\n          bio?: string | null\n          created_at?: string\n          fuehrungszeugnis_datum?: string | null\n          fuehrungszeugnis_vorhanden?: boolean\n          geburtsjahr?: number | null\n          id?: string\n          max_stunden_woche?: number | null\n          nachname: string\n          ort?: string | null\n          plz?: string | null\n          qualifikationen?: string[] | null\n          sprachen?: string[] | null\n          standort?: unknown\n          stundensatz_ct?: number\n          updated_at?: string\n          verfuegbar_ab?: string | null\n          vorname: string\n          zertifikate?: string[] | null\n        }\n        Update: {\n          abwesend_bis?: string | null\n          aktiv?: boolean\n          anbieter_id?: string\n          berufserfahrung_jahre?: number | null\n          bio?: string | null\n          created_at?: string\n          fuehrungszeugnis_datum?: string | null\n          fuehrungszeugnis_vorhanden?: boolean\n          geburtsjahr?: number | null\n          id?: string\n          max_stunden_woche?: number | null\n          nachname?: string\n          ort?: string | null\n          plz?: string | null\n          qualifikationen?: string[] | null\n          sprachen?: string[] | null\n          standort?: unknown\n          stundensatz_ct?: number\n          updated_at?: string\n          verfuegbar_ab?: string | null\n          vorname?: string\n          zertifikate?: string[] | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"care_workers_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"care_workers_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"care_workers_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n        ]\n      }\n      compliance_checks: {\n        Row: {\n          anbieter_id: string\n          bereich: string\n          created_at: string\n          erfuellt: boolean | null\n          erstellt_von: string | null\n          faellig_am: string | null\n          id: string\n          kriterium: string\n          letzte_pruefung: string | null\n          nachweis: string | null\n          updated_at: string\n        }\n        Insert: {\n          anbieter_id: string\n          bereich: string\n          created_at?: string\n          erfuellt?: boolean | null\n          erstellt_von?: string | null\n          faellig_am?: string | null\n          id?: string\n          kriterium: string\n          letzte_pruefung?: string | null\n          nachweis?: string | null\n          updated_at?: string\n        }\n        Update: {\n          anbieter_id?: string\n          bereich?: string\n          created_at?: string\n          erfuellt?: boolean | null\n          erstellt_von?: string | null\n          faellig_am?: string | null\n          id?: string\n          kriterium?: string\n          letzte_pruefung?: string | null\n          nachweis?: string | null\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"compliance_checks_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"compliance_checks_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"compliance_checks_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"compliance_checks_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      diagnosen: {\n        Row: {\n          arzt: string | null\n          bezeichnung: string\n          chronisch: boolean | null\n          created_at: string | null\n          erstdiagnose: string | null\n          icd10_code: string | null\n          id: string\n          notizen: string | null\n          profil_id: string\n        }\n        Insert: {\n          arzt?: string | null\n          bezeichnung: string\n          chronisch?: boolean | null\n          created_at?: string | null\n          erstdiagnose?: string | null\n          icd10_code?: string | null\n          id?: string\n          notizen?: string | null\n          profil_id: string\n        }\n        Update: {\n          arzt?: string | null\n          bezeichnung?: string\n          chronisch?: boolean | null\n          created_at?: string | null\n          erstdiagnose?: string | null\n          icd10_code?: string | null\n          id?: string\n          notizen?: string | null\n          profil_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"diagnosen_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      dokumente: {\n        Row: {\n          ablaufdatum: string | null\n          created_at: string | null\n          geteilt_mit: string[] | null\n          groesse_bytes: number | null\n          haushalt_id: string | null\n          id: string\n          kategorie: string\n          mime_type: string | null\n          name: string\n          notizen: string | null\n          ocr_text: string | null\n          profil_id: string\n          storage_path: string\n          updated_at: string | null\n          verschluesselt: boolean | null\n        }\n        Insert: {\n          ablaufdatum?: string | null\n          created_at?: string | null\n          geteilt_mit?: string[] | null\n          groesse_bytes?: number | null\n          haushalt_id?: string | null\n          id?: string\n          kategorie: string\n          mime_type?: string | null\n          name: string\n          notizen?: string | null\n          ocr_text?: string | null\n          profil_id: string\n          storage_path: string\n          updated_at?: string | null\n          verschluesselt?: boolean | null\n        }\n        Update: {\n          ablaufdatum?: string | null\n          created_at?: string | null\n          geteilt_mit?: string[] | null\n          groesse_bytes?: number | null\n          haushalt_id?: string | null\n          id?: string\n          kategorie?: string\n          mime_type?: string | null\n          name?: string\n          notizen?: string | null\n          ocr_text?: string | null\n          profil_id?: string\n          storage_path?: string\n          updated_at?: string | null\n          verschluesselt?: boolean | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"dokumente_haushalt_id_fkey\"\n            columns: [\"haushalt_id\"]\n            isOneToOne: false\n            referencedRelation: \"haushalte\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"dokumente_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      dsgvo_loeschanfragen: {\n        Row: {\n          angefragt_am: string\n          email: string\n          erledigt_am: string | null\n          id: string\n          notizen: string | null\n          profil_id: string | null\n          status: string\n        }\n        Insert: {\n          angefragt_am?: string\n          email: string\n          erledigt_am?: string | null\n          id?: string\n          notizen?: string | null\n          profil_id?: string | null\n          status?: string\n        }\n        Update: {\n          angefragt_am?: string\n          email?: string\n          erledigt_am?: string | null\n          id?: string\n          notizen?: string | null\n          profil_id?: string | null\n          status?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"dsgvo_loeschanfragen_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      familie_anbieter_notizen: {\n        Row: {\n          anbieter_id: string\n          created_at: string\n          familie_id: string\n          id: string\n          notiz: string\n          updated_at: string\n        }\n        Insert: {\n          anbieter_id: string\n          created_at?: string\n          familie_id: string\n          id?: string\n          notiz: string\n          updated_at?: string\n        }\n        Update: {\n          anbieter_id?: string\n          created_at?: string\n          familie_id?: string\n          id?: string\n          notiz?: string\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"familie_anbieter_notizen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"familie_anbieter_notizen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"familie_anbieter_notizen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"familie_anbieter_notizen_familie_id_fkey\"\n            columns: [\"familie_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      familie_pinnwand: {\n        Row: {\n          created_at: string\n          erledigt: boolean | null\n          erledigt_am: string | null\n          erstellt_von: string | null\n          erstellt_von_rolle: string | null\n          familie_profile_id: string\n          id: string\n          inhalt: string\n          pinned: boolean | null\n          typ: string\n          updated_at: string\n        }\n        Insert: {\n          created_at?: string\n          erledigt?: boolean | null\n          erledigt_am?: string | null\n          erstellt_von?: string | null\n          erstellt_von_rolle?: string | null\n          familie_profile_id: string\n          id?: string\n          inhalt: string\n          pinned?: boolean | null\n          typ?: string\n          updated_at?: string\n        }\n        Update: {\n          created_at?: string\n          erledigt?: boolean | null\n          erledigt_am?: string | null\n          erstellt_von?: string | null\n          erstellt_von_rolle?: string | null\n          familie_profile_id?: string\n          id?: string\n          inhalt?: string\n          pinned?: boolean | null\n          typ?: string\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"familie_pinnwand_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"familie_pinnwand_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      favoriten: {\n        Row: {\n          anbieter_id: string\n          created_at: string\n          familie_id: string\n          id: string\n        }\n        Insert: {\n          anbieter_id: string\n          created_at?: string\n          familie_id: string\n          id?: string\n        }\n        Update: {\n          anbieter_id?: string\n          created_at?: string\n          familie_id?: string\n          id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"favoriten_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"favoriten_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"favoriten_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"favoriten_familie_id_fkey\"\n            columns: [\"familie_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      gespeicherte_suchen: {\n        Row: {\n          created_at: string\n          id: string\n          lebenslage: string | null\n          name: string\n          plz: string | null\n          profile_id: string\n          radius_km: number | null\n          suchtext: string | null\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          lebenslage?: string | null\n          name: string\n          plz?: string | null\n          profile_id: string\n          radius_km?: number | null\n          suchtext?: string | null\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          lebenslage?: string | null\n          name?: string\n          plz?: string | null\n          profile_id?: string\n          radius_km?: number | null\n          suchtext?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"gespeicherte_suchen_profile_id_fkey\"\n            columns: [\"profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      haushalte: {\n        Row: {\n          created_at: string | null\n          erstellt_von: string | null\n          id: string\n          name: string\n          ort: string | null\n          plz: string | null\n          updated_at: string | null\n        }\n        Insert: {\n          created_at?: string | null\n          erstellt_von?: string | null\n          id?: string\n          name: string\n          ort?: string | null\n          plz?: string | null\n          updated_at?: string | null\n        }\n        Update: {\n          created_at?: string | null\n          erstellt_von?: string | null\n          id?: string\n          name?: string\n          ort?: string | null\n          plz?: string | null\n          updated_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"haushalte_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      haushaltsmitglieder: {\n        Row: {\n          created_at: string | null\n          gdb: number | null\n          geburtsdatum: string | null\n          haushalt_id: string\n          id: string\n          kann_anfragen_sehen: boolean | null\n          kann_dokumente_sehen: boolean | null\n          kann_verwalten: boolean | null\n          nachname: string | null\n          pflegegrad: number | null\n          profile_id: string | null\n          rolle: Database[\"public\"][\"Enums\"][\"haushalt_rolle\"]\n          updated_at: string | null\n          vorname: string | null\n        }\n        Insert: {\n          created_at?: string | null\n          gdb?: number | null\n          geburtsdatum?: string | null\n          haushalt_id: string\n          id?: string\n          kann_anfragen_sehen?: boolean | null\n          kann_dokumente_sehen?: boolean | null\n          kann_verwalten?: boolean | null\n          nachname?: string | null\n          pflegegrad?: number | null\n          profile_id?: string | null\n          rolle: Database[\"public\"][\"Enums\"][\"haushalt_rolle\"]\n          updated_at?: string | null\n          vorname?: string | null\n        }\n        Update: {\n          created_at?: string | null\n          gdb?: number | null\n          geburtsdatum?: string | null\n          haushalt_id?: string\n          id?: string\n          kann_anfragen_sehen?: boolean | null\n          kann_dokumente_sehen?: boolean | null\n          kann_verwalten?: boolean | null\n          nachname?: string | null\n          pflegegrad?: number | null\n          profile_id?: string | null\n          rolle?: Database[\"public\"][\"Enums\"][\"haushalt_rolle\"]\n          updated_at?: string | null\n          vorname?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"haushaltsmitglieder_haushalt_id_fkey\"\n            columns: [\"haushalt_id\"]\n            isOneToOne: false\n            referencedRelation: \"haushalte\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"haushaltsmitglieder_profile_id_fkey\"\n            columns: [\"profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      haushaltsscheck_daten: {\n        Row: {\n          aktiv: boolean\n          arbeitgeber_adresse: string\n          arbeitgeber_name: string\n          arbeitnehmer_name: string\n          arbeitnehmer_svnr: string\n          beginn_datum: string\n          created_at: string\n          id: string\n          profil_id: string\n          stunden_pro_woche: number\n          stundenlohn: number\n          updated_at: string\n        }\n        Insert: {\n          aktiv?: boolean\n          arbeitgeber_adresse: string\n          arbeitgeber_name: string\n          arbeitnehmer_name: string\n          arbeitnehmer_svnr: string\n          beginn_datum: string\n          created_at?: string\n          id?: string\n          profil_id: string\n          stunden_pro_woche: number\n          stundenlohn: number\n          updated_at?: string\n        }\n        Update: {\n          aktiv?: boolean\n          arbeitgeber_adresse?: string\n          arbeitgeber_name?: string\n          arbeitnehmer_name?: string\n          arbeitnehmer_svnr?: string\n          beginn_datum?: string\n          created_at?: string\n          id?: string\n          profil_id?: string\n          stunden_pro_woche?: number\n          stundenlohn?: number\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"haushaltsscheck_daten_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      impfungen: {\n        Row: {\n          arzt: string | null\n          charge: string | null\n          created_at: string | null\n          datum: string\n          id: string\n          impfstoff: string\n          krankheit: string\n          naechste_impfung: string | null\n          profil_id: string\n        }\n        Insert: {\n          arzt?: string | null\n          charge?: string | null\n          created_at?: string | null\n          datum: string\n          id?: string\n          impfstoff: string\n          krankheit: string\n          naechste_impfung?: string | null\n          profil_id: string\n        }\n        Update: {\n          arzt?: string | null\n          charge?: string | null\n          created_at?: string | null\n          datum?: string\n          id?: string\n          impfstoff?: string\n          krankheit?: string\n          naechste_impfung?: string | null\n          profil_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"impfungen_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      ki_audit_log: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2026_05: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2026_06: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2026_07: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2026_08: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2026_09: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2026_10: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2026_11: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2026_12: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2027_01: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2027_02: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2027_03: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      ki_audit_log_2027_04: {\n        Row: {\n          created_at: string\n          endpoint: string\n          error_code: string | null\n          id: string\n          input_schema: string | null\n          latency_ms: number | null\n          model_version: string\n          prompt_hash: string\n          success: boolean\n          tokens_in: number | null\n          tokens_out: number | null\n          user_pseudo_id: string\n        }\n        Insert: {\n          created_at?: string\n          endpoint: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version: string\n          prompt_hash: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id: string\n        }\n        Update: {\n          created_at?: string\n          endpoint?: string\n          error_code?: string | null\n          id?: string\n          input_schema?: string | null\n          latency_ms?: number | null\n          model_version?: string\n          prompt_hash?: string\n          success?: boolean\n          tokens_in?: number | null\n          tokens_out?: number | null\n          user_pseudo_id?: string\n        }\n        Relationships: []\n      }\n      leistungen: {\n        Row: {\n          aktiv: boolean\n          anbieter_id: string\n          beschreibung: string | null\n          created_at: string\n          id: string\n          kapazitaet: number | null\n          kategorie: string\n          kostentraeger: string[] | null\n          lebenslage: string[] | null\n          name: string\n          preis_bis: number | null\n          preis_einheit: string | null\n          preis_von: number | null\n          sgb_paragraf: string | null\n          wartezeit_wochen: number | null\n        }\n        Insert: {\n          aktiv?: boolean\n          anbieter_id: string\n          beschreibung?: string | null\n          created_at?: string\n          id?: string\n          kapazitaet?: number | null\n          kategorie: string\n          kostentraeger?: string[] | null\n          lebenslage?: string[] | null\n          name: string\n          preis_bis?: number | null\n          preis_einheit?: string | null\n          preis_von?: number | null\n          sgb_paragraf?: string | null\n          wartezeit_wochen?: number | null\n        }\n        Update: {\n          aktiv?: boolean\n          anbieter_id?: string\n          beschreibung?: string | null\n          created_at?: string\n          id?: string\n          kapazitaet?: number | null\n          kategorie?: string\n          kostentraeger?: string[] | null\n          lebenslage?: string[] | null\n          name?: string\n          preis_bis?: number | null\n          preis_einheit?: string | null\n          preis_von?: number | null\n          sgb_paragraf?: string | null\n          wartezeit_wochen?: number | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"leistungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"leistungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"leistungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n        ]\n      }\n      leistungen_embeddings: {\n        Row: {\n          created_at: string | null\n          embedding: string | null\n          id: string\n          lebenslage: string | null\n          leistung_beschreibung: string\n          leistung_code: string\n          leistung_titel: string\n          max_betrag_eur: number | null\n          rechtsgrundlage: string | null\n          updated_at: string | null\n        }\n        Insert: {\n          created_at?: string | null\n          embedding?: string | null\n          id?: string\n          lebenslage?: string | null\n          leistung_beschreibung: string\n          leistung_code: string\n          leistung_titel: string\n          max_betrag_eur?: number | null\n          rechtsgrundlage?: string | null\n          updated_at?: string | null\n        }\n        Update: {\n          created_at?: string | null\n          embedding?: string | null\n          id?: string\n          lebenslage?: string | null\n          leistung_beschreibung?: string\n          leistung_code?: string\n          leistung_titel?: string\n          max_betrag_eur?: number | null\n          rechtsgrundlage?: string | null\n          updated_at?: string | null\n        }\n        Relationships: []\n      }\n      medikamente: {\n        Row: {\n          abends: number | null\n          aktiv: boolean | null\n          bis_datum: string | null\n          created_at: string | null\n          darreichungsform: string | null\n          einheit: string | null\n          hinweis: string | null\n          id: string\n          mittags: number | null\n          morgens: number | null\n          nachts: number | null\n          name: string\n          profil_id: string\n          seit_datum: string | null\n          staerke: string | null\n          updated_at: string | null\n          verordnet_von: string | null\n          wirkstoff: string | null\n        }\n        Insert: {\n          abends?: number | null\n          aktiv?: boolean | null\n          bis_datum?: string | null\n          created_at?: string | null\n          darreichungsform?: string | null\n          einheit?: string | null\n          hinweis?: string | null\n          id?: string\n          mittags?: number | null\n          morgens?: number | null\n          nachts?: number | null\n          name: string\n          profil_id: string\n          seit_datum?: string | null\n          staerke?: string | null\n          updated_at?: string | null\n          verordnet_von?: string | null\n          wirkstoff?: string | null\n        }\n        Update: {\n          abends?: number | null\n          aktiv?: boolean | null\n          bis_datum?: string | null\n          created_at?: string | null\n          darreichungsform?: string | null\n          einheit?: string | null\n          hinweis?: string | null\n          id?: string\n          mittags?: number | null\n          morgens?: number | null\n          nachts?: number | null\n          name?: string\n          profil_id?: string\n          seit_datum?: string | null\n          staerke?: string | null\n          updated_at?: string | null\n          verordnet_von?: string | null\n          wirkstoff?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"medikamente_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      medikamenten_plan: {\n        Row: {\n          aktiv: boolean\n          anbieter_id: string\n          created_at: string\n          dosis: string\n          einheit: string | null\n          familie_profile_id: string\n          hinweis: string | null\n          id: string\n          medikament: string\n          mit_mahlzeit: boolean | null\n          valid_until: string | null\n          verordnet_am: string | null\n          verordnet_von: string | null\n          wirkstoff: string | null\n          zeiten: string[]\n        }\n        Insert: {\n          aktiv?: boolean\n          anbieter_id: string\n          created_at?: string\n          dosis: string\n          einheit?: string | null\n          familie_profile_id: string\n          hinweis?: string | null\n          id?: string\n          medikament: string\n          mit_mahlzeit?: boolean | null\n          valid_until?: string | null\n          verordnet_am?: string | null\n          verordnet_von?: string | null\n          wirkstoff?: string | null\n          zeiten: string[]\n        }\n        Update: {\n          aktiv?: boolean\n          anbieter_id?: string\n          created_at?: string\n          dosis?: string\n          einheit?: string | null\n          familie_profile_id?: string\n          hinweis?: string | null\n          id?: string\n          medikament?: string\n          mit_mahlzeit?: boolean | null\n          valid_until?: string | null\n          verordnet_am?: string | null\n          verordnet_von?: string | null\n          wirkstoff?: string | null\n          zeiten?: string[]\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"medikamenten_plan_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"medikamenten_plan_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"medikamenten_plan_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"medikamenten_plan_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      medikamentenplaene: {\n        Row: {\n          aktiv: boolean | null\n          anbieter_id: string | null\n          bis_datum: string | null\n          created_at: string | null\n          darreichungsform: string | null\n          dauermedikation: boolean | null\n          dosierung_abends: number | null\n          dosierung_mittags: number | null\n          dosierung_morgens: number | null\n          dosierung_nachts: number | null\n          einheit: string | null\n          erstellt_von: string | null\n          familie_profile_id: string\n          hinweise: string | null\n          id: string\n          indikation: string | null\n          medikament_name: string\n          mit_mahlzeit: boolean | null\n          staerke: string | null\n          updated_at: string | null\n          verordnet_von: string | null\n          von_datum: string | null\n          wirkstoff: string | null\n        }\n        Insert: {\n          aktiv?: boolean | null\n          anbieter_id?: string | null\n          bis_datum?: string | null\n          created_at?: string | null\n          darreichungsform?: string | null\n          dauermedikation?: boolean | null\n          dosierung_abends?: number | null\n          dosierung_mittags?: number | null\n          dosierung_morgens?: number | null\n          dosierung_nachts?: number | null\n          einheit?: string | null\n          erstellt_von?: string | null\n          familie_profile_id: string\n          hinweise?: string | null\n          id?: string\n          indikation?: string | null\n          medikament_name: string\n          mit_mahlzeit?: boolean | null\n          staerke?: string | null\n          updated_at?: string | null\n          verordnet_von?: string | null\n          von_datum?: string | null\n          wirkstoff?: string | null\n        }\n        Update: {\n          aktiv?: boolean | null\n          anbieter_id?: string | null\n          bis_datum?: string | null\n          created_at?: string | null\n          darreichungsform?: string | null\n          dauermedikation?: boolean | null\n          dosierung_abends?: number | null\n          dosierung_mittags?: number | null\n          dosierung_morgens?: number | null\n          dosierung_nachts?: number | null\n          einheit?: string | null\n          erstellt_von?: string | null\n          familie_profile_id?: string\n          hinweise?: string | null\n          id?: string\n          indikation?: string | null\n          medikament_name?: string\n          mit_mahlzeit?: boolean | null\n          staerke?: string | null\n          updated_at?: string | null\n          verordnet_von?: string | null\n          von_datum?: string | null\n          wirkstoff?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"medikamentenplaene_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"medikamentenplaene_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"medikamentenplaene_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"medikamentenplaene_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"medikamentenplaene_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      merkliste: {\n        Row: {\n          anbieter_id: string\n          created_at: string\n          familie_id: string\n          id: string\n          notiz: string | null\n        }\n        Insert: {\n          anbieter_id: string\n          created_at?: string\n          familie_id: string\n          id?: string\n          notiz?: string | null\n        }\n        Update: {\n          anbieter_id?: string\n          created_at?: string\n          familie_id?: string\n          id?: string\n          notiz?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"merkliste_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"merkliste_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"merkliste_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"merkliste_familie_id_fkey\"\n            columns: [\"familie_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      nachrichten: {\n        Row: {\n          anfrage_id: string\n          created_at: string\n          gelesen: boolean\n          id: string\n          inhalt: string\n          sender_id: string\n          typ: string\n        }\n        Insert: {\n          anfrage_id: string\n          created_at?: string\n          gelesen?: boolean\n          id?: string\n          inhalt: string\n          sender_id: string\n          typ?: string\n        }\n        Update: {\n          anfrage_id?: string\n          created_at?: string\n          gelesen?: boolean\n          id?: string\n          inhalt?: string\n          sender_id?: string\n          typ?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"nachrichten_anfrage_id_fkey\"\n            columns: [\"anfrage_id\"]\n            isOneToOne: false\n            referencedRelation: \"anfragen\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"nachrichten_sender_id_fkey\"\n            columns: [\"sender_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      nachrichten_vorlagen: {\n        Row: {\n          anbieter_id: string\n          created_at: string\n          id: string\n          inhalt: string\n          titel: string\n        }\n        Insert: {\n          anbieter_id: string\n          created_at?: string\n          id?: string\n          inhalt: string\n          titel: string\n        }\n        Update: {\n          anbieter_id?: string\n          created_at?: string\n          id?: string\n          inhalt?: string\n          titel?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"nachrichten_vorlagen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"nachrichten_vorlagen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"nachrichten_vorlagen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n        ]\n      }\n      notfallkontakte: {\n        Row: {\n          adresse: string | null\n          beziehung: string | null\n          created_at: string | null\n          email: string | null\n          id: string\n          ist_hauptkontakt: boolean | null\n          name: string\n          profil_id: string\n          sortierung: number | null\n          telefon: string | null\n        }\n        Insert: {\n          adresse?: string | null\n          beziehung?: string | null\n          created_at?: string | null\n          email?: string | null\n          id?: string\n          ist_hauptkontakt?: boolean | null\n          name: string\n          profil_id: string\n          sortierung?: number | null\n          telefon?: string | null\n        }\n        Update: {\n          adresse?: string | null\n          beziehung?: string | null\n          created_at?: string | null\n          email?: string | null\n          id?: string\n          ist_hauptkontakt?: boolean | null\n          name?: string\n          profil_id?: string\n          sortierung?: number | null\n          telefon?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"notfallkontakte_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      notfallplaene: {\n        Row: {\n          aktiv: boolean\n          allergien: string | null\n          anbieter_id: string | null\n          besondere_hinweise: string | null\n          blutgruppe: string | null\n          chronische_erkrankungen: string | null\n          created_at: string\n          dnr_verfuegung: boolean | null\n          familie_profile_id: string\n          hausarzt_name: string | null\n          hausarzt_telefon: string | null\n          id: string\n          implantate: string | null\n          krankenhaus_adresse: string | null\n          krankenhaus_name: string | null\n          krankenkasse: string | null\n          medikamente_notfall: string | null\n          patientenverfuegung_vorhanden: boolean | null\n          updated_at: string\n          versicherungsnummer: string | null\n        }\n        Insert: {\n          aktiv?: boolean\n          allergien?: string | null\n          anbieter_id?: string | null\n          besondere_hinweise?: string | null\n          blutgruppe?: string | null\n          chronische_erkrankungen?: string | null\n          created_at?: string\n          dnr_verfuegung?: boolean | null\n          familie_profile_id: string\n          hausarzt_name?: string | null\n          hausarzt_telefon?: string | null\n          id?: string\n          implantate?: string | null\n          krankenhaus_adresse?: string | null\n          krankenhaus_name?: string | null\n          krankenkasse?: string | null\n          medikamente_notfall?: string | null\n          patientenverfuegung_vorhanden?: boolean | null\n          updated_at?: string\n          versicherungsnummer?: string | null\n        }\n        Update: {\n          aktiv?: boolean\n          allergien?: string | null\n          anbieter_id?: string | null\n          besondere_hinweise?: string | null\n          blutgruppe?: string | null\n          chronische_erkrankungen?: string | null\n          created_at?: string\n          dnr_verfuegung?: boolean | null\n          familie_profile_id?: string\n          hausarzt_name?: string | null\n          hausarzt_telefon?: string | null\n          id?: string\n          implantate?: string | null\n          krankenhaus_adresse?: string | null\n          krankenhaus_name?: string | null\n          krankenkasse?: string | null\n          medikamente_notfall?: string | null\n          patientenverfuegung_vorhanden?: boolean | null\n          updated_at?: string\n          versicherungsnummer?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"notfallplaene_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"notfallplaene_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"notfallplaene_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"notfallplaene_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      notification_preferences: {\n        Row: {\n          email_anfragen: boolean\n          email_nachrichten: boolean\n          email_statusupdate: boolean\n          email_wochenbericht: boolean\n          profile_id: string\n          updated_at: string\n        }\n        Insert: {\n          email_anfragen?: boolean\n          email_nachrichten?: boolean\n          email_statusupdate?: boolean\n          email_wochenbericht?: boolean\n          profile_id: string\n          updated_at?: string\n        }\n        Update: {\n          email_anfragen?: boolean\n          email_nachrichten?: boolean\n          email_statusupdate?: boolean\n          email_wochenbericht?: boolean\n          profile_id?: string\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"notification_preferences_profile_id_fkey\"\n            columns: [\"profile_id\"]\n            isOneToOne: true\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      pflegeaufgaben: {\n        Row: {\n          aktiv: boolean | null\n          beschreibung: string | null\n          created_at: string | null\n          erledigt_heute: boolean | null\n          haeufigkeit: string | null\n          id: string\n          profil_id: string\n          titel: string\n          uhrzeit: string | null\n          verantwortlich: string | null\n          ziel_id: string | null\n        }\n        Insert: {\n          aktiv?: boolean | null\n          beschreibung?: string | null\n          created_at?: string | null\n          erledigt_heute?: boolean | null\n          haeufigkeit?: string | null\n          id?: string\n          profil_id: string\n          titel: string\n          uhrzeit?: string | null\n          verantwortlich?: string | null\n          ziel_id?: string | null\n        }\n        Update: {\n          aktiv?: boolean | null\n          beschreibung?: string | null\n          created_at?: string | null\n          erledigt_heute?: boolean | null\n          haeufigkeit?: string | null\n          id?: string\n          profil_id?: string\n          titel?: string\n          uhrzeit?: string | null\n          verantwortlich?: string | null\n          ziel_id?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"pflegeaufgaben_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n          {\n            foreignKeyName: \"pflegeaufgaben_ziel_id_fkey\"\n            columns: [\"ziel_id\"]\n            isOneToOne: false\n            referencedRelation: \"pflegeziele\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      pflegedokumentation: {\n        Row: {\n          anbieter_id: string\n          blutdruck_dia: number | null\n          blutdruck_sys: number | null\n          blutzucker: number | null\n          care_worker_id: string | null\n          created_at: string\n          ereignis_datum: string\n          erstellt_von: string | null\n          familie_profile_id: string | null\n          gewicht: number | null\n          id: string\n          inhalt: string\n          kategorie: string\n          medikament_dosis: string | null\n          medikament_gegeben: boolean | null\n          medikament_name: string | null\n          puls: number | null\n          sauerstoff: number | null\n          temperatur: number | null\n          titel: string | null\n          unterschrieben: boolean\n          unterschrift_ts: string | null\n          updated_at: string\n        }\n        Insert: {\n          anbieter_id: string\n          blutdruck_dia?: number | null\n          blutdruck_sys?: number | null\n          blutzucker?: number | null\n          care_worker_id?: string | null\n          created_at?: string\n          ereignis_datum?: string\n          erstellt_von?: string | null\n          familie_profile_id?: string | null\n          gewicht?: number | null\n          id?: string\n          inhalt: string\n          kategorie: string\n          medikament_dosis?: string | null\n          medikament_gegeben?: boolean | null\n          medikament_name?: string | null\n          puls?: number | null\n          sauerstoff?: number | null\n          temperatur?: number | null\n          titel?: string | null\n          unterschrieben?: boolean\n          unterschrift_ts?: string | null\n          updated_at?: string\n        }\n        Update: {\n          anbieter_id?: string\n          blutdruck_dia?: number | null\n          blutdruck_sys?: number | null\n          blutzucker?: number | null\n          care_worker_id?: string | null\n          created_at?: string\n          ereignis_datum?: string\n          erstellt_von?: string | null\n          familie_profile_id?: string | null\n          gewicht?: number | null\n          id?: string\n          inhalt?: string\n          kategorie?: string\n          medikament_dosis?: string | null\n          medikament_gegeben?: boolean | null\n          medikament_name?: string | null\n          puls?: number | null\n          sauerstoff?: number | null\n          temperatur?: number | null\n          titel?: string | null\n          unterschrieben?: boolean\n          unterschrift_ts?: string | null\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"pflegedokumentation_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"pflegedokumentation_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"pflegedokumentation_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"pflegedokumentation_care_worker_id_fkey\"\n            columns: [\"care_worker_id\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"pflegedokumentation_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"pflegedokumentation_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      pflegegrad_einschaetzungen: {\n        Row: {\n          aktueller_pflegegrad: number | null\n          anbieter_id: string | null\n          created_at: string\n          einschaetzung_datum: string\n          erstellt_von: string | null\n          familie_profile_id: string\n          gesamtpunkte: number | null\n          id: string\n          m1_bettpositionswechsel: number | null\n          m1_fortbewegung_innen: number | null\n          m1_halten_sitzposition: number | null\n          m1_treppensteigen: number | null\n          m1_umsetzen: number | null\n          m2_alltagsgegenstaende: number | null\n          m2_oertliche_orientierung: number | null\n          m2_personen_erkennen: number | null\n          m2_risiken_erkennen: number | null\n          m2_zeitliche_orientierung: number | null\n          m3_abwehrverhalten: number | null\n          m3_motorische_unruhe: number | null\n          m3_naechtliche_unruhe: number | null\n          m4_an_auskleiden: number | null\n          m4_ernaehrung: number | null\n          m4_koerperpflege: number | null\n          m4_toilettennutzung: number | null\n          m4_trinken: number | null\n          m4_waschen_gesicht: number | null\n          m5_arztbesuche: number | null\n          m5_hilfsmittel: number | null\n          m5_medikamente: number | null\n          m6_freizeitgestaltung: number | null\n          m6_kontakte: number | null\n          m6_tagesstruktur: number | null\n          notizen: string | null\n          pflegegrad_empfehlung: number | null\n        }\n        Insert: {\n          aktueller_pflegegrad?: number | null\n          anbieter_id?: string | null\n          created_at?: string\n          einschaetzung_datum?: string\n          erstellt_von?: string | null\n          familie_profile_id: string\n          gesamtpunkte?: number | null\n          id?: string\n          m1_bettpositionswechsel?: number | null\n          m1_fortbewegung_innen?: number | null\n          m1_halten_sitzposition?: number | null\n          m1_treppensteigen?: number | null\n          m1_umsetzen?: number | null\n          m2_alltagsgegenstaende?: number | null\n          m2_oertliche_orientierung?: number | null\n          m2_personen_erkennen?: number | null\n          m2_risiken_erkennen?: number | null\n          m2_zeitliche_orientierung?: number | null\n          m3_abwehrverhalten?: number | null\n          m3_motorische_unruhe?: number | null\n          m3_naechtliche_unruhe?: number | null\n          m4_an_auskleiden?: number | null\n          m4_ernaehrung?: number | null\n          m4_koerperpflege?: number | null\n          m4_toilettennutzung?: number | null\n          m4_trinken?: number | null\n          m4_waschen_gesicht?: number | null\n          m5_arztbesuche?: number | null\n          m5_hilfsmittel?: number | null\n          m5_medikamente?: number | null\n          m6_freizeitgestaltung?: number | null\n          m6_kontakte?: number | null\n          m6_tagesstruktur?: number | null\n          notizen?: string | null\n          pflegegrad_empfehlung?: number | null\n        }\n        Update: {\n          aktueller_pflegegrad?: number | null\n          anbieter_id?: string | null\n          created_at?: string\n          einschaetzung_datum?: string\n          erstellt_von?: string | null\n          familie_profile_id?: string\n          gesamtpunkte?: number | null\n          id?: string\n          m1_bettpositionswechsel?: number | null\n          m1_fortbewegung_innen?: number | null\n          m1_halten_sitzposition?: number | null\n          m1_treppensteigen?: number | null\n          m1_umsetzen?: number | null\n          m2_alltagsgegenstaende?: number | null\n          m2_oertliche_orientierung?: number | null\n          m2_personen_erkennen?: number | null\n          m2_risiken_erkennen?: number | null\n          m2_zeitliche_orientierung?: number | null\n          m3_abwehrverhalten?: number | null\n          m3_motorische_unruhe?: number | null\n          m3_naechtliche_unruhe?: number | null\n          m4_an_auskleiden?: number | null\n          m4_ernaehrung?: number | null\n          m4_koerperpflege?: number | null\n          m4_toilettennutzung?: number | null\n          m4_trinken?: number | null\n          m4_waschen_gesicht?: number | null\n          m5_arztbesuche?: number | null\n          m5_hilfsmittel?: number | null\n          m5_medikamente?: number | null\n          m6_freizeitgestaltung?: number | null\n          m6_kontakte?: number | null\n          m6_tagesstruktur?: number | null\n          notizen?: string | null\n          pflegegrad_empfehlung?: number | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"pflegegrad_einschaetzungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"pflegegrad_einschaetzungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"pflegegrad_einschaetzungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"pflegegrad_einschaetzungen_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"pflegegrad_einschaetzungen_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      pflegekassen_budgets: {\n        Row: {\n          created_at: string\n          id: string\n          jahr: number\n          jahresbudget: number\n          leistungsart: string\n          profil_id: string\n          updated_at: string\n          verbraucht: number\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          jahr: number\n          jahresbudget: number\n          leistungsart: string\n          profil_id: string\n          updated_at?: string\n          verbraucht?: number\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          jahr?: number\n          jahresbudget?: number\n          leistungsart?: string\n          profil_id?: string\n          updated_at?: string\n          verbraucht?: number\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"pflegekassen_budgets_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      pflegekosten: {\n        Row: {\n          belegnummer: string | null\n          beschreibung: string | null\n          betrag: number\n          buchungsdatum: string\n          created_at: string | null\n          erstattung: boolean | null\n          id: string\n          kategorie: string\n          profil_id: string\n        }\n        Insert: {\n          belegnummer?: string | null\n          beschreibung?: string | null\n          betrag: number\n          buchungsdatum?: string\n          created_at?: string | null\n          erstattung?: boolean | null\n          id?: string\n          kategorie: string\n          profil_id: string\n        }\n        Update: {\n          belegnummer?: string | null\n          beschreibung?: string | null\n          betrag?: number\n          buchungsdatum?: string\n          created_at?: string | null\n          erstattung?: boolean | null\n          id?: string\n          kategorie?: string\n          profil_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"pflegekosten_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      pflegetagebuch: {\n        Row: {\n          aktivitaeten: string | null\n          created_at: string | null\n          eintrag_datum: string\n          erstellt_von: string | null\n          id: string\n          notizen: string | null\n          profil_id: string\n          schlaf_stunden: number | null\n          schmerzen: number | null\n          stimmung: number | null\n        }\n        Insert: {\n          aktivitaeten?: string | null\n          created_at?: string | null\n          eintrag_datum?: string\n          erstellt_von?: string | null\n          id?: string\n          notizen?: string | null\n          profil_id: string\n          schlaf_stunden?: number | null\n          schmerzen?: number | null\n          stimmung?: number | null\n        }\n        Update: {\n          aktivitaeten?: string | null\n          created_at?: string | null\n          eintrag_datum?: string\n          erstellt_von?: string | null\n          id?: string\n          notizen?: string | null\n          profil_id?: string\n          schlaf_stunden?: number | null\n          schmerzen?: number | null\n          stimmung?: number | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"pflegetagebuch_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n          {\n            foreignKeyName: \"pflegetagebuch_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      pflegetermine: {\n        Row: {\n          anbieter_id: string | null\n          beschreibung: string | null\n          created_at: string | null\n          datum: string\n          dauer_minuten: number | null\n          erinnerung_tage: number | null\n          erledigt: boolean | null\n          id: string\n          notizen: string | null\n          ort: string | null\n          profil_id: string\n          termin_typ: string | null\n          titel: string\n        }\n        Insert: {\n          anbieter_id?: string | null\n          beschreibung?: string | null\n          created_at?: string | null\n          datum: string\n          dauer_minuten?: number | null\n          erinnerung_tage?: number | null\n          erledigt?: boolean | null\n          id?: string\n          notizen?: string | null\n          ort?: string | null\n          profil_id: string\n          termin_typ?: string | null\n          titel: string\n        }\n        Update: {\n          anbieter_id?: string | null\n          beschreibung?: string | null\n          created_at?: string | null\n          datum?: string\n          dauer_minuten?: number | null\n          erinnerung_tage?: number | null\n          erledigt?: boolean | null\n          id?: string\n          notizen?: string | null\n          ort?: string | null\n          profil_id?: string\n          termin_typ?: string | null\n          titel?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"pflegetermine_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"pflegetermine_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"pflegetermine_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"pflegetermine_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      pflegeziele: {\n        Row: {\n          beschreibung: string | null\n          created_at: string | null\n          erreicht: boolean | null\n          id: string\n          kategorie: string | null\n          prioritaet: number | null\n          profil_id: string\n          titel: string\n          updated_at: string | null\n          ziel_datum: string | null\n        }\n        Insert: {\n          beschreibung?: string | null\n          created_at?: string | null\n          erreicht?: boolean | null\n          id?: string\n          kategorie?: string | null\n          prioritaet?: number | null\n          profil_id: string\n          titel: string\n          updated_at?: string | null\n          ziel_datum?: string | null\n        }\n        Update: {\n          beschreibung?: string | null\n          created_at?: string | null\n          erreicht?: boolean | null\n          id?: string\n          kategorie?: string | null\n          prioritaet?: number | null\n          profil_id?: string\n          titel?: string\n          updated_at?: string | null\n          ziel_datum?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"pflegeziele_profil_id_fkey\"\n            columns: [\"profil_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"user_id\"]\n          },\n        ]\n      }\n      profiles: {\n        Row: {\n          avatar_url: string | null\n          created_at: string\n          deleted_at: string | null\n          email: string\n          email_prefs: Json\n          haushalt_id: string | null\n          haushalt_rolle: Database[\"public\"][\"Enums\"][\"haushalt_rolle\"] | null\n          id: string\n          nachname: string | null\n          onboarding_done: boolean\n          ort: string | null\n          plz: string | null\n          role: string\n          telefon: string | null\n          ui_modus: string\n          updated_at: string\n          user_id: string\n          vorname: string | null\n        }\n        Insert: {\n          avatar_url?: string | null\n          created_at?: string\n          deleted_at?: string | null\n          email: string\n          email_prefs?: Json\n          haushalt_id?: string | null\n          haushalt_rolle?: Database[\"public\"][\"Enums\"][\"haushalt_rolle\"] | null\n          id?: string\n          nachname?: string | null\n          onboarding_done?: boolean\n          ort?: string | null\n          plz?: string | null\n          role?: string\n          telefon?: string | null\n          ui_modus?: string\n          updated_at?: string\n          user_id: string\n          vorname?: string | null\n        }\n        Update: {\n          avatar_url?: string | null\n          created_at?: string\n          deleted_at?: string | null\n          email?: string\n          email_prefs?: Json\n          haushalt_id?: string | null\n          haushalt_rolle?: Database[\"public\"][\"Enums\"][\"haushalt_rolle\"] | null\n          id?: string\n          nachname?: string | null\n          onboarding_done?: boolean\n          ort?: string | null\n          plz?: string | null\n          role?: string\n          telefon?: string | null\n          ui_modus?: string\n          updated_at?: string\n          user_id?: string\n          vorname?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"profiles_haushalt_id_fkey\"\n            columns: [\"haushalt_id\"]\n            isOneToOne: false\n            referencedRelation: \"haushalte\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      qualitaetspruefungen: {\n        Row: {\n          abgeschlossen: boolean\n          anbieter_id: string\n          bericht_url: string | null\n          created_at: string\n          ergebnis: string | null\n          erstellt_von: string | null\n          id: string\n          massnahmen: string | null\n          naechste_pruefung: string | null\n          note_gesamt: number | null\n          pruefung_datum: string\n          pruefung_typ: string\n          updated_at: string\n        }\n        Insert: {\n          abgeschlossen?: boolean\n          anbieter_id: string\n          bericht_url?: string | null\n          created_at?: string\n          ergebnis?: string | null\n          erstellt_von?: string | null\n          id?: string\n          massnahmen?: string | null\n          naechste_pruefung?: string | null\n          note_gesamt?: number | null\n          pruefung_datum: string\n          pruefung_typ: string\n          updated_at?: string\n        }\n        Update: {\n          abgeschlossen?: boolean\n          anbieter_id?: string\n          bericht_url?: string | null\n          created_at?: string\n          ergebnis?: string | null\n          erstellt_von?: string | null\n          id?: string\n          massnahmen?: string | null\n          naechste_pruefung?: string | null\n          note_gesamt?: number | null\n          pruefung_datum?: string\n          pruefung_typ?: string\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"qualitaetspruefungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"qualitaetspruefungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"qualitaetspruefungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"qualitaetspruefungen_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      schichten: {\n        Row: {\n          abgesagt_am: string | null\n          absage_grund: string | null\n          anbieter_id: string\n          beschreibung: string | null\n          bestaetigt_am: string | null\n          care_worker_id: string\n          created_at: string\n          ende_ts: string\n          erstellt_von: string | null\n          familie_profile_id: string | null\n          id: string\n          schichttyp: string\n          start_ts: string\n          status: string\n          stunden_geplant: number | null\n          stundensatz_ct: number | null\n          titel: string | null\n          updated_at: string\n        }\n        Insert: {\n          abgesagt_am?: string | null\n          absage_grund?: string | null\n          anbieter_id: string\n          beschreibung?: string | null\n          bestaetigt_am?: string | null\n          care_worker_id: string\n          created_at?: string\n          ende_ts: string\n          erstellt_von?: string | null\n          familie_profile_id?: string | null\n          id?: string\n          schichttyp?: string\n          start_ts: string\n          status?: string\n          stunden_geplant?: number | null\n          stundensatz_ct?: number | null\n          titel?: string | null\n          updated_at?: string\n        }\n        Update: {\n          abgesagt_am?: string | null\n          absage_grund?: string | null\n          anbieter_id?: string\n          beschreibung?: string | null\n          bestaetigt_am?: string | null\n          care_worker_id?: string\n          created_at?: string\n          ende_ts?: string\n          erstellt_von?: string | null\n          familie_profile_id?: string | null\n          id?: string\n          schichttyp?: string\n          start_ts?: string\n          status?: string\n          stunden_geplant?: number | null\n          stundensatz_ct?: number | null\n          titel?: string | null\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"schichten_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"schichten_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"schichten_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"schichten_care_worker_id_fkey\"\n            columns: [\"care_worker_id\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"schichten_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"schichten_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      spatial_ref_sys: {\n        Row: {\n          auth_name: string | null\n          auth_srid: number | null\n          proj4text: string | null\n          srid: number\n          srtext: string | null\n        }\n        Insert: {\n          auth_name?: string | null\n          auth_srid?: number | null\n          proj4text?: string | null\n          srid: number\n          srtext?: string | null\n        }\n        Update: {\n          auth_name?: string | null\n          auth_srid?: number | null\n          proj4text?: string | null\n          srid?: number\n          srtext?: string | null\n        }\n        Relationships: []\n      }\n      stripe_connect_accounts: {\n        Row: {\n          anbieter_id: string\n          charges_enabled: boolean\n          country: string\n          created_at: string\n          details_submitted: boolean\n          email: string | null\n          id: string\n          onboarding_complete: boolean\n          payouts_enabled: boolean\n          stripe_account_id: string\n          updated_at: string\n        }\n        Insert: {\n          anbieter_id: string\n          charges_enabled?: boolean\n          country?: string\n          created_at?: string\n          details_submitted?: boolean\n          email?: string | null\n          id?: string\n          onboarding_complete?: boolean\n          payouts_enabled?: boolean\n          stripe_account_id: string\n          updated_at?: string\n        }\n        Update: {\n          anbieter_id?: string\n          charges_enabled?: boolean\n          country?: string\n          created_at?: string\n          details_submitted?: boolean\n          email?: string | null\n          id?: string\n          onboarding_complete?: boolean\n          payouts_enabled?: boolean\n          stripe_account_id?: string\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"stripe_connect_accounts_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: true\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"stripe_connect_accounts_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: true\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"stripe_connect_accounts_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: true\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n        ]\n      }\n      stundennachweise: {\n        Row: {\n          anbieter_id: string\n          approved_at: string | null\n          beschreibung: string | null\n          betrag_ct: number | null\n          care_worker_id: string\n          created_at: string\n          datum: string\n          familie_profile_id: string | null\n          id: string\n          paid_at: string | null\n          payment_intent_id: string | null\n          payment_status: string | null\n          status: string\n          stripe_charge_id: string | null\n          stunden: number\n          stundensatz_ct: number\n        }\n        Insert: {\n          anbieter_id: string\n          approved_at?: string | null\n          beschreibung?: string | null\n          betrag_ct?: number | null\n          care_worker_id: string\n          created_at?: string\n          datum: string\n          familie_profile_id?: string | null\n          id?: string\n          paid_at?: string | null\n          payment_intent_id?: string | null\n          payment_status?: string | null\n          status?: string\n          stripe_charge_id?: string | null\n          stunden: number\n          stundensatz_ct: number\n        }\n        Update: {\n          anbieter_id?: string\n          approved_at?: string | null\n          beschreibung?: string | null\n          betrag_ct?: number | null\n          care_worker_id?: string\n          created_at?: string\n          datum?: string\n          familie_profile_id?: string | null\n          id?: string\n          paid_at?: string | null\n          payment_intent_id?: string | null\n          payment_status?: string | null\n          status?: string\n          stripe_charge_id?: string | null\n          stunden?: number\n          stundensatz_ct?: number\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"stundennachweise_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"stundennachweise_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"stundennachweise_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"stundennachweise_care_worker_id_fkey\"\n            columns: [\"care_worker_id\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"stundennachweise_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      traeger_klienten: {\n        Row: {\n          created_at: string | null\n          geburtsjahr: number | null\n          id: string\n          klienten_nr: string\n          lebenslage: string | null\n          letzte_pruefung_at: string | null\n          nachname: string | null\n          notizen: string | null\n          pflegegrad: number | null\n          plz: string | null\n          pruefungs_ergebnis: Json | null\n          status: string\n          traeger_id: string\n          updated_at: string | null\n          vorname: string | null\n        }\n        Insert: {\n          created_at?: string | null\n          geburtsjahr?: number | null\n          id?: string\n          klienten_nr: string\n          lebenslage?: string | null\n          letzte_pruefung_at?: string | null\n          nachname?: string | null\n          notizen?: string | null\n          pflegegrad?: number | null\n          plz?: string | null\n          pruefungs_ergebnis?: Json | null\n          status?: string\n          traeger_id: string\n          updated_at?: string | null\n          vorname?: string | null\n        }\n        Update: {\n          created_at?: string | null\n          geburtsjahr?: number | null\n          id?: string\n          klienten_nr?: string\n          lebenslage?: string | null\n          letzte_pruefung_at?: string | null\n          nachname?: string | null\n          notizen?: string | null\n          pflegegrad?: number | null\n          plz?: string | null\n          pruefungs_ergebnis?: Json | null\n          status?: string\n          traeger_id?: string\n          updated_at?: string | null\n          vorname?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"traeger_klienten_traeger_id_fkey\"\n            columns: [\"traeger_id\"]\n            isOneToOne: false\n            referencedRelation: \"traeger_profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      traeger_massenpruefungen: {\n        Row: {\n          completed_at: string | null\n          created_at: string | null\n          dateiname: string\n          ergebnis_url: string | null\n          fehler: string | null\n          id: string\n          status: string\n          traeger_id: string\n          zeilen_gesamt: number | null\n          zeilen_verarbeitet: number | null\n        }\n        Insert: {\n          completed_at?: string | null\n          created_at?: string | null\n          dateiname: string\n          ergebnis_url?: string | null\n          fehler?: string | null\n          id?: string\n          status?: string\n          traeger_id: string\n          zeilen_gesamt?: number | null\n          zeilen_verarbeitet?: number | null\n        }\n        Update: {\n          completed_at?: string | null\n          created_at?: string | null\n          dateiname?: string\n          ergebnis_url?: string | null\n          fehler?: string | null\n          id?: string\n          status?: string\n          traeger_id?: string\n          zeilen_gesamt?: number | null\n          zeilen_verarbeitet?: number | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"traeger_massenpruefungen_traeger_id_fkey\"\n            columns: [\"traeger_id\"]\n            isOneToOne: false\n            referencedRelation: \"traeger_profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      traeger_profiles: {\n        Row: {\n          abo_plan: string\n          created_at: string | null\n          id: string\n          max_klienten: number\n          organisation: string\n          ort: string | null\n          plz: string | null\n          profile_id: string\n          strasse: string | null\n          telefon: string | null\n          typ: string\n          updated_at: string | null\n          verified: boolean\n          website: string | null\n        }\n        Insert: {\n          abo_plan?: string\n          created_at?: string | null\n          id?: string\n          max_klienten?: number\n          organisation: string\n          ort?: string | null\n          plz?: string | null\n          profile_id: string\n          strasse?: string | null\n          telefon?: string | null\n          typ?: string\n          updated_at?: string | null\n          verified?: boolean\n          website?: string | null\n        }\n        Update: {\n          abo_plan?: string\n          created_at?: string | null\n          id?: string\n          max_klienten?: number\n          organisation?: string\n          ort?: string | null\n          plz?: string | null\n          profile_id?: string\n          strasse?: string | null\n          telefon?: string | null\n          typ?: string\n          updated_at?: string | null\n          verified?: boolean\n          website?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"traeger_profiles_profile_id_fkey\"\n            columns: [\"profile_id\"]\n            isOneToOne: true\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      uebergabeprotokolle: {\n        Row: {\n          allgemeinzustand: string | null\n          anbieter_id: string\n          besonderheiten: string | null\n          bestaetigt: boolean | null\n          bestaetigt_am: string | null\n          care_worker_bis: string | null\n          care_worker_von: string | null\n          created_at: string\n          erstellt_am: string\n          familie_profile_id: string | null\n          id: string\n          medikamente_status: string | null\n          offene_aufgaben: string | null\n          schicht_bis_id: string | null\n          schicht_von_id: string | null\n          stimmung: string | null\n          vitalwerte_auffaellig: boolean | null\n        }\n        Insert: {\n          allgemeinzustand?: string | null\n          anbieter_id: string\n          besonderheiten?: string | null\n          bestaetigt?: boolean | null\n          bestaetigt_am?: string | null\n          care_worker_bis?: string | null\n          care_worker_von?: string | null\n          created_at?: string\n          erstellt_am?: string\n          familie_profile_id?: string | null\n          id?: string\n          medikamente_status?: string | null\n          offene_aufgaben?: string | null\n          schicht_bis_id?: string | null\n          schicht_von_id?: string | null\n          stimmung?: string | null\n          vitalwerte_auffaellig?: boolean | null\n        }\n        Update: {\n          allgemeinzustand?: string | null\n          anbieter_id?: string\n          besonderheiten?: string | null\n          bestaetigt?: boolean | null\n          bestaetigt_am?: string | null\n          care_worker_bis?: string | null\n          care_worker_von?: string | null\n          created_at?: string\n          erstellt_am?: string\n          familie_profile_id?: string | null\n          id?: string\n          medikamente_status?: string | null\n          offene_aufgaben?: string | null\n          schicht_bis_id?: string | null\n          schicht_von_id?: string | null\n          stimmung?: string | null\n          vitalwerte_auffaellig?: boolean | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"uebergabeprotokolle_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_care_worker_bis_fkey\"\n            columns: [\"care_worker_bis\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_care_worker_von_fkey\"\n            columns: [\"care_worker_von\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_schicht_bis_id_fkey\"\n            columns: [\"schicht_bis_id\"]\n            isOneToOne: false\n            referencedRelation: \"schicht_konflikte\"\n            referencedColumns: [\"schicht_a_id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_schicht_bis_id_fkey\"\n            columns: [\"schicht_bis_id\"]\n            isOneToOne: false\n            referencedRelation: \"schicht_konflikte\"\n            referencedColumns: [\"schicht_b_id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_schicht_bis_id_fkey\"\n            columns: [\"schicht_bis_id\"]\n            isOneToOne: false\n            referencedRelation: \"schichten\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_schicht_von_id_fkey\"\n            columns: [\"schicht_von_id\"]\n            isOneToOne: false\n            referencedRelation: \"schicht_konflikte\"\n            referencedColumns: [\"schicht_a_id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_schicht_von_id_fkey\"\n            columns: [\"schicht_von_id\"]\n            isOneToOne: false\n            referencedRelation: \"schicht_konflikte\"\n            referencedColumns: [\"schicht_b_id\"]\n          },\n          {\n            foreignKeyName: \"uebergabeprotokolle_schicht_von_id_fkey\"\n            columns: [\"schicht_von_id\"]\n            isOneToOne: false\n            referencedRelation: \"schichten\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      vollmachten: {\n        Row: {\n          aktiv: boolean | null\n          beschreibung: string | null\n          bevollmaechtigter_id: string | null\n          created_at: string | null\n          dokument_id: string | null\n          gueltig_ab: string | null\n          gueltig_bis: string | null\n          haushalt_id: string\n          id: string\n          notariell: boolean | null\n          registriert_beim: string | null\n          titel: string\n          typ: Database[\"public\"][\"Enums\"][\"vollmacht_typ\"]\n          updated_at: string | null\n          vollmachtgeber_id: string | null\n        }\n        Insert: {\n          aktiv?: boolean | null\n          beschreibung?: string | null\n          bevollmaechtigter_id?: string | null\n          created_at?: string | null\n          dokument_id?: string | null\n          gueltig_ab?: string | null\n          gueltig_bis?: string | null\n          haushalt_id: string\n          id?: string\n          notariell?: boolean | null\n          registriert_beim?: string | null\n          titel: string\n          typ: Database[\"public\"][\"Enums\"][\"vollmacht_typ\"]\n          updated_at?: string | null\n          vollmachtgeber_id?: string | null\n        }\n        Update: {\n          aktiv?: boolean | null\n          beschreibung?: string | null\n          bevollmaechtigter_id?: string | null\n          created_at?: string | null\n          dokument_id?: string | null\n          gueltig_ab?: string | null\n          gueltig_bis?: string | null\n          haushalt_id?: string\n          id?: string\n          notariell?: boolean | null\n          registriert_beim?: string | null\n          titel?: string\n          typ?: Database[\"public\"][\"Enums\"][\"vollmacht_typ\"]\n          updated_at?: string | null\n          vollmachtgeber_id?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"vollmachten_bevollmaechtigter_id_fkey\"\n            columns: [\"bevollmaechtigter_id\"]\n            isOneToOne: false\n            referencedRelation: \"haushaltsmitglieder\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"vollmachten_haushalt_id_fkey\"\n            columns: [\"haushalt_id\"]\n            isOneToOne: false\n            referencedRelation: \"haushalte\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"vollmachten_vollmachtgeber_id_fkey\"\n            columns: [\"vollmachtgeber_id\"]\n            isOneToOne: false\n            referencedRelation: \"haushaltsmitglieder\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      white_label_configs: {\n        Row: {\n          aktiv: boolean\n          color_accent: string\n          color_primary: string\n          color_secondary: string\n          created_at: string\n          datenschutz_url: string | null\n          domain: string | null\n          favicon_url: string | null\n          features: Json\n          font_family: string\n          id: string\n          impressum_url: string | null\n          logo_url: string | null\n          organisation: string\n          slug: string\n          support_email: string | null\n          support_tel: string | null\n          updated_at: string\n        }\n        Insert: {\n          aktiv?: boolean\n          color_accent?: string\n          color_primary?: string\n          color_secondary?: string\n          created_at?: string\n          datenschutz_url?: string | null\n          domain?: string | null\n          favicon_url?: string | null\n          features?: Json\n          font_family?: string\n          id?: string\n          impressum_url?: string | null\n          logo_url?: string | null\n          organisation: string\n          slug: string\n          support_email?: string | null\n          support_tel?: string | null\n          updated_at?: string\n        }\n        Update: {\n          aktiv?: boolean\n          color_accent?: string\n          color_primary?: string\n          color_secondary?: string\n          created_at?: string\n          datenschutz_url?: string | null\n          domain?: string | null\n          favicon_url?: string | null\n          features?: Json\n          font_family?: string\n          id?: string\n          impressum_url?: string | null\n          logo_url?: string | null\n          organisation?: string\n          slug?: string\n          support_email?: string | null\n          support_tel?: string | null\n          updated_at?: string\n        }\n        Relationships: []\n      }\n      wiedervorlagen: {\n        Row: {\n          anbieter_id: string\n          anfrage_id: string\n          created_at: string\n          erledigt: boolean\n          faellig_am: string\n          id: string\n          notiz: string | null\n        }\n        Insert: {\n          anbieter_id: string\n          anfrage_id: string\n          created_at?: string\n          erledigt?: boolean\n          faellig_am: string\n          id?: string\n          notiz?: string | null\n        }\n        Update: {\n          anbieter_id?: string\n          anfrage_id?: string\n          created_at?: string\n          erledigt?: boolean\n          faellig_am?: string\n          id?: string\n          notiz?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"wiedervorlagen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"wiedervorlagen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"wiedervorlagen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"wiedervorlagen_anfrage_id_fkey\"\n            columns: [\"anfrage_id\"]\n            isOneToOne: false\n            referencedRelation: \"anfragen\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      wochenplaene: {\n        Row: {\n          aktiv: boolean\n          anbieter_id: string\n          care_worker_id: string\n          created_at: string\n          familie_profile_id: string | null\n          gueltig_ab: string\n          gueltig_bis: string | null\n          id: string\n          muster: Json\n          name: string\n        }\n        Insert: {\n          aktiv?: boolean\n          anbieter_id: string\n          care_worker_id: string\n          created_at?: string\n          familie_profile_id?: string | null\n          gueltig_ab?: string\n          gueltig_bis?: string | null\n          id?: string\n          muster?: Json\n          name: string\n        }\n        Update: {\n          aktiv?: boolean\n          anbieter_id?: string\n          care_worker_id?: string\n          created_at?: string\n          familie_profile_id?: string | null\n          gueltig_ab?: string\n          gueltig_bis?: string | null\n          id?: string\n          muster?: Json\n          name?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"wochenplaene_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"wochenplaene_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"wochenplaene_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"wochenplaene_care_worker_id_fkey\"\n            columns: [\"care_worker_id\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"wochenplaene_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      wohlbefinden: {\n        Row: {\n          anbieter_id: string | null\n          appetit: number | null\n          created_at: string\n          erfasst_am: string\n          erfasst_von_rolle: string | null\n          erstellt_von: string | null\n          familie_profile_id: string\n          id: string\n          mobilitaet: number | null\n          notiz: string | null\n          schlaf: number | null\n          schmerz: number | null\n          stimmung: number | null\n        }\n        Insert: {\n          anbieter_id?: string | null\n          appetit?: number | null\n          created_at?: string\n          erfasst_am?: string\n          erfasst_von_rolle?: string | null\n          erstellt_von?: string | null\n          familie_profile_id: string\n          id?: string\n          mobilitaet?: number | null\n          notiz?: string | null\n          schlaf?: number | null\n          schmerz?: number | null\n          stimmung?: number | null\n        }\n        Update: {\n          anbieter_id?: string | null\n          appetit?: number | null\n          created_at?: string\n          erfasst_am?: string\n          erfasst_von_rolle?: string | null\n          erstellt_von?: string | null\n          familie_profile_id?: string\n          id?: string\n          mobilitaet?: number | null\n          notiz?: string | null\n          schlaf?: number | null\n          schmerz?: number | null\n          stimmung?: number | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"wohlbefinden_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"wohlbefinden_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"wohlbefinden_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"wohlbefinden_erstellt_von_fkey\"\n            columns: [\"erstellt_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"wohlbefinden_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      wundversorgung: {\n        Row: {\n          anbieter_id: string\n          care_worker_id: string | null\n          created_at: string\n          ereignis_datum: string\n          familie_profile_id: string\n          foto_url: string | null\n          heilungsverlauf: string | null\n          id: string\n          naechste_kontrolle: string | null\n          wundbehandlung: string | null\n          wundgroesse_cm: number | null\n          wundlokalisation: string\n          wundstadium: number | null\n          wundtiefe: string | null\n        }\n        Insert: {\n          anbieter_id: string\n          care_worker_id?: string | null\n          created_at?: string\n          ereignis_datum?: string\n          familie_profile_id: string\n          foto_url?: string | null\n          heilungsverlauf?: string | null\n          id?: string\n          naechste_kontrolle?: string | null\n          wundbehandlung?: string | null\n          wundgroesse_cm?: number | null\n          wundlokalisation: string\n          wundstadium?: number | null\n          wundtiefe?: string | null\n        }\n        Update: {\n          anbieter_id?: string\n          care_worker_id?: string | null\n          created_at?: string\n          ereignis_datum?: string\n          familie_profile_id?: string\n          foto_url?: string | null\n          heilungsverlauf?: string | null\n          id?: string\n          naechste_kontrolle?: string | null\n          wundbehandlung?: string | null\n          wundgroesse_cm?: number | null\n          wundlokalisation?: string\n          wundstadium?: number | null\n          wundtiefe?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"wundversorgung_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"wundversorgung_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"wundversorgung_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"wundversorgung_care_worker_id_fkey\"\n            columns: [\"care_worker_id\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"wundversorgung_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      wundversorgungen: {\n        Row: {\n          anbieter_id: string | null\n          created_at: string | null\n          dokumentiert_von: string | null\n          exsudat: string | null\n          familie_profile_id: string\n          foto_url: string | null\n          id: string\n          lokalisation: string\n          massnahmen: string | null\n          naechster_verbandwechsel: string | null\n          notizen: string | null\n          schmerz_nrs: number | null\n          tiefe_grad: number | null\n          verbandsmaterial: string | null\n          wundart: string | null\n          wunde_id: string | null\n          wundgroesse_cm2: number | null\n          wundrand: string | null\n          wundzustand: string | null\n        }\n        Insert: {\n          anbieter_id?: string | null\n          created_at?: string | null\n          dokumentiert_von?: string | null\n          exsudat?: string | null\n          familie_profile_id: string\n          foto_url?: string | null\n          id?: string\n          lokalisation: string\n          massnahmen?: string | null\n          naechster_verbandwechsel?: string | null\n          notizen?: string | null\n          schmerz_nrs?: number | null\n          tiefe_grad?: number | null\n          verbandsmaterial?: string | null\n          wundart?: string | null\n          wunde_id?: string | null\n          wundgroesse_cm2?: number | null\n          wundrand?: string | null\n          wundzustand?: string | null\n        }\n        Update: {\n          anbieter_id?: string | null\n          created_at?: string | null\n          dokumentiert_von?: string | null\n          exsudat?: string | null\n          familie_profile_id?: string\n          foto_url?: string | null\n          id?: string\n          lokalisation?: string\n          massnahmen?: string | null\n          naechster_verbandwechsel?: string | null\n          notizen?: string | null\n          schmerz_nrs?: number | null\n          tiefe_grad?: number | null\n          verbandsmaterial?: string | null\n          wundart?: string | null\n          wunde_id?: string | null\n          wundgroesse_cm2?: number | null\n          wundrand?: string | null\n          wundzustand?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"wundversorgungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"wundversorgungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"wundversorgungen_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"wundversorgungen_dokumentiert_von_fkey\"\n            columns: [\"dokumentiert_von\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"wundversorgungen_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      zahlungen_log: {\n        Row: {\n          anbieter_id: string\n          beschreibung: string | null\n          brutto_ct: number\n          created_at: string\n          familie_profile_id: string | null\n          id: string\n          netto_ct: number\n          paid_at: string | null\n          payment_intent_id: string\n          provision_ct: number\n          status: string\n          stripe_account_id: string\n          stripe_charge_id: string | null\n          stripe_transfer_id: string | null\n          stundennachweis_id: string | null\n        }\n        Insert: {\n          anbieter_id: string\n          beschreibung?: string | null\n          brutto_ct: number\n          created_at?: string\n          familie_profile_id?: string | null\n          id?: string\n          netto_ct: number\n          paid_at?: string | null\n          payment_intent_id: string\n          provision_ct: number\n          status?: string\n          stripe_account_id: string\n          stripe_charge_id?: string | null\n          stripe_transfer_id?: string | null\n          stundennachweis_id?: string | null\n        }\n        Update: {\n          anbieter_id?: string\n          beschreibung?: string | null\n          brutto_ct?: number\n          created_at?: string\n          familie_profile_id?: string | null\n          id?: string\n          netto_ct?: number\n          paid_at?: string | null\n          payment_intent_id?: string\n          provision_ct?: number\n          status?: string\n          stripe_account_id?: string\n          stripe_charge_id?: string | null\n          stripe_transfer_id?: string | null\n          stundennachweis_id?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"zahlungen_log_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"zahlungen_log_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"zahlungen_log_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"zahlungen_log_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"zahlungen_log_stundennachweis_id_fkey\"\n            columns: [\"stundennachweis_id\"]\n            isOneToOne: false\n            referencedRelation: \"stundennachweise\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n    }\n    Views: {\n      anbieter_zahlungs_uebersicht: {\n        Row: {\n          anbieter_id: string | null\n          anbieter_name: string | null\n          charges_enabled: boolean | null\n          offen_ct: number | null\n          onboarding_complete: boolean | null\n          payouts_enabled: boolean | null\n          stripe_account_id: string | null\n          stunden_approved: number | null\n          stunden_paid: number | null\n          stunden_pending: number | null\n          umsatz_ct: number | null\n        }\n        Relationships: []\n      }\n      geography_columns: {\n        Row: {\n          coord_dimension: number | null\n          f_geography_column: unknown\n          f_table_catalog: unknown\n          f_table_name: unknown\n          f_table_schema: unknown\n          srid: number | null\n          type: string | null\n        }\n        Relationships: []\n      }\n      geometry_columns: {\n        Row: {\n          coord_dimension: number | null\n          f_geometry_column: unknown\n          f_table_catalog: string | null\n          f_table_name: unknown\n          f_table_schema: unknown\n          srid: number | null\n          type: string | null\n        }\n        Insert: {\n          coord_dimension?: number | null\n          f_geometry_column?: unknown\n          f_table_catalog?: string | null\n          f_table_name?: unknown\n          f_table_schema?: unknown\n          srid?: number | null\n          type?: string | null\n        }\n        Update: {\n          coord_dimension?: number | null\n          f_geometry_column?: unknown\n          f_table_catalog?: string | null\n          f_table_name?: unknown\n          f_table_schema?: unknown\n          srid?: number | null\n          type?: string | null\n        }\n        Relationships: []\n      }\n      ki_audit_stats: {\n        Row: {\n          avg_latency_ms: number | null\n          day: string | null\n          endpoint: string | null\n          error_count: number | null\n          model_version: string | null\n          success_rate_pct: number | null\n          total_calls: number | null\n          total_tokens_in: number | null\n          total_tokens_out: number | null\n        }\n        Relationships: []\n      }\n      mdk_compliance_uebersicht: {\n        Row: {\n          anbieter_id: string | null\n          anbieter_name: string | null\n          betreute_personen: number | null\n          checks_erfuellt: number | null\n          checks_gesamt: number | null\n          doku_eintraege_90d: number | null\n          doku_signiert_90d: number | null\n          kritische_beschwerden: number | null\n          letzte_mdk_pruefung: string | null\n          letzter_mdk_note: number | null\n          offene_beschwerden: number | null\n          ueberfaellige_checks: number | null\n        }\n        Relationships: []\n      }\n      schicht_konflikte: {\n        Row: {\n          a_ende: string | null\n          a_start: string | null\n          b_ende: string | null\n          b_start: string | null\n          care_worker_id: string | null\n          schicht_a_id: string | null\n          schicht_b_id: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"schichten_care_worker_id_fkey\"\n            columns: [\"care_worker_id\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      schichten_wochenuebersicht: {\n        Row: {\n          absagen: number | null\n          anbieter_id: string | null\n          anzahl_schichten: number | null\n          care_worker_id: string | null\n          care_worker_name: string | null\n          geleistete_stunden: number | null\n          geplante_stunden: number | null\n          kalenderwoche: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"schichten_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"schichten_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"schichten_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"schichten_care_worker_id_fkey\"\n            columns: [\"care_worker_id\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      vitalwert_verlauf: {\n        Row: {\n          anbieter_id: string | null\n          anzahl_messungen: number | null\n          avg_blutzucker: number | null\n          avg_dia: number | null\n          avg_gewicht: number | null\n          avg_puls: number | null\n          avg_sys: number | null\n          avg_temp: number | null\n          datum: string | null\n          familie_profile_id: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"pflegedokumentation_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"pflegedokumentation_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"pflegedokumentation_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"pflegedokumentation_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      wohlbefinden_verlauf: {\n        Row: {\n          anzahl_eintraege: number | null\n          avg_appetit: number | null\n          avg_mobilitaet: number | null\n          avg_schlaf: number | null\n          avg_schmerz: number | null\n          avg_stimmung: number | null\n          familie_profile_id: string | null\n          woche: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"wohlbefinden_familie_profile_id_fkey\"\n            columns: [\"familie_profile_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      zertifikat_ablaufwarnungen: {\n        Row: {\n          anbieter_id: string | null\n          bezeichnung: string | null\n          care_worker_id: string | null\n          care_worker_name: string | null\n          gueltig_bis: string | null\n          id: string | null\n          status: string | null\n          tage_bis_ablauf: number | null\n          typ: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"care_worker_zertifikate_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"care_worker_zertifikate_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"anbieter_zahlungs_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"care_worker_zertifikate_anbieter_id_fkey\"\n            columns: [\"anbieter_id\"]\n            isOneToOne: false\n            referencedRelation: \"mdk_compliance_uebersicht\"\n            referencedColumns: [\"anbieter_id\"]\n          },\n          {\n            foreignKeyName: \"care_worker_zertifikate_care_worker_id_fkey\"\n            columns: [\"care_worker_id\"]\n            isOneToOne: false\n            referencedRelation: \"care_workers\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n    }\n    Functions: {\n      _postgis_deprecate: {\n        Args: { newname: string; oldname: string; version: string }\n        Returns: undefined\n      }\n      _postgis_index_extent: {\n        Args: { col: string; tbl: unknown }\n        Returns: unknown\n      }\n      _postgis_pgsql_version: { Args: never; Returns: string }\n      _postgis_scripts_pgsql_version: { Args: never; Returns: string }\n      _postgis_selectivity: {\n        Args: { att_name: string; geom: unknown; mode?: string; tbl: unknown }\n        Returns: number\n      }\n      _postgis_stats: {\n        Args: { \"\"?: string; att_name: string; tbl: unknown }\n        Returns: string\n      }\n      _st_3dintersects: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_contains: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_containsproperly: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_coveredby:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      _st_covers:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      _st_crosses: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_dwithin: {\n        Args: {\n          geog1: unknown\n          geog2: unknown\n          tolerance: number\n          use_spheroid?: boolean\n        }\n        Returns: boolean\n      }\n      _st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      _st_intersects: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_linecrossingdirection: {\n        Args: { line1: unknown; line2: unknown }\n        Returns: number\n      }\n      _st_longestline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      _st_maxdistance: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      _st_orderingequals: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_overlaps: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_sortablehash: { Args: { geom: unknown }; Returns: number }\n      _st_touches: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_voronoi: {\n        Args: {\n          clip?: unknown\n          g1: unknown\n          return_polygons?: boolean\n          tolerance?: number\n        }\n        Returns: unknown\n      }\n      _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      addauth: { Args: { \"\": string }; Returns: boolean }\n      addgeometrycolumn:\n        | {\n            Args: {\n              catalog_name: string\n              column_name: string\n              new_dim: number\n              new_srid_in: number\n              new_type: string\n              schema_name: string\n              table_name: string\n              use_typmod?: boolean\n            }\n            Returns: string\n          }\n        | {\n            Args: {\n              column_name: string\n              new_dim: number\n              new_srid: number\n              new_type: string\n              schema_name: string\n              table_name: string\n              use_typmod?: boolean\n            }\n            Returns: string\n          }\n        | {\n            Args: {\n              column_name: string\n              new_dim: number\n              new_srid: number\n              new_type: string\n              table_name: string\n              use_typmod?: boolean\n            }\n            Returns: string\n          }\n      anbieter_im_umkreis: {\n        Args: { lat_eingabe: number; lng_eingabe: number; radius_km?: number }\n        Returns: {\n          entfernung_m: number\n          id: string\n          lat: number\n          lng: number\n          name: string\n          ort: string\n          plz: string\n          verifiziert: boolean\n        }[]\n      }\n      create_ki_audit_partition: {\n        Args: { target_month: string }\n        Returns: undefined\n      }\n      disablelongtransactions: { Args: never; Returns: string }\n      dropgeometrycolumn:\n        | {\n            Args: {\n              catalog_name: string\n              column_name: string\n              schema_name: string\n              table_name: string\n            }\n            Returns: string\n          }\n        | {\n            Args: {\n              column_name: string\n              schema_name: string\n              table_name: string\n            }\n            Returns: string\n          }\n        | { Args: { column_name: string; table_name: string }; Returns: string }\n      dropgeometrytable:\n        | {\n            Args: {\n              catalog_name: string\n              schema_name: string\n              table_name: string\n            }\n            Returns: string\n          }\n        | { Args: { schema_name: string; table_name: string }; Returns: string }\n        | { Args: { table_name: string }; Returns: string }\n      enablelongtransactions: { Args: never; Returns: string }\n      equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      geometry: { Args: { \"\": string }; Returns: unknown }\n      geometry_above: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_below: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_cmp: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      geometry_contained_3d: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_contains: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_contains_3d: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_distance_box: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      geometry_distance_centroid: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      geometry_eq: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_ge: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_gt: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_le: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_left: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_lt: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overabove: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overbelow: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overlaps: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overlaps_3d: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overleft: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overright: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_right: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_same: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_same_3d: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_within: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geomfromewkt: { Args: { \"\": string }; Returns: unknown }\n      gettransactionid: { Args: never; Returns: unknown }\n      longtransactionsenabled: { Args: never; Returns: boolean }\n      match_leistungen: {\n        Args: {\n          match_count?: number\n          match_threshold?: number\n          query_embedding: string\n        }\n        Returns: {\n          id: string\n          lebenslage: string\n          leistung_beschreibung: string\n          leistung_code: string\n          leistung_titel: string\n          max_betrag_eur: number\n          rechtsgrundlage: string\n          similarity: number\n        }[]\n      }\n      populate_geometry_columns:\n        | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }\n        | { Args: { use_typmod?: boolean }; Returns: string }\n      postgis_constraint_dims: {\n        Args: { geomcolumn: string; geomschema: string; geomtable: string }\n        Returns: number\n      }\n      postgis_constraint_srid: {\n        Args: { geomcolumn: string; geomschema: string; geomtable: string }\n        Returns: number\n      }\n      postgis_constraint_type: {\n        Args: { geomcolumn: string; geomschema: string; geomtable: string }\n        Returns: string\n      }\n      postgis_extensions_upgrade: { Args: never; Returns: string }\n      postgis_full_version: { Args: never; Returns: string }\n      postgis_geos_version: { Args: never; Returns: string }\n      postgis_lib_build_date: { Args: never; Returns: string }\n      postgis_lib_revision: { Args: never; Returns: string }\n      postgis_lib_version: { Args: never; Returns: string }\n      postgis_libjson_version: { Args: never; Returns: string }\n      postgis_liblwgeom_version: { Args: never; Returns: string }\n      postgis_libprotobuf_version: { Args: never; Returns: string }\n      postgis_libxml_version: { Args: never; Returns: string }\n      postgis_proj_version: { Args: never; Returns: string }\n      postgis_scripts_build_date: { Args: never; Returns: string }\n      postgis_scripts_installed: { Args: never; Returns: string }\n      postgis_scripts_released: { Args: never; Returns: string }\n      postgis_svn_version: { Args: never; Returns: string }\n      postgis_type_name: {\n        Args: {\n          coord_dimension: number\n          geomname: string\n          use_new_name?: boolean\n        }\n        Returns: string\n      }\n      postgis_version: { Args: never; Returns: string }\n      postgis_wagyu_version: { Args: never; Returns: string }\n      show_limit: { Args: never; Returns: number }\n      show_trgm: { Args: { \"\": string }; Returns: string[] }\n      st_3dclosestpoint: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_3ddistance: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_3dintersects: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_3dlongestline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_3dmakebox: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_3dmaxdistance: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_3dshortestline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_addpoint: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_angle:\n        | { Args: { line1: unknown; line2: unknown }; Returns: number }\n        | {\n            Args: { pt1: unknown; pt2: unknown; pt3: unknown; pt4?: unknown }\n            Returns: number\n          }\n      st_area:\n        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }\n        | { Args: { \"\": string }; Returns: number }\n      st_asencodedpolyline: {\n        Args: { geom: unknown; nprecision?: number }\n        Returns: string\n      }\n      st_asewkt: { Args: { \"\": string }; Returns: string }\n      st_asgeojson:\n        | {\n            Args: { geog: unknown; maxdecimaldigits?: number; options?: number }\n            Returns: string\n          }\n        | {\n            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }\n            Returns: string\n          }\n        | {\n            Args: {\n              geom_column?: string\n              maxdecimaldigits?: number\n              pretty_bool?: boolean\n              r: Record<string, unknown>\n            }\n            Returns: string\n          }\n        | { Args: { \"\": string }; Returns: string }\n      st_asgml:\n        | {\n            Args: {\n              geog: unknown\n              id?: string\n              maxdecimaldigits?: number\n              nprefix?: string\n              options?: number\n            }\n            Returns: string\n          }\n        | {\n            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }\n            Returns: string\n          }\n        | { Args: { \"\": string }; Returns: string }\n        | {\n            Args: {\n              geog: unknown\n              id?: string\n              maxdecimaldigits?: number\n              nprefix?: string\n              options?: number\n              version: number\n            }\n            Returns: string\n          }\n        | {\n            Args: {\n              geom: unknown\n              id?: string\n              maxdecimaldigits?: number\n              nprefix?: string\n              options?: number\n              version: number\n            }\n            Returns: string\n          }\n      st_askml:\n        | {\n            Args: { geog: unknown; maxdecimaldigits?: number; nprefix?: string }\n            Returns: string\n          }\n        | {\n            Args: { geom: unknown; maxdecimaldigits?: number; nprefix?: string }\n            Returns: string\n          }\n        | { Args: { \"\": string }; Returns: string }\n      st_aslatlontext: {\n        Args: { geom: unknown; tmpl?: string }\n        Returns: string\n      }\n      st_asmarc21: { Args: { format?: string; geom: unknown }; Returns: string }\n      st_asmvtgeom: {\n        Args: {\n          bounds: unknown\n          buffer?: number\n          clip_geom?: boolean\n          extent?: number\n          geom: unknown\n        }\n        Returns: unknown\n      }\n      st_assvg:\n        | {\n            Args: { geog: unknown; maxdecimaldigits?: number; rel?: number }\n            Returns: string\n          }\n        | {\n            Args: { geom: unknown; maxdecimaldigits?: number; rel?: number }\n            Returns: string\n          }\n        | { Args: { \"\": string }; Returns: string }\n      st_astext: { Args: { \"\": string }; Returns: string }\n      st_astwkb:\n        | {\n            Args: {\n              geom: unknown\n              prec?: number\n              prec_m?: number\n              prec_z?: number\n              with_boxes?: boolean\n              with_sizes?: boolean\n            }\n            Returns: string\n          }\n        | {\n            Args: {\n              geom: unknown[]\n              ids: number[]\n              prec?: number\n              prec_m?: number\n              prec_z?: number\n              with_boxes?: boolean\n              with_sizes?: boolean\n            }\n            Returns: string\n          }\n      st_asx3d: {\n        Args: { geom: unknown; maxdecimaldigits?: number; options?: number }\n        Returns: string\n      }\n      st_azimuth:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: number }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }\n      st_boundingdiagonal: {\n        Args: { fits?: boolean; geom: unknown }\n        Returns: unknown\n      }\n      st_buffer:\n        | {\n            Args: { geom: unknown; options?: string; radius: number }\n            Returns: unknown\n          }\n        | {\n            Args: { geom: unknown; quadsegs: number; radius: number }\n            Returns: unknown\n          }\n      st_centroid: { Args: { \"\": string }; Returns: unknown }\n      st_clipbybox2d: {\n        Args: { box: unknown; geom: unknown }\n        Returns: unknown\n      }\n      st_closestpoint: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_collect: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }\n      st_concavehull: {\n        Args: {\n          param_allow_holes?: boolean\n          param_geom: unknown\n          param_pctconvex: number\n        }\n        Returns: unknown\n      }\n      st_contains: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_containsproperly: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_coorddim: { Args: { geometry: unknown }; Returns: number }\n      st_coveredby:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_covers:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_crosses: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_curvetoline: {\n        Args: { flags?: number; geom: unknown; tol?: number; toltype?: number }\n        Returns: unknown\n      }\n      st_delaunaytriangles: {\n        Args: { flags?: number; g1: unknown; tolerance?: number }\n        Returns: unknown\n      }\n      st_difference: {\n        Args: { geom1: unknown; geom2: unknown; gridsize?: number }\n        Returns: unknown\n      }\n      st_disjoint: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_distance:\n        | {\n            Args: { geog1: unknown; geog2: unknown; use_spheroid?: boolean }\n            Returns: number\n          }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }\n      st_distancesphere:\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }\n        | {\n            Args: { geom1: unknown; geom2: unknown; radius: number }\n            Returns: number\n          }\n      st_distancespheroid: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_dwithin: {\n        Args: {\n          geog1: unknown\n          geog2: unknown\n          tolerance: number\n          use_spheroid?: boolean\n        }\n        Returns: boolean\n      }\n      st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_expand:\n        | { Args: { box: unknown; dx: number; dy: number }; Returns: unknown }\n        | {\n            Args: { box: unknown; dx: number; dy: number; dz?: number }\n            Returns: unknown\n          }\n        | {\n            Args: {\n              dm?: number\n              dx: number\n              dy: number\n              dz?: number\n              geom: unknown\n            }\n            Returns: unknown\n          }\n      st_force3d: { Args: { geom: unknown; zvalue?: number }; Returns: unknown }\n      st_force3dm: {\n        Args: { geom: unknown; mvalue?: number }\n        Returns: unknown\n      }\n      st_force3dz: {\n        Args: { geom: unknown; zvalue?: number }\n        Returns: unknown\n      }\n      st_force4d: {\n        Args: { geom: unknown; mvalue?: number; zvalue?: number }\n        Returns: unknown\n      }\n      st_generatepoints:\n        | { Args: { area: unknown; npoints: number }; Returns: unknown }\n        | {\n            Args: { area: unknown; npoints: number; seed: number }\n            Returns: unknown\n          }\n      st_geogfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_geographyfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_geohash:\n        | { Args: { geog: unknown; maxchars?: number }; Returns: string }\n        | { Args: { geom: unknown; maxchars?: number }; Returns: string }\n      st_geomcollfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_geometricmedian: {\n        Args: {\n          fail_if_not_converged?: boolean\n          g: unknown\n          max_iter?: number\n          tolerance?: number\n        }\n        Returns: unknown\n      }\n      st_geometryfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_geomfromewkt: { Args: { \"\": string }; Returns: unknown }\n      st_geomfromgeojson:\n        | { Args: { \"\": Json }; Returns: unknown }\n        | { Args: { \"\": Json }; Returns: unknown }\n        | { Args: { \"\": string }; Returns: unknown }\n      st_geomfromgml: { Args: { \"\": string }; Returns: unknown }\n      st_geomfromkml: { Args: { \"\": string }; Returns: unknown }\n      st_geomfrommarc21: { Args: { marc21xml: string }; Returns: unknown }\n      st_geomfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_gmltosql: { Args: { \"\": string }; Returns: unknown }\n      st_hasarc: { Args: { geometry: unknown }; Returns: boolean }\n      st_hausdorffdistance: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_hexagon: {\n        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }\n        Returns: unknown\n      }\n      st_hexagongrid: {\n        Args: { bounds: unknown; size: number }\n        Returns: Record<string, unknown>[]\n      }\n      st_interpolatepoint: {\n        Args: { line: unknown; point: unknown }\n        Returns: number\n      }\n      st_intersection: {\n        Args: { geom1: unknown; geom2: unknown; gridsize?: number }\n        Returns: unknown\n      }\n      st_intersects:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_isvaliddetail: {\n        Args: { flags?: number; geom: unknown }\n        Returns: Database[\"public\"][\"CompositeTypes\"][\"valid_detail\"]\n        SetofOptions: {\n          from: \"*\"\n          to: \"valid_detail\"\n          isOneToOne: true\n          isSetofReturn: false\n        }\n      }\n      st_length:\n        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }\n        | { Args: { \"\": string }; Returns: number }\n      st_letters: { Args: { font?: Json; letters: string }; Returns: unknown }\n      st_linecrossingdirection: {\n        Args: { line1: unknown; line2: unknown }\n        Returns: number\n      }\n      st_linefromencodedpolyline: {\n        Args: { nprecision?: number; txtin: string }\n        Returns: unknown\n      }\n      st_linefromtext: { Args: { \"\": string }; Returns: unknown }\n      st_linelocatepoint: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_linetocurve: { Args: { geometry: unknown }; Returns: unknown }\n      st_locatealong: {\n        Args: { geometry: unknown; leftrightoffset?: number; measure: number }\n        Returns: unknown\n      }\n      st_locatebetween: {\n        Args: {\n          frommeasure: number\n          geometry: unknown\n          leftrightoffset?: number\n          tomeasure: number\n        }\n        Returns: unknown\n      }\n      st_locatebetweenelevations: {\n        Args: { fromelevation: number; geometry: unknown; toelevation: number }\n        Returns: unknown\n      }\n      st_longestline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_makebox2d: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_makeline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_makevalid: {\n        Args: { geom: unknown; params: string }\n        Returns: unknown\n      }\n      st_maxdistance: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_minimumboundingcircle: {\n        Args: { inputgeom: unknown; segs_per_quarter?: number }\n        Returns: unknown\n      }\n      st_mlinefromtext: { Args: { \"\": string }; Returns: unknown }\n      st_mpointfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_mpolyfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_multilinestringfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_multipointfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_multipolygonfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_node: { Args: { g: unknown }; Returns: unknown }\n      st_normalize: { Args: { geom: unknown }; Returns: unknown }\n      st_offsetcurve: {\n        Args: { distance: number; line: unknown; params?: string }\n        Returns: unknown\n      }\n      st_orderingequals: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_overlaps: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_perimeter: {\n        Args: { geog: unknown; use_spheroid?: boolean }\n        Returns: number\n      }\n      st_pointfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_pointm: {\n        Args: {\n          mcoordinate: number\n          srid?: number\n          xcoordinate: number\n          ycoordinate: number\n        }\n        Returns: unknown\n      }\n      st_pointz: {\n        Args: {\n          srid?: number\n          xcoordinate: number\n          ycoordinate: number\n          zcoordinate: number\n        }\n        Returns: unknown\n      }\n      st_pointzm: {\n        Args: {\n          mcoordinate: number\n          srid?: number\n          xcoordinate: number\n          ycoordinate: number\n          zcoordinate: number\n        }\n        Returns: unknown\n      }\n      st_polyfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_polygonfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_project: {\n        Args: { azimuth: number; distance: number; geog: unknown }\n        Returns: unknown\n      }\n      st_quantizecoordinates: {\n        Args: {\n          g: unknown\n          prec_m?: number\n          prec_x: number\n          prec_y?: number\n          prec_z?: number\n        }\n        Returns: unknown\n      }\n      st_reduceprecision: {\n        Args: { geom: unknown; gridsize: number }\n        Returns: unknown\n      }\n      st_relate: { Args: { geom1: unknown; geom2: unknown }; Returns: string }\n      st_removerepeatedpoints: {\n        Args: { geom: unknown; tolerance?: number }\n        Returns: unknown\n      }\n      st_segmentize: {\n        Args: { geog: unknown; max_segment_length: number }\n        Returns: unknown\n      }\n      st_setsrid:\n        | { Args: { geog: unknown; srid: number }; Returns: unknown }\n        | { Args: { geom: unknown; srid: number }; Returns: unknown }\n      st_sharedpaths: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_shortestline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_simplifypolygonhull: {\n        Args: { geom: unknown; is_outer?: boolean; vertex_fraction: number }\n        Returns: unknown\n      }\n      st_split: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }\n      st_square: {\n        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }\n        Returns: unknown\n      }\n      st_squaregrid: {\n        Args: { bounds: unknown; size: number }\n        Returns: Record<string, unknown>[]\n      }\n      st_srid:\n        | { Args: { geog: unknown }; Returns: number }\n        | { Args: { geom: unknown }; Returns: number }\n      st_subdivide: {\n        Args: { geom: unknown; gridsize?: number; maxvertices?: number }\n        Returns: unknown[]\n      }\n      st_swapordinates: {\n        Args: { geom: unknown; ords: unknown }\n        Returns: unknown\n      }\n      st_symdifference: {\n        Args: { geom1: unknown; geom2: unknown; gridsize?: number }\n        Returns: unknown\n      }\n      st_symmetricdifference: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_tileenvelope: {\n        Args: {\n          bounds?: unknown\n          margin?: number\n          x: number\n          y: number\n          zoom: number\n        }\n        Returns: unknown\n      }\n      st_touches: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_transform:\n        | {\n            Args: { from_proj: string; geom: unknown; to_proj: string }\n            Returns: unknown\n          }\n        | {\n            Args: { from_proj: string; geom: unknown; to_srid: number }\n            Returns: unknown\n          }\n        | { Args: { geom: unknown; to_proj: string }; Returns: unknown }\n      st_triangulatepolygon: { Args: { g1: unknown }; Returns: unknown }\n      st_union:\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }\n        | {\n            Args: { geom1: unknown; geom2: unknown; gridsize: number }\n            Returns: unknown\n          }\n      st_voronoilines: {\n        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }\n        Returns: unknown\n      }\n      st_voronoipolygons: {\n        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }\n        Returns: unknown\n      }\n      st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_wkbtosql: { Args: { wkb: string }; Returns: unknown }\n      st_wkttosql: { Args: { \"\": string }; Returns: unknown }\n      st_wrapx: {\n        Args: { geom: unknown; move: number; wrap: number }\n        Returns: unknown\n      }\n      suche_care_workers_geo: {\n        Args: {\n          p_fuehrungszeugnis?: boolean\n          p_lat: number\n          p_limit?: number\n          p_lng: number\n          p_max_stundensatz?: number\n          p_offset?: number\n          p_qualifikation?: string\n          p_radius_m?: number\n          p_sprache?: string\n          p_verfuegbar_ab?: string\n        }\n        Returns: {\n          anbieter_id: string\n          anbieter_logo_url: string\n          anbieter_name: string\n          anbieter_verifiziert: boolean\n          berufserfahrung_jahre: number\n          bio: string\n          entfernung_m: number\n          fuehrungszeugnis_vorhanden: boolean\n          id: string\n          max_stunden_woche: number\n          nachname: string\n          ort: string\n          plz: string\n          qualifikationen: string[]\n          sprachen: string[]\n          stundensatz_ct: number\n          verfuegbar_ab: string\n          vorname: string\n          zertifikate: string[]\n        }[]\n      }\n      unlockrows: { Args: { \"\": string }; Returns: number }\n      updategeometrysrid: {\n        Args: {\n          catalogn_name: string\n          column_name: string\n          new_srid_in: number\n          schema_name: string\n          table_name: string\n        }\n        Returns: string\n      }\n    }\n    Enums: {\n      anbieter_plan: \"free\" | \"starter\" | \"professional\" | \"enterprise\"\n      haushalt_rolle:\n        | \"pflegebeduerftig\"\n        | \"pflegeperson\"\n        | \"betreuer\"\n        | \"vormund\"\n        | \"bevollmaechtigter\"\n        | \"kind\"\n        | \"angehoeriger\"\n      vollmacht_typ:\n        | \"generalvollmacht\"\n        | \"vorsorgevollmacht\"\n        | \"betreuungsverfuegung\"\n        | \"patientenverfuegung\"\n        | \"sorgerechtsverfuegung\"\n    }\n    CompositeTypes: {\n      geometry_dump: {\n        path: number[] | null\n        geom: unknown\n      }\n      valid_detail: {\n        valid: boolean | null\n        reason: string | null\n        location: unknown\n      }\n    }\n  }\n}\n\ntype DatabaseWithoutInternals = Omit<Database, \"__InternalSupabase\">\n\ntype DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, \"public\">]\n\nexport type Tables<\n  DefaultSchemaTableNameOrOptions extends\n    | keyof (DefaultSchema[\"Tables\"] & DefaultSchema[\"Views\"])\n    | { schema: keyof DatabaseWithoutInternals },\n  TableName extends DefaultSchemaTableNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"] &\n        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Views\"])\n    : never = never,\n> = DefaultSchemaTableNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"] &\n      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Views\"])[TableName] extends {\n      Row: infer R\n    }\n    ? R\n    : never\n  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema[\"Tables\"] &\n        DefaultSchema[\"Views\"])\n    ? (DefaultSchema[\"Tables\"] &\n        DefaultSchema[\"Views\"])[DefaultSchemaTableNameOrOptions] extends {\n        Row: infer R\n      }\n      ? R\n      : never\n    : never\n\nexport type TablesInsert<\n  DefaultSchemaTableNameOrOptions extends\n    | keyof DefaultSchema[\"Tables\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  TableName extends DefaultSchemaTableNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"]\n    : never = never,\n> = DefaultSchemaTableNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"][TableName] extends {\n      Insert: infer I\n    }\n    ? I\n    : never\n  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema[\"Tables\"]\n    ? DefaultSchema[\"Tables\"][DefaultSchemaTableNameOrOptions] extends {\n        Insert: infer I\n      }\n      ? I\n      : never\n    : never\n\nexport type TablesUpdate<\n  DefaultSchemaTableNameOrOptions extends\n    | keyof DefaultSchema[\"Tables\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  TableName extends DefaultSchemaTableNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"]\n    : never = never,\n> = DefaultSchemaTableNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"][TableName] extends {\n      Update: infer U\n    }\n    ? U\n    : never\n  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema[\"Tables\"]\n    ? DefaultSchema[\"Tables\"][DefaultSchemaTableNameOrOptions] extends {\n        Update: infer U\n      }\n      ? U\n      : never\n    : never\n\nexport type Enums<\n  DefaultSchemaEnumNameOrOptions extends\n    | keyof DefaultSchema[\"Enums\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  EnumName extends DefaultSchemaEnumNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions[\"schema\"]][\"Enums\"]\n    : never = never,\n> = DefaultSchemaEnumNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions[\"schema\"]][\"Enums\"][EnumName]\n  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema[\"Enums\"]\n    ? DefaultSchema[\"Enums\"][DefaultSchemaEnumNameOrOptions]\n    : never\n\nexport type CompositeTypes<\n  PublicCompositeTypeNameOrOptions extends\n    | keyof DefaultSchema[\"CompositeTypes\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions[\"schema\"]][\"CompositeTypes\"]\n    : never = never,\n> = PublicCompositeTypeNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions[\"schema\"]][\"CompositeTypes\"][CompositeTypeName]\n  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema[\"CompositeTypes\"]\n    ? DefaultSchema[\"CompositeTypes\"][PublicCompositeTypeNameOrOptions]\n    : never\n\nexport const Constants = {\n  public: {\n    Enums: {\n      anbieter_plan: [\"free\", \"starter\", \"professional\", \"enterprise\"],\n      haushalt_rolle: [\n        \"pflegebeduerftig\",\n        \"pflegeperson\",\n        \"betreuer\",\n        \"vormund\",\n        \"bevollmaechtigter\",\n        \"kind\",\n        \"angehoeriger\",\n      ],\n      vollmacht_typ: [\n        \"generalvollmacht\",\n        \"vorsorgevollmacht\",\n        \"betreuungsverfuegung\",\n        \"patientenverfuegung\",\n        \"sorgerechtsverfuegung\",\n      ],\n    },\n  },\n} as const\n"}
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  public: {
+    Tables: {
+      anbieter: {
+        Row: {
+          abwesend: boolean
+          abwesend_bis: string | null
+          abwesend_notiz: string | null
+          aktiv: boolean
+          beschreibung: string | null
+          created_at: string
+          email: string | null
+          foto_url: string | null
+          geo: unknown
+          id: string
+          lat: number | null
+          lng: number | null
+          logo_url: string | null
+          name: string
+          oeffnungszeiten: Json | null
+          ort: string | null
+          plan: string
+          plan_expires_at: string | null
+          plz: string | null
+          profile_id: string
+          search_vector: unknown
+          social_media: Json | null
+          strasse: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          telefon: string | null
+          traeger: string | null
+          updated_at: string
+          verfuegbarkeit: string | null
+          verifiziert: boolean
+          views_total: number
+          website: string | null
+          zertifiziert: boolean
+        }
+        Insert: {
+          abwesend?: boolean
+          abwesend_bis?: string | null
+          abwesend_notiz?: string | null
+          aktiv?: boolean
+          beschreibung?: string | null
+          created_at?: string
+          email?: string | null
+          foto_url?: string | null
+          geo?: unknown
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          logo_url?: string | null
+          name: string
+          oeffnungszeiten?: Json | null
+          ort?: string | null
+          plan?: string
+          plan_expires_at?: string | null
+          plz?: string | null
+          profile_id: string
+          search_vector?: unknown
+          social_media?: Json | null
+          strasse?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          telefon?: string | null
+          traeger?: string | null
+          updated_at?: string
+          verfuegbarkeit?: string | null
+          verifiziert?: boolean
+          views_total?: number
+          website?: string | null
+          zertifiziert?: boolean
+        }
+        Update: {
+          abwesend?: boolean
+          abwesend_bis?: string | null
+          abwesend_notiz?: string | null
+          aktiv?: boolean
+          beschreibung?: string | null
+          created_at?: string
+          email?: string | null
+          foto_url?: string | null
+          geo?: unknown
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          logo_url?: string | null
+          name?: string
+          oeffnungszeiten?: Json | null
+          ort?: string | null
+          plan?: string
+          plan_expires_at?: string | null
+          plz?: string | null
+          profile_id?: string
+          search_vector?: unknown
+          social_media?: Json | null
+          strasse?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          telefon?: string | null
+          traeger?: string | null
+          updated_at?: string
+          verfuegbarkeit?: string | null
+          verifiziert?: boolean
+          views_total?: number
+          website?: string | null
+          zertifiziert?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anbieter_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anbieter_dokumente: {
+        Row: {
+          anbieter_id: string
+          created_at: string
+          id: string
+          name: string
+          oeffentlich: boolean
+          path: string
+          size: number
+          typ: string
+        }
+        Insert: {
+          anbieter_id: string
+          created_at?: string
+          id?: string
+          name: string
+          oeffentlich?: boolean
+          path: string
+          size?: number
+          typ?: string
+        }
+        Update: {
+          anbieter_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          oeffentlich?: boolean
+          path?: string
+          size?: number
+          typ?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anbieter_dokumente_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anbieter_dokumente_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anbieter_dokumente_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+        ]
+      }
+      anbieter_galerie: {
+        Row: {
+          alt_text: string | null
+          anbieter_id: string
+          created_at: string
+          id: string
+          position: number
+          storage_pfad: string
+        }
+        Insert: {
+          alt_text?: string | null
+          anbieter_id: string
+          created_at?: string
+          id?: string
+          position?: number
+          storage_pfad: string
+        }
+        Update: {
+          alt_text?: string | null
+          anbieter_id?: string
+          created_at?: string
+          id?: string
+          position?: number
+          storage_pfad?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anbieter_galerie_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anbieter_galerie_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anbieter_galerie_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+        ]
+      }
+      anbieter_mitglieder: {
+        Row: {
+          anbieter_id: string
+          created_at: string
+          id: string
+          profile_id: string
+          rolle: string
+        }
+        Insert: {
+          anbieter_id: string
+          created_at?: string
+          id?: string
+          profile_id: string
+          rolle?: string
+        }
+        Update: {
+          anbieter_id?: string
+          created_at?: string
+          id?: string
+          profile_id?: string
+          rolle?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anbieter_mitglieder_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anbieter_mitglieder_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anbieter_mitglieder_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anbieter_mitglieder_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anbieter_profil_aufrufe: {
+        Row: {
+          anbieter_id: string
+          created_at: string
+          id: string
+          referrer: string | null
+        }
+        Insert: {
+          anbieter_id: string
+          created_at?: string
+          id?: string
+          referrer?: string | null
+        }
+        Update: {
+          anbieter_id?: string
+          created_at?: string
+          id?: string
+          referrer?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anbieter_profil_aufrufe_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anbieter_profil_aufrufe_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anbieter_profil_aufrufe_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+        ]
+      }
+      anbieter_team: {
+        Row: {
+          anbieter_id: string
+          created_at: string
+          id: string
+          profile_id: string
+          rolle: string
+        }
+        Insert: {
+          anbieter_id: string
+          created_at?: string
+          id?: string
+          profile_id: string
+          rolle?: string
+        }
+        Update: {
+          anbieter_id?: string
+          created_at?: string
+          id?: string
+          profile_id?: string
+          rolle?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anbieter_team_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anbieter_team_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anbieter_team_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anbieter_team_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anbieter_zuletzt_angesehen: {
+        Row: {
+          anbieter_id: string
+          familie_id: string
+          gesehen_am: string
+          id: string
+        }
+        Insert: {
+          anbieter_id: string
+          familie_id: string
+          gesehen_am?: string
+          id?: string
+        }
+        Update: {
+          anbieter_id?: string
+          familie_id?: string
+          gesehen_am?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anbieter_zuletzt_angesehen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anbieter_zuletzt_angesehen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anbieter_zuletzt_angesehen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anbieter_zuletzt_angesehen_familie_id_fkey"
+            columns: ["familie_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anfrage_dokumente: {
+        Row: {
+          anfrage_id: string
+          created_at: string
+          dateiname: string
+          familie_id: string
+          groesse_bytes: number
+          id: string
+          mime_typ: string
+          storage_pfad: string
+        }
+        Insert: {
+          anfrage_id: string
+          created_at?: string
+          dateiname: string
+          familie_id: string
+          groesse_bytes?: number
+          id?: string
+          mime_typ?: string
+          storage_pfad: string
+        }
+        Update: {
+          anfrage_id?: string
+          created_at?: string
+          dateiname?: string
+          familie_id?: string
+          groesse_bytes?: number
+          id?: string
+          mime_typ?: string
+          storage_pfad?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anfrage_dokumente_anfrage_id_fkey"
+            columns: ["anfrage_id"]
+            isOneToOne: false
+            referencedRelation: "anfragen"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anfrage_dokumente_familie_id_fkey"
+            columns: ["familie_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anfrage_notizen: {
+        Row: {
+          anbieter_id: string
+          anfrage_id: string
+          created_at: string
+          id: string
+          inhalt: string
+          tag: string | null
+          updated_at: string
+        }
+        Insert: {
+          anbieter_id: string
+          anfrage_id: string
+          created_at?: string
+          id?: string
+          inhalt: string
+          tag?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anbieter_id?: string
+          anfrage_id?: string
+          created_at?: string
+          id?: string
+          inhalt?: string
+          tag?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anfrage_notizen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anfrage_notizen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anfrage_notizen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anfrage_notizen_anfrage_id_fkey"
+            columns: ["anfrage_id"]
+            isOneToOne: false
+            referencedRelation: "anfragen"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anfragen: {
+        Row: {
+          anbieter_id: string | null
+          beschreibung: string
+          created_at: string
+          crm_tags: string[]
+          familie_id: string
+          id: string
+          ki_empfehlung: string | null
+          lebenslage: string
+          leistung_id: string | null
+          status: string
+          updated_at: string
+          wichtig: boolean
+        }
+        Insert: {
+          anbieter_id?: string | null
+          beschreibung: string
+          created_at?: string
+          crm_tags?: string[]
+          familie_id: string
+          id?: string
+          ki_empfehlung?: string | null
+          lebenslage: string
+          leistung_id?: string | null
+          status?: string
+          updated_at?: string
+          wichtig?: boolean
+        }
+        Update: {
+          anbieter_id?: string | null
+          beschreibung?: string
+          created_at?: string
+          crm_tags?: string[]
+          familie_id?: string
+          id?: string
+          ki_empfehlung?: string | null
+          lebenslage?: string
+          leistung_id?: string | null
+          status?: string
+          updated_at?: string
+          wichtig?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anfragen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anfragen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anfragen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "anfragen_familie_id_fkey"
+            columns: ["familie_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anfragen_leistung_id_fkey"
+            columns: ["leistung_id"]
+            isOneToOne: false
+            referencedRelation: "leistungen"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anfragen_historie: {
+        Row: {
+          alter_status: string | null
+          anfrage_id: string
+          created_at: string
+          geaendert_von: string | null
+          id: string
+          neuer_status: string
+          notiz: string | null
+        }
+        Insert: {
+          alter_status?: string | null
+          anfrage_id: string
+          created_at?: string
+          geaendert_von?: string | null
+          id?: string
+          neuer_status: string
+          notiz?: string | null
+        }
+        Update: {
+          alter_status?: string | null
+          anfrage_id?: string
+          created_at?: string
+          geaendert_von?: string | null
+          id?: string
+          neuer_status?: string
+          notiz?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anfragen_historie_anfrage_id_fkey"
+            columns: ["anfrage_id"]
+            isOneToOne: false
+            referencedRelation: "anfragen"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anfragen_historie_geaendert_von_fkey"
+            columns: ["geaendert_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anfragen_statusverlauf: {
+        Row: {
+          alter_status: string | null
+          anfrage_id: string
+          created_at: string
+          geaendert_von: string | null
+          id: string
+          kommentar: string | null
+          neuer_status: string
+        }
+        Insert: {
+          alter_status?: string | null
+          anfrage_id: string
+          created_at?: string
+          geaendert_von?: string | null
+          id?: string
+          kommentar?: string | null
+          neuer_status: string
+        }
+        Update: {
+          alter_status?: string | null
+          anfrage_id?: string
+          created_at?: string
+          geaendert_von?: string | null
+          id?: string
+          kommentar?: string | null
+          neuer_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anfragen_statusverlauf_anfrage_id_fkey"
+            columns: ["anfrage_id"]
+            isOneToOne: false
+            referencedRelation: "anfragen"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anfragen_statusverlauf_geaendert_von_fkey"
+            columns: ["geaendert_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anspruchs_profile: {
+        Row: {
+          bezeichnung: string | null
+          created_at: string
+          ergebnis: Json
+          gesamt_jaehrlich_eur: number | null
+          gesamt_monatlich_eur: number | null
+          id: string
+          lebenslage: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bezeichnung?: string | null
+          created_at?: string
+          ergebnis: Json
+          gesamt_jaehrlich_eur?: number | null
+          gesamt_monatlich_eur?: number | null
+          id?: string
+          lebenslage: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bezeichnung?: string | null
+          created_at?: string
+          ergebnis?: Json
+          gesamt_jaehrlich_eur?: number | null
+          gesamt_monatlich_eur?: number | null
+          id?: string
+          lebenslage?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      avv_partner: {
+        Row: {
+          avv_unterzeichnet: boolean
+          created_at: string
+          dienst: string
+          id: string
+          naechste_pruefung: string | null
+          name: string
+          notizen: string | null
+          unterzeichnet_am: string | null
+          updated_at: string
+        }
+        Insert: {
+          avv_unterzeichnet?: boolean
+          created_at?: string
+          dienst: string
+          id?: string
+          naechste_pruefung?: string | null
+          name: string
+          notizen?: string | null
+          unterzeichnet_am?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avv_unterzeichnet?: boolean
+          created_at?: string
+          dienst?: string
+          id?: string
+          naechste_pruefung?: string | null
+          name?: string
+          notizen?: string | null
+          unterzeichnet_am?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      benachrichtigungen: {
+        Row: {
+          created_at: string
+          gelesen: boolean
+          id: string
+          link: string | null
+          nachricht: string
+          profile_id: string
+          titel: string
+          typ: string
+        }
+        Insert: {
+          created_at?: string
+          gelesen?: boolean
+          id?: string
+          link?: string | null
+          nachricht: string
+          profile_id: string
+          titel: string
+          typ: string
+        }
+        Update: {
+          created_at?: string
+          gelesen?: boolean
+          id?: string
+          link?: string | null
+          nachricht?: string
+          profile_id?: string
+          titel?: string
+          typ?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "benachrichtigungen_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beschwerden: {
+        Row: {
+          anbieter_id: string
+          beschreibung: string
+          created_at: string
+          eingegangen_am: string
+          ergebnis: string | null
+          erstellt_von: string | null
+          familie_profile_id: string | null
+          frist_am: string
+          geloest_am: string | null
+          id: string
+          kategorie: string
+          massnahmen: string | null
+          schweregrad: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          anbieter_id: string
+          beschreibung: string
+          created_at?: string
+          eingegangen_am?: string
+          ergebnis?: string | null
+          erstellt_von?: string | null
+          familie_profile_id?: string | null
+          frist_am?: string
+          geloest_am?: string | null
+          id?: string
+          kategorie: string
+          massnahmen?: string | null
+          schweregrad?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          anbieter_id?: string
+          beschreibung?: string
+          created_at?: string
+          eingegangen_am?: string
+          ergebnis?: string | null
+          erstellt_von?: string | null
+          familie_profile_id?: string | null
+          frist_am?: string
+          geloest_am?: string | null
+          id?: string
+          kategorie?: string
+          massnahmen?: string | null
+          schweregrad?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beschwerden_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beschwerden_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "beschwerden_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "beschwerden_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beschwerden_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bewertungen: {
+        Row: {
+          anbieter_id: string
+          anfrage_id: string | null
+          antwort: string | null
+          antwort_at: string | null
+          created_at: string
+          familie_id: string
+          gemeldet: boolean
+          id: string
+          kommentar: string | null
+          sterne: number
+        }
+        Insert: {
+          anbieter_id: string
+          anfrage_id?: string | null
+          antwort?: string | null
+          antwort_at?: string | null
+          created_at?: string
+          familie_id: string
+          gemeldet?: boolean
+          id?: string
+          kommentar?: string | null
+          sterne: number
+        }
+        Update: {
+          anbieter_id?: string
+          anfrage_id?: string | null
+          antwort?: string | null
+          antwort_at?: string | null
+          created_at?: string
+          familie_id?: string
+          gemeldet?: boolean
+          id?: string
+          kommentar?: string | null
+          sterne?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bewertungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bewertungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "bewertungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "bewertungen_anfrage_id_fkey"
+            columns: ["anfrage_id"]
+            isOneToOne: false
+            referencedRelation: "anfragen"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bewertungen_familie_id_fkey"
+            columns: ["familie_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_transaktionen: {
+        Row: {
+          beleg_url: string | null
+          beschreibung: string | null
+          betrag: number
+          budget_id: string
+          created_at: string
+          datum: string
+          id: string
+        }
+        Insert: {
+          beleg_url?: string | null
+          beschreibung?: string | null
+          betrag: number
+          budget_id: string
+          created_at?: string
+          datum?: string
+          id?: string
+        }
+        Update: {
+          beleg_url?: string | null
+          beschreibung?: string | null
+          betrag?: number
+          budget_id?: string
+          created_at?: string
+          datum?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_transaktionen_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "pflegekassen_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_worker_anfragen: {
+        Row: {
+          anbieter_id: string
+          care_worker_id: string
+          created_at: string
+          familie_id: string | null
+          id: string
+          nachricht: string | null
+          start_datum: string | null
+          status: string
+          stunden_pro_woche: number | null
+        }
+        Insert: {
+          anbieter_id: string
+          care_worker_id: string
+          created_at?: string
+          familie_id?: string | null
+          id?: string
+          nachricht?: string | null
+          start_datum?: string | null
+          status?: string
+          stunden_pro_woche?: number | null
+        }
+        Update: {
+          anbieter_id?: string
+          care_worker_id?: string
+          created_at?: string
+          familie_id?: string | null
+          id?: string
+          nachricht?: string | null
+          start_datum?: string | null
+          status?: string
+          stunden_pro_woche?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_worker_anfragen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_worker_anfragen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "care_worker_anfragen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "care_worker_anfragen_care_worker_id_fkey"
+            columns: ["care_worker_id"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_worker_anfragen_familie_id_fkey"
+            columns: ["familie_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_worker_zertifikate: {
+        Row: {
+          anbieter_id: string
+          ausgestellt_am: string | null
+          ausstellende_stelle: string | null
+          bezeichnung: string
+          care_worker_id: string
+          created_at: string
+          dokument_url: string | null
+          gueltig_bis: string | null
+          id: string
+          typ: string
+          zertifikat_nr: string | null
+        }
+        Insert: {
+          anbieter_id: string
+          ausgestellt_am?: string | null
+          ausstellende_stelle?: string | null
+          bezeichnung: string
+          care_worker_id: string
+          created_at?: string
+          dokument_url?: string | null
+          gueltig_bis?: string | null
+          id?: string
+          typ?: string
+          zertifikat_nr?: string | null
+        }
+        Update: {
+          anbieter_id?: string
+          ausgestellt_am?: string | null
+          ausstellende_stelle?: string | null
+          bezeichnung?: string
+          care_worker_id?: string
+          created_at?: string
+          dokument_url?: string | null
+          gueltig_bis?: string | null
+          id?: string
+          typ?: string
+          zertifikat_nr?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_worker_zertifikate_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_worker_zertifikate_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "care_worker_zertifikate_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "care_worker_zertifikate_care_worker_id_fkey"
+            columns: ["care_worker_id"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_workers: {
+        Row: {
+          abwesend_bis: string | null
+          aktiv: boolean
+          anbieter_id: string
+          berufserfahrung_jahre: number | null
+          bio: string | null
+          created_at: string
+          fuehrungszeugnis_datum: string | null
+          fuehrungszeugnis_vorhanden: boolean
+          geburtsjahr: number | null
+          id: string
+          max_stunden_woche: number | null
+          nachname: string
+          ort: string | null
+          plz: string | null
+          qualifikationen: string[] | null
+          sprachen: string[] | null
+          standort: unknown
+          stundensatz_ct: number
+          updated_at: string
+          verfuegbar_ab: string | null
+          vorname: string
+          zertifikate: string[] | null
+        }
+        Insert: {
+          abwesend_bis?: string | null
+          aktiv?: boolean
+          anbieter_id: string
+          berufserfahrung_jahre?: number | null
+          bio?: string | null
+          created_at?: string
+          fuehrungszeugnis_datum?: string | null
+          fuehrungszeugnis_vorhanden?: boolean
+          geburtsjahr?: number | null
+          id?: string
+          max_stunden_woche?: number | null
+          nachname: string
+          ort?: string | null
+          plz?: string | null
+          qualifikationen?: string[] | null
+          sprachen?: string[] | null
+          standort?: unknown
+          stundensatz_ct?: number
+          updated_at?: string
+          verfuegbar_ab?: string | null
+          vorname: string
+          zertifikate?: string[] | null
+        }
+        Update: {
+          abwesend_bis?: string | null
+          aktiv?: boolean
+          anbieter_id?: string
+          berufserfahrung_jahre?: number | null
+          bio?: string | null
+          created_at?: string
+          fuehrungszeugnis_datum?: string | null
+          fuehrungszeugnis_vorhanden?: boolean
+          geburtsjahr?: number | null
+          id?: string
+          max_stunden_woche?: number | null
+          nachname?: string
+          ort?: string | null
+          plz?: string | null
+          qualifikationen?: string[] | null
+          sprachen?: string[] | null
+          standort?: unknown
+          stundensatz_ct?: number
+          updated_at?: string
+          verfuegbar_ab?: string | null
+          vorname?: string
+          zertifikate?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_workers_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_workers_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "care_workers_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+        ]
+      }
+      compliance_checks: {
+        Row: {
+          anbieter_id: string
+          bereich: string
+          created_at: string
+          erfuellt: boolean | null
+          erstellt_von: string | null
+          faellig_am: string | null
+          id: string
+          kriterium: string
+          letzte_pruefung: string | null
+          nachweis: string | null
+          updated_at: string
+        }
+        Insert: {
+          anbieter_id: string
+          bereich: string
+          created_at?: string
+          erfuellt?: boolean | null
+          erstellt_von?: string | null
+          faellig_am?: string | null
+          id?: string
+          kriterium: string
+          letzte_pruefung?: string | null
+          nachweis?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anbieter_id?: string
+          bereich?: string
+          created_at?: string
+          erfuellt?: boolean | null
+          erstellt_von?: string | null
+          faellig_am?: string | null
+          id?: string
+          kriterium?: string
+          letzte_pruefung?: string | null
+          nachweis?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_checks_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_checks_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "compliance_checks_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "compliance_checks_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnosen: {
+        Row: {
+          arzt: string | null
+          bezeichnung: string
+          chronisch: boolean | null
+          created_at: string | null
+          erstdiagnose: string | null
+          icd10_code: string | null
+          id: string
+          notizen: string | null
+          profil_id: string
+        }
+        Insert: {
+          arzt?: string | null
+          bezeichnung: string
+          chronisch?: boolean | null
+          created_at?: string | null
+          erstdiagnose?: string | null
+          icd10_code?: string | null
+          id?: string
+          notizen?: string | null
+          profil_id: string
+        }
+        Update: {
+          arzt?: string | null
+          bezeichnung?: string
+          chronisch?: boolean | null
+          created_at?: string | null
+          erstdiagnose?: string | null
+          icd10_code?: string | null
+          id?: string
+          notizen?: string | null
+          profil_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnosen_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      dokumente: {
+        Row: {
+          ablaufdatum: string | null
+          created_at: string | null
+          geteilt_mit: string[] | null
+          groesse_bytes: number | null
+          haushalt_id: string | null
+          id: string
+          kategorie: string
+          mime_type: string | null
+          name: string
+          notizen: string | null
+          ocr_text: string | null
+          profil_id: string
+          storage_path: string
+          updated_at: string | null
+          verschluesselt: boolean | null
+        }
+        Insert: {
+          ablaufdatum?: string | null
+          created_at?: string | null
+          geteilt_mit?: string[] | null
+          groesse_bytes?: number | null
+          haushalt_id?: string | null
+          id?: string
+          kategorie: string
+          mime_type?: string | null
+          name: string
+          notizen?: string | null
+          ocr_text?: string | null
+          profil_id: string
+          storage_path: string
+          updated_at?: string | null
+          verschluesselt?: boolean | null
+        }
+        Update: {
+          ablaufdatum?: string | null
+          created_at?: string | null
+          geteilt_mit?: string[] | null
+          groesse_bytes?: number | null
+          haushalt_id?: string | null
+          id?: string
+          kategorie?: string
+          mime_type?: string | null
+          name?: string
+          notizen?: string | null
+          ocr_text?: string | null
+          profil_id?: string
+          storage_path?: string
+          updated_at?: string | null
+          verschluesselt?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dokumente_haushalt_id_fkey"
+            columns: ["haushalt_id"]
+            isOneToOne: false
+            referencedRelation: "haushalte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dokumente_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      dsgvo_loeschanfragen: {
+        Row: {
+          angefragt_am: string
+          email: string
+          erledigt_am: string | null
+          id: string
+          notizen: string | null
+          profil_id: string | null
+          status: string
+        }
+        Insert: {
+          angefragt_am?: string
+          email: string
+          erledigt_am?: string | null
+          id?: string
+          notizen?: string | null
+          profil_id?: string | null
+          status?: string
+        }
+        Update: {
+          angefragt_am?: string
+          email?: string
+          erledigt_am?: string | null
+          id?: string
+          notizen?: string | null
+          profil_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dsgvo_loeschanfragen_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      familie_anbieter_notizen: {
+        Row: {
+          anbieter_id: string
+          created_at: string
+          familie_id: string
+          id: string
+          notiz: string
+          updated_at: string
+        }
+        Insert: {
+          anbieter_id: string
+          created_at?: string
+          familie_id: string
+          id?: string
+          notiz: string
+          updated_at?: string
+        }
+        Update: {
+          anbieter_id?: string
+          created_at?: string
+          familie_id?: string
+          id?: string
+          notiz?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "familie_anbieter_notizen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "familie_anbieter_notizen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "familie_anbieter_notizen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "familie_anbieter_notizen_familie_id_fkey"
+            columns: ["familie_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      familie_pinnwand: {
+        Row: {
+          created_at: string
+          erledigt: boolean | null
+          erledigt_am: string | null
+          erstellt_von: string | null
+          erstellt_von_rolle: string | null
+          familie_profile_id: string
+          id: string
+          inhalt: string
+          pinned: boolean | null
+          typ: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          erledigt?: boolean | null
+          erledigt_am?: string | null
+          erstellt_von?: string | null
+          erstellt_von_rolle?: string | null
+          familie_profile_id: string
+          id?: string
+          inhalt: string
+          pinned?: boolean | null
+          typ?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          erledigt?: boolean | null
+          erledigt_am?: string | null
+          erstellt_von?: string | null
+          erstellt_von_rolle?: string | null
+          familie_profile_id?: string
+          id?: string
+          inhalt?: string
+          pinned?: boolean | null
+          typ?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "familie_pinnwand_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "familie_pinnwand_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favoriten: {
+        Row: {
+          anbieter_id: string
+          created_at: string
+          familie_id: string
+          id: string
+        }
+        Insert: {
+          anbieter_id: string
+          created_at?: string
+          familie_id: string
+          id?: string
+        }
+        Update: {
+          anbieter_id?: string
+          created_at?: string
+          familie_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favoriten_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favoriten_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "favoriten_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "favoriten_familie_id_fkey"
+            columns: ["familie_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gespeicherte_suchen: {
+        Row: {
+          created_at: string
+          id: string
+          lebenslage: string | null
+          name: string
+          plz: string | null
+          profile_id: string
+          radius_km: number | null
+          suchtext: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lebenslage?: string | null
+          name: string
+          plz?: string | null
+          profile_id: string
+          radius_km?: number | null
+          suchtext?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lebenslage?: string | null
+          name?: string
+          plz?: string | null
+          profile_id?: string
+          radius_km?: number | null
+          suchtext?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gespeicherte_suchen_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      haushalte: {
+        Row: {
+          created_at: string | null
+          erstellt_von: string | null
+          id: string
+          name: string
+          ort: string | null
+          plz: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          erstellt_von?: string | null
+          id?: string
+          name: string
+          ort?: string | null
+          plz?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          erstellt_von?: string | null
+          id?: string
+          name?: string
+          ort?: string | null
+          plz?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "haushalte_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      haushaltsmitglieder: {
+        Row: {
+          created_at: string | null
+          gdb: number | null
+          geburtsdatum: string | null
+          haushalt_id: string
+          id: string
+          kann_anfragen_sehen: boolean | null
+          kann_dokumente_sehen: boolean | null
+          kann_verwalten: boolean | null
+          nachname: string | null
+          pflegegrad: number | null
+          profile_id: string | null
+          rolle: Database["public"]["Enums"]["haushalt_rolle"]
+          updated_at: string | null
+          vorname: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          gdb?: number | null
+          geburtsdatum?: string | null
+          haushalt_id: string
+          id?: string
+          kann_anfragen_sehen?: boolean | null
+          kann_dokumente_sehen?: boolean | null
+          kann_verwalten?: boolean | null
+          nachname?: string | null
+          pflegegrad?: number | null
+          profile_id?: string | null
+          rolle: Database["public"]["Enums"]["haushalt_rolle"]
+          updated_at?: string | null
+          vorname?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          gdb?: number | null
+          geburtsdatum?: string | null
+          haushalt_id?: string
+          id?: string
+          kann_anfragen_sehen?: boolean | null
+          kann_dokumente_sehen?: boolean | null
+          kann_verwalten?: boolean | null
+          nachname?: string | null
+          pflegegrad?: number | null
+          profile_id?: string | null
+          rolle?: Database["public"]["Enums"]["haushalt_rolle"]
+          updated_at?: string | null
+          vorname?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "haushaltsmitglieder_haushalt_id_fkey"
+            columns: ["haushalt_id"]
+            isOneToOne: false
+            referencedRelation: "haushalte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "haushaltsmitglieder_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      haushaltsscheck_daten: {
+        Row: {
+          aktiv: boolean
+          arbeitgeber_adresse: string
+          arbeitgeber_name: string
+          arbeitnehmer_name: string
+          arbeitnehmer_svnr: string
+          beginn_datum: string
+          created_at: string
+          id: string
+          profil_id: string
+          stunden_pro_woche: number
+          stundenlohn: number
+          updated_at: string
+        }
+        Insert: {
+          aktiv?: boolean
+          arbeitgeber_adresse: string
+          arbeitgeber_name: string
+          arbeitnehmer_name: string
+          arbeitnehmer_svnr: string
+          beginn_datum: string
+          created_at?: string
+          id?: string
+          profil_id: string
+          stunden_pro_woche: number
+          stundenlohn: number
+          updated_at?: string
+        }
+        Update: {
+          aktiv?: boolean
+          arbeitgeber_adresse?: string
+          arbeitgeber_name?: string
+          arbeitnehmer_name?: string
+          arbeitnehmer_svnr?: string
+          beginn_datum?: string
+          created_at?: string
+          id?: string
+          profil_id?: string
+          stunden_pro_woche?: number
+          stundenlohn?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "haushaltsscheck_daten_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      impfungen: {
+        Row: {
+          arzt: string | null
+          charge: string | null
+          created_at: string | null
+          datum: string
+          id: string
+          impfstoff: string
+          krankheit: string
+          naechste_impfung: string | null
+          profil_id: string
+        }
+        Insert: {
+          arzt?: string | null
+          charge?: string | null
+          created_at?: string | null
+          datum: string
+          id?: string
+          impfstoff: string
+          krankheit: string
+          naechste_impfung?: string | null
+          profil_id: string
+        }
+        Update: {
+          arzt?: string | null
+          charge?: string | null
+          created_at?: string | null
+          datum?: string
+          id?: string
+          impfstoff?: string
+          krankheit?: string
+          naechste_impfung?: string | null
+          profil_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impfungen_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ki_audit_log: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2026_05: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2026_06: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2026_07: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2026_08: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2026_09: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2026_10: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2026_11: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2026_12: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2027_01: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2027_02: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2027_03: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      ki_audit_log_2027_04: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          id: string
+          input_schema: string | null
+          latency_ms: number | null
+          model_version: string
+          prompt_hash: string
+          success: boolean
+          tokens_in: number | null
+          tokens_out: number | null
+          user_pseudo_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version: string
+          prompt_hash: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          input_schema?: string | null
+          latency_ms?: number | null
+          model_version?: string
+          prompt_hash?: string
+          success?: boolean
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_pseudo_id?: string
+        }
+        Relationships: []
+      }
+      leistungen: {
+        Row: {
+          aktiv: boolean
+          anbieter_id: string
+          beschreibung: string | null
+          created_at: string
+          id: string
+          kapazitaet: number | null
+          kategorie: string
+          kostentraeger: string[] | null
+          lebenslage: string[] | null
+          name: string
+          preis_bis: number | null
+          preis_einheit: string | null
+          preis_von: number | null
+          sgb_paragraf: string | null
+          wartezeit_wochen: number | null
+        }
+        Insert: {
+          aktiv?: boolean
+          anbieter_id: string
+          beschreibung?: string | null
+          created_at?: string
+          id?: string
+          kapazitaet?: number | null
+          kategorie: string
+          kostentraeger?: string[] | null
+          lebenslage?: string[] | null
+          name: string
+          preis_bis?: number | null
+          preis_einheit?: string | null
+          preis_von?: number | null
+          sgb_paragraf?: string | null
+          wartezeit_wochen?: number | null
+        }
+        Update: {
+          aktiv?: boolean
+          anbieter_id?: string
+          beschreibung?: string | null
+          created_at?: string
+          id?: string
+          kapazitaet?: number | null
+          kategorie?: string
+          kostentraeger?: string[] | null
+          lebenslage?: string[] | null
+          name?: string
+          preis_bis?: number | null
+          preis_einheit?: string | null
+          preis_von?: number | null
+          sgb_paragraf?: string | null
+          wartezeit_wochen?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leistungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leistungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "leistungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+        ]
+      }
+      leistungen_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string | null
+          id: string
+          lebenslage: string | null
+          leistung_beschreibung: string
+          leistung_code: string
+          leistung_titel: string
+          max_betrag_eur: number | null
+          rechtsgrundlage: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          lebenslage?: string | null
+          leistung_beschreibung: string
+          leistung_code: string
+          leistung_titel: string
+          max_betrag_eur?: number | null
+          rechtsgrundlage?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          lebenslage?: string | null
+          leistung_beschreibung?: string
+          leistung_code?: string
+          leistung_titel?: string
+          max_betrag_eur?: number | null
+          rechtsgrundlage?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      medikamente: {
+        Row: {
+          abends: number | null
+          aktiv: boolean | null
+          bis_datum: string | null
+          created_at: string | null
+          darreichungsform: string | null
+          einheit: string | null
+          hinweis: string | null
+          id: string
+          mittags: number | null
+          morgens: number | null
+          nachts: number | null
+          name: string
+          profil_id: string
+          seit_datum: string | null
+          staerke: string | null
+          updated_at: string | null
+          verordnet_von: string | null
+          wirkstoff: string | null
+        }
+        Insert: {
+          abends?: number | null
+          aktiv?: boolean | null
+          bis_datum?: string | null
+          created_at?: string | null
+          darreichungsform?: string | null
+          einheit?: string | null
+          hinweis?: string | null
+          id?: string
+          mittags?: number | null
+          morgens?: number | null
+          nachts?: number | null
+          name: string
+          profil_id: string
+          seit_datum?: string | null
+          staerke?: string | null
+          updated_at?: string | null
+          verordnet_von?: string | null
+          wirkstoff?: string | null
+        }
+        Update: {
+          abends?: number | null
+          aktiv?: boolean | null
+          bis_datum?: string | null
+          created_at?: string | null
+          darreichungsform?: string | null
+          einheit?: string | null
+          hinweis?: string | null
+          id?: string
+          mittags?: number | null
+          morgens?: number | null
+          nachts?: number | null
+          name?: string
+          profil_id?: string
+          seit_datum?: string | null
+          staerke?: string | null
+          updated_at?: string | null
+          verordnet_von?: string | null
+          wirkstoff?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medikamente_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      medikamenten_plan: {
+        Row: {
+          aktiv: boolean
+          anbieter_id: string
+          created_at: string
+          dosis: string
+          einheit: string | null
+          familie_profile_id: string
+          hinweis: string | null
+          id: string
+          medikament: string
+          mit_mahlzeit: boolean | null
+          valid_until: string | null
+          verordnet_am: string | null
+          verordnet_von: string | null
+          wirkstoff: string | null
+          zeiten: string[]
+        }
+        Insert: {
+          aktiv?: boolean
+          anbieter_id: string
+          created_at?: string
+          dosis: string
+          einheit?: string | null
+          familie_profile_id: string
+          hinweis?: string | null
+          id?: string
+          medikament: string
+          mit_mahlzeit?: boolean | null
+          valid_until?: string | null
+          verordnet_am?: string | null
+          verordnet_von?: string | null
+          wirkstoff?: string | null
+          zeiten: string[]
+        }
+        Update: {
+          aktiv?: boolean
+          anbieter_id?: string
+          created_at?: string
+          dosis?: string
+          einheit?: string | null
+          familie_profile_id?: string
+          hinweis?: string | null
+          id?: string
+          medikament?: string
+          mit_mahlzeit?: boolean | null
+          valid_until?: string | null
+          verordnet_am?: string | null
+          verordnet_von?: string | null
+          wirkstoff?: string | null
+          zeiten?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medikamenten_plan_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medikamenten_plan_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "medikamenten_plan_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "medikamenten_plan_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medikamentenplaene: {
+        Row: {
+          aktiv: boolean | null
+          anbieter_id: string | null
+          bis_datum: string | null
+          created_at: string | null
+          darreichungsform: string | null
+          dauermedikation: boolean | null
+          dosierung_abends: number | null
+          dosierung_mittags: number | null
+          dosierung_morgens: number | null
+          dosierung_nachts: number | null
+          einheit: string | null
+          erstellt_von: string | null
+          familie_profile_id: string
+          hinweise: string | null
+          id: string
+          indikation: string | null
+          medikament_name: string
+          mit_mahlzeit: boolean | null
+          staerke: string | null
+          updated_at: string | null
+          verordnet_von: string | null
+          von_datum: string | null
+          wirkstoff: string | null
+        }
+        Insert: {
+          aktiv?: boolean | null
+          anbieter_id?: string | null
+          bis_datum?: string | null
+          created_at?: string | null
+          darreichungsform?: string | null
+          dauermedikation?: boolean | null
+          dosierung_abends?: number | null
+          dosierung_mittags?: number | null
+          dosierung_morgens?: number | null
+          dosierung_nachts?: number | null
+          einheit?: string | null
+          erstellt_von?: string | null
+          familie_profile_id: string
+          hinweise?: string | null
+          id?: string
+          indikation?: string | null
+          medikament_name: string
+          mit_mahlzeit?: boolean | null
+          staerke?: string | null
+          updated_at?: string | null
+          verordnet_von?: string | null
+          von_datum?: string | null
+          wirkstoff?: string | null
+        }
+        Update: {
+          aktiv?: boolean | null
+          anbieter_id?: string | null
+          bis_datum?: string | null
+          created_at?: string | null
+          darreichungsform?: string | null
+          dauermedikation?: boolean | null
+          dosierung_abends?: number | null
+          dosierung_mittags?: number | null
+          dosierung_morgens?: number | null
+          dosierung_nachts?: number | null
+          einheit?: string | null
+          erstellt_von?: string | null
+          familie_profile_id?: string
+          hinweise?: string | null
+          id?: string
+          indikation?: string | null
+          medikament_name?: string
+          mit_mahlzeit?: boolean | null
+          staerke?: string | null
+          updated_at?: string | null
+          verordnet_von?: string | null
+          von_datum?: string | null
+          wirkstoff?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medikamentenplaene_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medikamentenplaene_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "medikamentenplaene_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "medikamentenplaene_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medikamentenplaene_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merkliste: {
+        Row: {
+          anbieter_id: string
+          created_at: string
+          familie_id: string
+          id: string
+          notiz: string | null
+        }
+        Insert: {
+          anbieter_id: string
+          created_at?: string
+          familie_id: string
+          id?: string
+          notiz?: string | null
+        }
+        Update: {
+          anbieter_id?: string
+          created_at?: string
+          familie_id?: string
+          id?: string
+          notiz?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merkliste_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merkliste_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "merkliste_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "merkliste_familie_id_fkey"
+            columns: ["familie_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nachrichten: {
+        Row: {
+          anfrage_id: string
+          created_at: string
+          gelesen: boolean
+          id: string
+          inhalt: string
+          sender_id: string
+          typ: string
+        }
+        Insert: {
+          anfrage_id: string
+          created_at?: string
+          gelesen?: boolean
+          id?: string
+          inhalt: string
+          sender_id: string
+          typ?: string
+        }
+        Update: {
+          anfrage_id?: string
+          created_at?: string
+          gelesen?: boolean
+          id?: string
+          inhalt?: string
+          sender_id?: string
+          typ?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nachrichten_anfrage_id_fkey"
+            columns: ["anfrage_id"]
+            isOneToOne: false
+            referencedRelation: "anfragen"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nachrichten_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nachrichten_vorlagen: {
+        Row: {
+          anbieter_id: string
+          created_at: string
+          id: string
+          inhalt: string
+          titel: string
+        }
+        Insert: {
+          anbieter_id: string
+          created_at?: string
+          id?: string
+          inhalt: string
+          titel: string
+        }
+        Update: {
+          anbieter_id?: string
+          created_at?: string
+          id?: string
+          inhalt?: string
+          titel?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nachrichten_vorlagen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nachrichten_vorlagen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "nachrichten_vorlagen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+        ]
+      }
+      notfallkontakte: {
+        Row: {
+          adresse: string | null
+          beziehung: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          ist_hauptkontakt: boolean | null
+          name: string
+          profil_id: string
+          sortierung: number | null
+          telefon: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          beziehung?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ist_hauptkontakt?: boolean | null
+          name: string
+          profil_id: string
+          sortierung?: number | null
+          telefon?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          beziehung?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ist_hauptkontakt?: boolean | null
+          name?: string
+          profil_id?: string
+          sortierung?: number | null
+          telefon?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notfallkontakte_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      notfallplaene: {
+        Row: {
+          aktiv: boolean
+          allergien: string | null
+          anbieter_id: string | null
+          besondere_hinweise: string | null
+          blutgruppe: string | null
+          chronische_erkrankungen: string | null
+          created_at: string
+          dnr_verfuegung: boolean | null
+          familie_profile_id: string
+          hausarzt_name: string | null
+          hausarzt_telefon: string | null
+          id: string
+          implantate: string | null
+          krankenhaus_adresse: string | null
+          krankenhaus_name: string | null
+          krankenkasse: string | null
+          medikamente_notfall: string | null
+          patientenverfuegung_vorhanden: boolean | null
+          updated_at: string
+          versicherungsnummer: string | null
+        }
+        Insert: {
+          aktiv?: boolean
+          allergien?: string | null
+          anbieter_id?: string | null
+          besondere_hinweise?: string | null
+          blutgruppe?: string | null
+          chronische_erkrankungen?: string | null
+          created_at?: string
+          dnr_verfuegung?: boolean | null
+          familie_profile_id: string
+          hausarzt_name?: string | null
+          hausarzt_telefon?: string | null
+          id?: string
+          implantate?: string | null
+          krankenhaus_adresse?: string | null
+          krankenhaus_name?: string | null
+          krankenkasse?: string | null
+          medikamente_notfall?: string | null
+          patientenverfuegung_vorhanden?: boolean | null
+          updated_at?: string
+          versicherungsnummer?: string | null
+        }
+        Update: {
+          aktiv?: boolean
+          allergien?: string | null
+          anbieter_id?: string | null
+          besondere_hinweise?: string | null
+          blutgruppe?: string | null
+          chronische_erkrankungen?: string | null
+          created_at?: string
+          dnr_verfuegung?: boolean | null
+          familie_profile_id?: string
+          hausarzt_name?: string | null
+          hausarzt_telefon?: string | null
+          id?: string
+          implantate?: string | null
+          krankenhaus_adresse?: string | null
+          krankenhaus_name?: string | null
+          krankenkasse?: string | null
+          medikamente_notfall?: string | null
+          patientenverfuegung_vorhanden?: boolean | null
+          updated_at?: string
+          versicherungsnummer?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notfallplaene_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notfallplaene_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "notfallplaene_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "notfallplaene_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          email_anfragen: boolean
+          email_nachrichten: boolean
+          email_statusupdate: boolean
+          email_wochenbericht: boolean
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          email_anfragen?: boolean
+          email_nachrichten?: boolean
+          email_statusupdate?: boolean
+          email_wochenbericht?: boolean
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          email_anfragen?: boolean
+          email_nachrichten?: boolean
+          email_statusupdate?: boolean
+          email_wochenbericht?: boolean
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pflegeaufgaben: {
+        Row: {
+          aktiv: boolean | null
+          beschreibung: string | null
+          created_at: string | null
+          erledigt_heute: boolean | null
+          haeufigkeit: string | null
+          id: string
+          profil_id: string
+          titel: string
+          uhrzeit: string | null
+          verantwortlich: string | null
+          ziel_id: string | null
+        }
+        Insert: {
+          aktiv?: boolean | null
+          beschreibung?: string | null
+          created_at?: string | null
+          erledigt_heute?: boolean | null
+          haeufigkeit?: string | null
+          id?: string
+          profil_id: string
+          titel: string
+          uhrzeit?: string | null
+          verantwortlich?: string | null
+          ziel_id?: string | null
+        }
+        Update: {
+          aktiv?: boolean | null
+          beschreibung?: string | null
+          created_at?: string | null
+          erledigt_heute?: boolean | null
+          haeufigkeit?: string | null
+          id?: string
+          profil_id?: string
+          titel?: string
+          uhrzeit?: string | null
+          verantwortlich?: string | null
+          ziel_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pflegeaufgaben_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "pflegeaufgaben_ziel_id_fkey"
+            columns: ["ziel_id"]
+            isOneToOne: false
+            referencedRelation: "pflegeziele"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pflegedokumentation: {
+        Row: {
+          anbieter_id: string
+          blutdruck_dia: number | null
+          blutdruck_sys: number | null
+          blutzucker: number | null
+          care_worker_id: string | null
+          created_at: string
+          ereignis_datum: string
+          erstellt_von: string | null
+          familie_profile_id: string | null
+          gewicht: number | null
+          id: string
+          inhalt: string
+          kategorie: string
+          medikament_dosis: string | null
+          medikament_gegeben: boolean | null
+          medikament_name: string | null
+          puls: number | null
+          sauerstoff: number | null
+          temperatur: number | null
+          titel: string | null
+          unterschrieben: boolean
+          unterschrift_ts: string | null
+          updated_at: string
+        }
+        Insert: {
+          anbieter_id: string
+          blutdruck_dia?: number | null
+          blutdruck_sys?: number | null
+          blutzucker?: number | null
+          care_worker_id?: string | null
+          created_at?: string
+          ereignis_datum?: string
+          erstellt_von?: string | null
+          familie_profile_id?: string | null
+          gewicht?: number | null
+          id?: string
+          inhalt: string
+          kategorie: string
+          medikament_dosis?: string | null
+          medikament_gegeben?: boolean | null
+          medikament_name?: string | null
+          puls?: number | null
+          sauerstoff?: number | null
+          temperatur?: number | null
+          titel?: string | null
+          unterschrieben?: boolean
+          unterschrift_ts?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anbieter_id?: string
+          blutdruck_dia?: number | null
+          blutdruck_sys?: number | null
+          blutzucker?: number | null
+          care_worker_id?: string | null
+          created_at?: string
+          ereignis_datum?: string
+          erstellt_von?: string | null
+          familie_profile_id?: string | null
+          gewicht?: number | null
+          id?: string
+          inhalt?: string
+          kategorie?: string
+          medikament_dosis?: string | null
+          medikament_gegeben?: boolean | null
+          medikament_name?: string | null
+          puls?: number | null
+          sauerstoff?: number | null
+          temperatur?: number | null
+          titel?: string | null
+          unterschrieben?: boolean
+          unterschrift_ts?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pflegedokumentation_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pflegedokumentation_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "pflegedokumentation_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "pflegedokumentation_care_worker_id_fkey"
+            columns: ["care_worker_id"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pflegedokumentation_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pflegedokumentation_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pflegegrad_einschaetzungen: {
+        Row: {
+          aktueller_pflegegrad: number | null
+          anbieter_id: string | null
+          created_at: string
+          einschaetzung_datum: string
+          erstellt_von: string | null
+          familie_profile_id: string
+          gesamtpunkte: number | null
+          id: string
+          m1_bettpositionswechsel: number | null
+          m1_fortbewegung_innen: number | null
+          m1_halten_sitzposition: number | null
+          m1_treppensteigen: number | null
+          m1_umsetzen: number | null
+          m2_alltagsgegenstaende: number | null
+          m2_oertliche_orientierung: number | null
+          m2_personen_erkennen: number | null
+          m2_risiken_erkennen: number | null
+          m2_zeitliche_orientierung: number | null
+          m3_abwehrverhalten: number | null
+          m3_motorische_unruhe: number | null
+          m3_naechtliche_unruhe: number | null
+          m4_an_auskleiden: number | null
+          m4_ernaehrung: number | null
+          m4_koerperpflege: number | null
+          m4_toilettennutzung: number | null
+          m4_trinken: number | null
+          m4_waschen_gesicht: number | null
+          m5_arztbesuche: number | null
+          m5_hilfsmittel: number | null
+          m5_medikamente: number | null
+          m6_freizeitgestaltung: number | null
+          m6_kontakte: number | null
+          m6_tagesstruktur: number | null
+          notizen: string | null
+          pflegegrad_empfehlung: number | null
+        }
+        Insert: {
+          aktueller_pflegegrad?: number | null
+          anbieter_id?: string | null
+          created_at?: string
+          einschaetzung_datum?: string
+          erstellt_von?: string | null
+          familie_profile_id: string
+          gesamtpunkte?: number | null
+          id?: string
+          m1_bettpositionswechsel?: number | null
+          m1_fortbewegung_innen?: number | null
+          m1_halten_sitzposition?: number | null
+          m1_treppensteigen?: number | null
+          m1_umsetzen?: number | null
+          m2_alltagsgegenstaende?: number | null
+          m2_oertliche_orientierung?: number | null
+          m2_personen_erkennen?: number | null
+          m2_risiken_erkennen?: number | null
+          m2_zeitliche_orientierung?: number | null
+          m3_abwehrverhalten?: number | null
+          m3_motorische_unruhe?: number | null
+          m3_naechtliche_unruhe?: number | null
+          m4_an_auskleiden?: number | null
+          m4_ernaehrung?: number | null
+          m4_koerperpflege?: number | null
+          m4_toilettennutzung?: number | null
+          m4_trinken?: number | null
+          m4_waschen_gesicht?: number | null
+          m5_arztbesuche?: number | null
+          m5_hilfsmittel?: number | null
+          m5_medikamente?: number | null
+          m6_freizeitgestaltung?: number | null
+          m6_kontakte?: number | null
+          m6_tagesstruktur?: number | null
+          notizen?: string | null
+          pflegegrad_empfehlung?: number | null
+        }
+        Update: {
+          aktueller_pflegegrad?: number | null
+          anbieter_id?: string | null
+          created_at?: string
+          einschaetzung_datum?: string
+          erstellt_von?: string | null
+          familie_profile_id?: string
+          gesamtpunkte?: number | null
+          id?: string
+          m1_bettpositionswechsel?: number | null
+          m1_fortbewegung_innen?: number | null
+          m1_halten_sitzposition?: number | null
+          m1_treppensteigen?: number | null
+          m1_umsetzen?: number | null
+          m2_alltagsgegenstaende?: number | null
+          m2_oertliche_orientierung?: number | null
+          m2_personen_erkennen?: number | null
+          m2_risiken_erkennen?: number | null
+          m2_zeitliche_orientierung?: number | null
+          m3_abwehrverhalten?: number | null
+          m3_motorische_unruhe?: number | null
+          m3_naechtliche_unruhe?: number | null
+          m4_an_auskleiden?: number | null
+          m4_ernaehrung?: number | null
+          m4_koerperpflege?: number | null
+          m4_toilettennutzung?: number | null
+          m4_trinken?: number | null
+          m4_waschen_gesicht?: number | null
+          m5_arztbesuche?: number | null
+          m5_hilfsmittel?: number | null
+          m5_medikamente?: number | null
+          m6_freizeitgestaltung?: number | null
+          m6_kontakte?: number | null
+          m6_tagesstruktur?: number | null
+          notizen?: string | null
+          pflegegrad_empfehlung?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pflegegrad_einschaetzungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pflegegrad_einschaetzungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "pflegegrad_einschaetzungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "pflegegrad_einschaetzungen_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pflegegrad_einschaetzungen_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pflegekassen_budgets: {
+        Row: {
+          created_at: string
+          id: string
+          jahr: number
+          jahresbudget: number
+          leistungsart: string
+          profil_id: string
+          updated_at: string
+          verbraucht: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jahr: number
+          jahresbudget: number
+          leistungsart: string
+          profil_id: string
+          updated_at?: string
+          verbraucht?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jahr?: number
+          jahresbudget?: number
+          leistungsart?: string
+          profil_id?: string
+          updated_at?: string
+          verbraucht?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pflegekassen_budgets_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pflegekosten: {
+        Row: {
+          belegnummer: string | null
+          beschreibung: string | null
+          betrag: number
+          buchungsdatum: string
+          created_at: string | null
+          erstattung: boolean | null
+          id: string
+          kategorie: string
+          profil_id: string
+        }
+        Insert: {
+          belegnummer?: string | null
+          beschreibung?: string | null
+          betrag: number
+          buchungsdatum?: string
+          created_at?: string | null
+          erstattung?: boolean | null
+          id?: string
+          kategorie: string
+          profil_id: string
+        }
+        Update: {
+          belegnummer?: string | null
+          beschreibung?: string | null
+          betrag?: number
+          buchungsdatum?: string
+          created_at?: string | null
+          erstattung?: boolean | null
+          id?: string
+          kategorie?: string
+          profil_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pflegekosten_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      pflegetagebuch: {
+        Row: {
+          aktivitaeten: string | null
+          created_at: string | null
+          eintrag_datum: string
+          erstellt_von: string | null
+          id: string
+          notizen: string | null
+          profil_id: string
+          schlaf_stunden: number | null
+          schmerzen: number | null
+          stimmung: number | null
+        }
+        Insert: {
+          aktivitaeten?: string | null
+          created_at?: string | null
+          eintrag_datum?: string
+          erstellt_von?: string | null
+          id?: string
+          notizen?: string | null
+          profil_id: string
+          schlaf_stunden?: number | null
+          schmerzen?: number | null
+          stimmung?: number | null
+        }
+        Update: {
+          aktivitaeten?: string | null
+          created_at?: string | null
+          eintrag_datum?: string
+          erstellt_von?: string | null
+          id?: string
+          notizen?: string | null
+          profil_id?: string
+          schlaf_stunden?: number | null
+          schmerzen?: number | null
+          stimmung?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pflegetagebuch_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "pflegetagebuch_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      pflegetermine: {
+        Row: {
+          anbieter_id: string | null
+          beschreibung: string | null
+          created_at: string | null
+          datum: string
+          dauer_minuten: number | null
+          erinnerung_tage: number | null
+          erledigt: boolean | null
+          id: string
+          notizen: string | null
+          ort: string | null
+          profil_id: string
+          termin_typ: string | null
+          titel: string
+        }
+        Insert: {
+          anbieter_id?: string | null
+          beschreibung?: string | null
+          created_at?: string | null
+          datum: string
+          dauer_minuten?: number | null
+          erinnerung_tage?: number | null
+          erledigt?: boolean | null
+          id?: string
+          notizen?: string | null
+          ort?: string | null
+          profil_id: string
+          termin_typ?: string | null
+          titel: string
+        }
+        Update: {
+          anbieter_id?: string | null
+          beschreibung?: string | null
+          created_at?: string | null
+          datum?: string
+          dauer_minuten?: number | null
+          erinnerung_tage?: number | null
+          erledigt?: boolean | null
+          id?: string
+          notizen?: string | null
+          ort?: string | null
+          profil_id?: string
+          termin_typ?: string | null
+          titel?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pflegetermine_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pflegetermine_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "pflegetermine_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "pflegetermine_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      pflegeziele: {
+        Row: {
+          beschreibung: string | null
+          created_at: string | null
+          erreicht: boolean | null
+          id: string
+          kategorie: string | null
+          prioritaet: number | null
+          profil_id: string
+          titel: string
+          updated_at: string | null
+          ziel_datum: string | null
+        }
+        Insert: {
+          beschreibung?: string | null
+          created_at?: string | null
+          erreicht?: boolean | null
+          id?: string
+          kategorie?: string | null
+          prioritaet?: number | null
+          profil_id: string
+          titel: string
+          updated_at?: string | null
+          ziel_datum?: string | null
+        }
+        Update: {
+          beschreibung?: string | null
+          created_at?: string | null
+          erreicht?: boolean | null
+          id?: string
+          kategorie?: string | null
+          prioritaet?: number | null
+          profil_id?: string
+          titel?: string
+          updated_at?: string | null
+          ziel_datum?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pflegeziele_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          deleted_at: string | null
+          email: string
+          email_prefs: Json
+          haushalt_id: string | null
+          haushalt_rolle: Database["public"]["Enums"]["haushalt_rolle"] | null
+          id: string
+          nachname: string | null
+          onboarding_done: boolean
+          ort: string | null
+          plz: string | null
+          role: string
+          telefon: string | null
+          ui_modus: string
+          updated_at: string
+          user_id: string
+          vorname: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          email: string
+          email_prefs?: Json
+          haushalt_id?: string | null
+          haushalt_rolle?: Database["public"]["Enums"]["haushalt_rolle"] | null
+          id?: string
+          nachname?: string | null
+          onboarding_done?: boolean
+          ort?: string | null
+          plz?: string | null
+          role?: string
+          telefon?: string | null
+          ui_modus?: string
+          updated_at?: string
+          user_id: string
+          vorname?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          email?: string
+          email_prefs?: Json
+          haushalt_id?: string | null
+          haushalt_rolle?: Database["public"]["Enums"]["haushalt_rolle"] | null
+          id?: string
+          nachname?: string | null
+          onboarding_done?: boolean
+          ort?: string | null
+          plz?: string | null
+          role?: string
+          telefon?: string | null
+          ui_modus?: string
+          updated_at?: string
+          user_id?: string
+          vorname?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_haushalt_id_fkey"
+            columns: ["haushalt_id"]
+            isOneToOne: false
+            referencedRelation: "haushalte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qualitaetspruefungen: {
+        Row: {
+          abgeschlossen: boolean
+          anbieter_id: string
+          bericht_url: string | null
+          created_at: string
+          ergebnis: string | null
+          erstellt_von: string | null
+          id: string
+          massnahmen: string | null
+          naechste_pruefung: string | null
+          note_gesamt: number | null
+          pruefung_datum: string
+          pruefung_typ: string
+          updated_at: string
+        }
+        Insert: {
+          abgeschlossen?: boolean
+          anbieter_id: string
+          bericht_url?: string | null
+          created_at?: string
+          ergebnis?: string | null
+          erstellt_von?: string | null
+          id?: string
+          massnahmen?: string | null
+          naechste_pruefung?: string | null
+          note_gesamt?: number | null
+          pruefung_datum: string
+          pruefung_typ: string
+          updated_at?: string
+        }
+        Update: {
+          abgeschlossen?: boolean
+          anbieter_id?: string
+          bericht_url?: string | null
+          created_at?: string
+          ergebnis?: string | null
+          erstellt_von?: string | null
+          id?: string
+          massnahmen?: string | null
+          naechste_pruefung?: string | null
+          note_gesamt?: number | null
+          pruefung_datum?: string
+          pruefung_typ?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qualitaetspruefungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qualitaetspruefungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "qualitaetspruefungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "qualitaetspruefungen_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schichten: {
+        Row: {
+          abgesagt_am: string | null
+          absage_grund: string | null
+          anbieter_id: string
+          beschreibung: string | null
+          bestaetigt_am: string | null
+          care_worker_id: string
+          created_at: string
+          ende_ts: string
+          erstellt_von: string | null
+          familie_profile_id: string | null
+          id: string
+          schichttyp: string
+          start_ts: string
+          status: string
+          stunden_geplant: number | null
+          stundensatz_ct: number | null
+          titel: string | null
+          updated_at: string
+        }
+        Insert: {
+          abgesagt_am?: string | null
+          absage_grund?: string | null
+          anbieter_id: string
+          beschreibung?: string | null
+          bestaetigt_am?: string | null
+          care_worker_id: string
+          created_at?: string
+          ende_ts: string
+          erstellt_von?: string | null
+          familie_profile_id?: string | null
+          id?: string
+          schichttyp?: string
+          start_ts: string
+          status?: string
+          stunden_geplant?: number | null
+          stundensatz_ct?: number | null
+          titel?: string | null
+          updated_at?: string
+        }
+        Update: {
+          abgesagt_am?: string | null
+          absage_grund?: string | null
+          anbieter_id?: string
+          beschreibung?: string | null
+          bestaetigt_am?: string | null
+          care_worker_id?: string
+          created_at?: string
+          ende_ts?: string
+          erstellt_von?: string | null
+          familie_profile_id?: string | null
+          id?: string
+          schichttyp?: string
+          start_ts?: string
+          status?: string
+          stunden_geplant?: number | null
+          stundensatz_ct?: number | null
+          titel?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schichten_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schichten_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "schichten_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "schichten_care_worker_id_fkey"
+            columns: ["care_worker_id"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schichten_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schichten_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spatial_ref_sys: {
+        Row: {
+          auth_name: string | null
+          auth_srid: number | null
+          proj4text: string | null
+          srid: number
+          srtext: string | null
+        }
+        Insert: {
+          auth_name?: string | null
+          auth_srid?: number | null
+          proj4text?: string | null
+          srid: number
+          srtext?: string | null
+        }
+        Update: {
+          auth_name?: string | null
+          auth_srid?: number | null
+          proj4text?: string | null
+          srid?: number
+          srtext?: string | null
+        }
+        Relationships: []
+      }
+      stripe_connect_accounts: {
+        Row: {
+          anbieter_id: string
+          charges_enabled: boolean
+          country: string
+          created_at: string
+          details_submitted: boolean
+          email: string | null
+          id: string
+          onboarding_complete: boolean
+          payouts_enabled: boolean
+          stripe_account_id: string
+          updated_at: string
+        }
+        Insert: {
+          anbieter_id: string
+          charges_enabled?: boolean
+          country?: string
+          created_at?: string
+          details_submitted?: boolean
+          email?: string | null
+          id?: string
+          onboarding_complete?: boolean
+          payouts_enabled?: boolean
+          stripe_account_id: string
+          updated_at?: string
+        }
+        Update: {
+          anbieter_id?: string
+          charges_enabled?: boolean
+          country?: string
+          created_at?: string
+          details_submitted?: boolean
+          email?: string | null
+          id?: string
+          onboarding_complete?: boolean
+          payouts_enabled?: boolean
+          stripe_account_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_connect_accounts_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: true
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stripe_connect_accounts_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: true
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "stripe_connect_accounts_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: true
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+        ]
+      }
+      stundennachweise: {
+        Row: {
+          anbieter_id: string
+          approved_at: string | null
+          beschreibung: string | null
+          betrag_ct: number | null
+          care_worker_id: string
+          created_at: string
+          datum: string
+          familie_profile_id: string | null
+          id: string
+          paid_at: string | null
+          payment_intent_id: string | null
+          payment_status: string | null
+          status: string
+          stripe_charge_id: string | null
+          stunden: number
+          stundensatz_ct: number
+        }
+        Insert: {
+          anbieter_id: string
+          approved_at?: string | null
+          beschreibung?: string | null
+          betrag_ct?: number | null
+          care_worker_id: string
+          created_at?: string
+          datum: string
+          familie_profile_id?: string | null
+          id?: string
+          paid_at?: string | null
+          payment_intent_id?: string | null
+          payment_status?: string | null
+          status?: string
+          stripe_charge_id?: string | null
+          stunden: number
+          stundensatz_ct: number
+        }
+        Update: {
+          anbieter_id?: string
+          approved_at?: string | null
+          beschreibung?: string | null
+          betrag_ct?: number | null
+          care_worker_id?: string
+          created_at?: string
+          datum?: string
+          familie_profile_id?: string | null
+          id?: string
+          paid_at?: string | null
+          payment_intent_id?: string | null
+          payment_status?: string | null
+          status?: string
+          stripe_charge_id?: string | null
+          stunden?: number
+          stundensatz_ct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stundennachweise_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stundennachweise_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "stundennachweise_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "stundennachweise_care_worker_id_fkey"
+            columns: ["care_worker_id"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stundennachweise_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      traeger_klienten: {
+        Row: {
+          created_at: string | null
+          geburtsjahr: number | null
+          id: string
+          klienten_nr: string
+          lebenslage: string | null
+          letzte_pruefung_at: string | null
+          nachname: string | null
+          notizen: string | null
+          pflegegrad: number | null
+          plz: string | null
+          pruefungs_ergebnis: Json | null
+          status: string
+          traeger_id: string
+          updated_at: string | null
+          vorname: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          geburtsjahr?: number | null
+          id?: string
+          klienten_nr: string
+          lebenslage?: string | null
+          letzte_pruefung_at?: string | null
+          nachname?: string | null
+          notizen?: string | null
+          pflegegrad?: number | null
+          plz?: string | null
+          pruefungs_ergebnis?: Json | null
+          status?: string
+          traeger_id: string
+          updated_at?: string | null
+          vorname?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          geburtsjahr?: number | null
+          id?: string
+          klienten_nr?: string
+          lebenslage?: string | null
+          letzte_pruefung_at?: string | null
+          nachname?: string | null
+          notizen?: string | null
+          pflegegrad?: number | null
+          plz?: string | null
+          pruefungs_ergebnis?: Json | null
+          status?: string
+          traeger_id?: string
+          updated_at?: string | null
+          vorname?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traeger_klienten_traeger_id_fkey"
+            columns: ["traeger_id"]
+            isOneToOne: false
+            referencedRelation: "traeger_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      traeger_massenpruefungen: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          dateiname: string
+          ergebnis_url: string | null
+          fehler: string | null
+          id: string
+          status: string
+          traeger_id: string
+          zeilen_gesamt: number | null
+          zeilen_verarbeitet: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          dateiname: string
+          ergebnis_url?: string | null
+          fehler?: string | null
+          id?: string
+          status?: string
+          traeger_id: string
+          zeilen_gesamt?: number | null
+          zeilen_verarbeitet?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          dateiname?: string
+          ergebnis_url?: string | null
+          fehler?: string | null
+          id?: string
+          status?: string
+          traeger_id?: string
+          zeilen_gesamt?: number | null
+          zeilen_verarbeitet?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traeger_massenpruefungen_traeger_id_fkey"
+            columns: ["traeger_id"]
+            isOneToOne: false
+            referencedRelation: "traeger_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      traeger_profiles: {
+        Row: {
+          abo_plan: string
+          created_at: string | null
+          id: string
+          max_klienten: number
+          organisation: string
+          ort: string | null
+          plz: string | null
+          profile_id: string
+          strasse: string | null
+          telefon: string | null
+          typ: string
+          updated_at: string | null
+          verified: boolean
+          website: string | null
+        }
+        Insert: {
+          abo_plan?: string
+          created_at?: string | null
+          id?: string
+          max_klienten?: number
+          organisation: string
+          ort?: string | null
+          plz?: string | null
+          profile_id: string
+          strasse?: string | null
+          telefon?: string | null
+          typ?: string
+          updated_at?: string | null
+          verified?: boolean
+          website?: string | null
+        }
+        Update: {
+          abo_plan?: string
+          created_at?: string | null
+          id?: string
+          max_klienten?: number
+          organisation?: string
+          ort?: string | null
+          plz?: string | null
+          profile_id?: string
+          strasse?: string | null
+          telefon?: string | null
+          typ?: string
+          updated_at?: string | null
+          verified?: boolean
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traeger_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      uebergabeprotokolle: {
+        Row: {
+          allgemeinzustand: string | null
+          anbieter_id: string
+          besonderheiten: string | null
+          bestaetigt: boolean | null
+          bestaetigt_am: string | null
+          care_worker_bis: string | null
+          care_worker_von: string | null
+          created_at: string
+          erstellt_am: string
+          familie_profile_id: string | null
+          id: string
+          medikamente_status: string | null
+          offene_aufgaben: string | null
+          schicht_bis_id: string | null
+          schicht_von_id: string | null
+          stimmung: string | null
+          vitalwerte_auffaellig: boolean | null
+        }
+        Insert: {
+          allgemeinzustand?: string | null
+          anbieter_id: string
+          besonderheiten?: string | null
+          bestaetigt?: boolean | null
+          bestaetigt_am?: string | null
+          care_worker_bis?: string | null
+          care_worker_von?: string | null
+          created_at?: string
+          erstellt_am?: string
+          familie_profile_id?: string | null
+          id?: string
+          medikamente_status?: string | null
+          offene_aufgaben?: string | null
+          schicht_bis_id?: string | null
+          schicht_von_id?: string | null
+          stimmung?: string | null
+          vitalwerte_auffaellig?: boolean | null
+        }
+        Update: {
+          allgemeinzustand?: string | null
+          anbieter_id?: string
+          besonderheiten?: string | null
+          bestaetigt?: boolean | null
+          bestaetigt_am?: string | null
+          care_worker_bis?: string | null
+          care_worker_von?: string | null
+          created_at?: string
+          erstellt_am?: string
+          familie_profile_id?: string | null
+          id?: string
+          medikamente_status?: string | null
+          offene_aufgaben?: string | null
+          schicht_bis_id?: string | null
+          schicht_von_id?: string | null
+          stimmung?: string | null
+          vitalwerte_auffaellig?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uebergabeprotokolle_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_care_worker_bis_fkey"
+            columns: ["care_worker_bis"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_care_worker_von_fkey"
+            columns: ["care_worker_von"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_schicht_bis_id_fkey"
+            columns: ["schicht_bis_id"]
+            isOneToOne: false
+            referencedRelation: "schicht_konflikte"
+            referencedColumns: ["schicht_a_id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_schicht_bis_id_fkey"
+            columns: ["schicht_bis_id"]
+            isOneToOne: false
+            referencedRelation: "schicht_konflikte"
+            referencedColumns: ["schicht_b_id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_schicht_bis_id_fkey"
+            columns: ["schicht_bis_id"]
+            isOneToOne: false
+            referencedRelation: "schichten"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_schicht_von_id_fkey"
+            columns: ["schicht_von_id"]
+            isOneToOne: false
+            referencedRelation: "schicht_konflikte"
+            referencedColumns: ["schicht_a_id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_schicht_von_id_fkey"
+            columns: ["schicht_von_id"]
+            isOneToOne: false
+            referencedRelation: "schicht_konflikte"
+            referencedColumns: ["schicht_b_id"]
+          },
+          {
+            foreignKeyName: "uebergabeprotokolle_schicht_von_id_fkey"
+            columns: ["schicht_von_id"]
+            isOneToOne: false
+            referencedRelation: "schichten"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vollmachten: {
+        Row: {
+          aktiv: boolean | null
+          beschreibung: string | null
+          bevollmaechtigter_id: string | null
+          created_at: string | null
+          dokument_id: string | null
+          gueltig_ab: string | null
+          gueltig_bis: string | null
+          haushalt_id: string
+          id: string
+          notariell: boolean | null
+          registriert_beim: string | null
+          titel: string
+          typ: Database["public"]["Enums"]["vollmacht_typ"]
+          updated_at: string | null
+          vollmachtgeber_id: string | null
+        }
+        Insert: {
+          aktiv?: boolean | null
+          beschreibung?: string | null
+          bevollmaechtigter_id?: string | null
+          created_at?: string | null
+          dokument_id?: string | null
+          gueltig_ab?: string | null
+          gueltig_bis?: string | null
+          haushalt_id: string
+          id?: string
+          notariell?: boolean | null
+          registriert_beim?: string | null
+          titel: string
+          typ: Database["public"]["Enums"]["vollmacht_typ"]
+          updated_at?: string | null
+          vollmachtgeber_id?: string | null
+        }
+        Update: {
+          aktiv?: boolean | null
+          beschreibung?: string | null
+          bevollmaechtigter_id?: string | null
+          created_at?: string | null
+          dokument_id?: string | null
+          gueltig_ab?: string | null
+          gueltig_bis?: string | null
+          haushalt_id?: string
+          id?: string
+          notariell?: boolean | null
+          registriert_beim?: string | null
+          titel?: string
+          typ?: Database["public"]["Enums"]["vollmacht_typ"]
+          updated_at?: string | null
+          vollmachtgeber_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vollmachten_bevollmaechtigter_id_fkey"
+            columns: ["bevollmaechtigter_id"]
+            isOneToOne: false
+            referencedRelation: "haushaltsmitglieder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vollmachten_haushalt_id_fkey"
+            columns: ["haushalt_id"]
+            isOneToOne: false
+            referencedRelation: "haushalte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vollmachten_vollmachtgeber_id_fkey"
+            columns: ["vollmachtgeber_id"]
+            isOneToOne: false
+            referencedRelation: "haushaltsmitglieder"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      white_label_configs: {
+        Row: {
+          aktiv: boolean
+          color_accent: string
+          color_primary: string
+          color_secondary: string
+          created_at: string
+          datenschutz_url: string | null
+          domain: string | null
+          favicon_url: string | null
+          features: Json
+          font_family: string
+          id: string
+          impressum_url: string | null
+          logo_url: string | null
+          organisation: string
+          slug: string
+          support_email: string | null
+          support_tel: string | null
+          updated_at: string
+        }
+        Insert: {
+          aktiv?: boolean
+          color_accent?: string
+          color_primary?: string
+          color_secondary?: string
+          created_at?: string
+          datenschutz_url?: string | null
+          domain?: string | null
+          favicon_url?: string | null
+          features?: Json
+          font_family?: string
+          id?: string
+          impressum_url?: string | null
+          logo_url?: string | null
+          organisation: string
+          slug: string
+          support_email?: string | null
+          support_tel?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aktiv?: boolean
+          color_accent?: string
+          color_primary?: string
+          color_secondary?: string
+          created_at?: string
+          datenschutz_url?: string | null
+          domain?: string | null
+          favicon_url?: string | null
+          features?: Json
+          font_family?: string
+          id?: string
+          impressum_url?: string | null
+          logo_url?: string | null
+          organisation?: string
+          slug?: string
+          support_email?: string | null
+          support_tel?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wiedervorlagen: {
+        Row: {
+          anbieter_id: string
+          anfrage_id: string
+          created_at: string
+          erledigt: boolean
+          faellig_am: string
+          id: string
+          notiz: string | null
+        }
+        Insert: {
+          anbieter_id: string
+          anfrage_id: string
+          created_at?: string
+          erledigt?: boolean
+          faellig_am: string
+          id?: string
+          notiz?: string | null
+        }
+        Update: {
+          anbieter_id?: string
+          anfrage_id?: string
+          created_at?: string
+          erledigt?: boolean
+          faellig_am?: string
+          id?: string
+          notiz?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wiedervorlagen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wiedervorlagen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "wiedervorlagen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "wiedervorlagen_anfrage_id_fkey"
+            columns: ["anfrage_id"]
+            isOneToOne: false
+            referencedRelation: "anfragen"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wochenplaene: {
+        Row: {
+          aktiv: boolean
+          anbieter_id: string
+          care_worker_id: string
+          created_at: string
+          familie_profile_id: string | null
+          gueltig_ab: string
+          gueltig_bis: string | null
+          id: string
+          muster: Json
+          name: string
+        }
+        Insert: {
+          aktiv?: boolean
+          anbieter_id: string
+          care_worker_id: string
+          created_at?: string
+          familie_profile_id?: string | null
+          gueltig_ab?: string
+          gueltig_bis?: string | null
+          id?: string
+          muster?: Json
+          name: string
+        }
+        Update: {
+          aktiv?: boolean
+          anbieter_id?: string
+          care_worker_id?: string
+          created_at?: string
+          familie_profile_id?: string | null
+          gueltig_ab?: string
+          gueltig_bis?: string | null
+          id?: string
+          muster?: Json
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wochenplaene_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wochenplaene_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "wochenplaene_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "wochenplaene_care_worker_id_fkey"
+            columns: ["care_worker_id"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wochenplaene_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wohlbefinden: {
+        Row: {
+          anbieter_id: string | null
+          appetit: number | null
+          created_at: string
+          erfasst_am: string
+          erfasst_von_rolle: string | null
+          erstellt_von: string | null
+          familie_profile_id: string
+          id: string
+          mobilitaet: number | null
+          notiz: string | null
+          schlaf: number | null
+          schmerz: number | null
+          stimmung: number | null
+        }
+        Insert: {
+          anbieter_id?: string | null
+          appetit?: number | null
+          created_at?: string
+          erfasst_am?: string
+          erfasst_von_rolle?: string | null
+          erstellt_von?: string | null
+          familie_profile_id: string
+          id?: string
+          mobilitaet?: number | null
+          notiz?: string | null
+          schlaf?: number | null
+          schmerz?: number | null
+          stimmung?: number | null
+        }
+        Update: {
+          anbieter_id?: string | null
+          appetit?: number | null
+          created_at?: string
+          erfasst_am?: string
+          erfasst_von_rolle?: string | null
+          erstellt_von?: string | null
+          familie_profile_id?: string
+          id?: string
+          mobilitaet?: number | null
+          notiz?: string | null
+          schlaf?: number | null
+          schmerz?: number | null
+          stimmung?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wohlbefinden_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wohlbefinden_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "wohlbefinden_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "wohlbefinden_erstellt_von_fkey"
+            columns: ["erstellt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wohlbefinden_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wundversorgung: {
+        Row: {
+          anbieter_id: string
+          care_worker_id: string | null
+          created_at: string
+          ereignis_datum: string
+          familie_profile_id: string
+          foto_url: string | null
+          heilungsverlauf: string | null
+          id: string
+          naechste_kontrolle: string | null
+          wundbehandlung: string | null
+          wundgroesse_cm: number | null
+          wundlokalisation: string
+          wundstadium: number | null
+          wundtiefe: string | null
+        }
+        Insert: {
+          anbieter_id: string
+          care_worker_id?: string | null
+          created_at?: string
+          ereignis_datum?: string
+          familie_profile_id: string
+          foto_url?: string | null
+          heilungsverlauf?: string | null
+          id?: string
+          naechste_kontrolle?: string | null
+          wundbehandlung?: string | null
+          wundgroesse_cm?: number | null
+          wundlokalisation: string
+          wundstadium?: number | null
+          wundtiefe?: string | null
+        }
+        Update: {
+          anbieter_id?: string
+          care_worker_id?: string | null
+          created_at?: string
+          ereignis_datum?: string
+          familie_profile_id?: string
+          foto_url?: string | null
+          heilungsverlauf?: string | null
+          id?: string
+          naechste_kontrolle?: string | null
+          wundbehandlung?: string | null
+          wundgroesse_cm?: number | null
+          wundlokalisation?: string
+          wundstadium?: number | null
+          wundtiefe?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wundversorgung_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wundversorgung_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "wundversorgung_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "wundversorgung_care_worker_id_fkey"
+            columns: ["care_worker_id"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wundversorgung_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wundversorgungen: {
+        Row: {
+          anbieter_id: string | null
+          created_at: string | null
+          dokumentiert_von: string | null
+          exsudat: string | null
+          familie_profile_id: string
+          foto_url: string | null
+          id: string
+          lokalisation: string
+          massnahmen: string | null
+          naechster_verbandwechsel: string | null
+          notizen: string | null
+          schmerz_nrs: number | null
+          tiefe_grad: number | null
+          verbandsmaterial: string | null
+          wundart: string | null
+          wunde_id: string | null
+          wundgroesse_cm2: number | null
+          wundrand: string | null
+          wundzustand: string | null
+        }
+        Insert: {
+          anbieter_id?: string | null
+          created_at?: string | null
+          dokumentiert_von?: string | null
+          exsudat?: string | null
+          familie_profile_id: string
+          foto_url?: string | null
+          id?: string
+          lokalisation: string
+          massnahmen?: string | null
+          naechster_verbandwechsel?: string | null
+          notizen?: string | null
+          schmerz_nrs?: number | null
+          tiefe_grad?: number | null
+          verbandsmaterial?: string | null
+          wundart?: string | null
+          wunde_id?: string | null
+          wundgroesse_cm2?: number | null
+          wundrand?: string | null
+          wundzustand?: string | null
+        }
+        Update: {
+          anbieter_id?: string | null
+          created_at?: string | null
+          dokumentiert_von?: string | null
+          exsudat?: string | null
+          familie_profile_id?: string
+          foto_url?: string | null
+          id?: string
+          lokalisation?: string
+          massnahmen?: string | null
+          naechster_verbandwechsel?: string | null
+          notizen?: string | null
+          schmerz_nrs?: number | null
+          tiefe_grad?: number | null
+          verbandsmaterial?: string | null
+          wundart?: string | null
+          wunde_id?: string | null
+          wundgroesse_cm2?: number | null
+          wundrand?: string | null
+          wundzustand?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wundversorgungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wundversorgungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "wundversorgungen_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "wundversorgungen_dokumentiert_von_fkey"
+            columns: ["dokumentiert_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wundversorgungen_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zahlungen_log: {
+        Row: {
+          anbieter_id: string
+          beschreibung: string | null
+          brutto_ct: number
+          created_at: string
+          familie_profile_id: string | null
+          id: string
+          netto_ct: number
+          paid_at: string | null
+          payment_intent_id: string
+          provision_ct: number
+          status: string
+          stripe_account_id: string
+          stripe_charge_id: string | null
+          stripe_transfer_id: string | null
+          stundennachweis_id: string | null
+        }
+        Insert: {
+          anbieter_id: string
+          beschreibung?: string | null
+          brutto_ct: number
+          created_at?: string
+          familie_profile_id?: string | null
+          id?: string
+          netto_ct: number
+          paid_at?: string | null
+          payment_intent_id: string
+          provision_ct: number
+          status?: string
+          stripe_account_id: string
+          stripe_charge_id?: string | null
+          stripe_transfer_id?: string | null
+          stundennachweis_id?: string | null
+        }
+        Update: {
+          anbieter_id?: string
+          beschreibung?: string | null
+          brutto_ct?: number
+          created_at?: string
+          familie_profile_id?: string | null
+          id?: string
+          netto_ct?: number
+          paid_at?: string | null
+          payment_intent_id?: string
+          provision_ct?: number
+          status?: string
+          stripe_account_id?: string
+          stripe_charge_id?: string | null
+          stripe_transfer_id?: string | null
+          stundennachweis_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zahlungen_log_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zahlungen_log_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "zahlungen_log_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "zahlungen_log_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zahlungen_log_stundennachweis_id_fkey"
+            columns: ["stundennachweis_id"]
+            isOneToOne: false
+            referencedRelation: "stundennachweise"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      anbieter_zahlungs_uebersicht: {
+        Row: {
+          anbieter_id: string | null
+          anbieter_name: string | null
+          charges_enabled: boolean | null
+          offen_ct: number | null
+          onboarding_complete: boolean | null
+          payouts_enabled: boolean | null
+          stripe_account_id: string | null
+          stunden_approved: number | null
+          stunden_paid: number | null
+          stunden_pending: number | null
+          umsatz_ct: number | null
+        }
+        Relationships: []
+      }
+      geography_columns: {
+        Row: {
+          coord_dimension: number | null
+          f_geography_column: unknown
+          f_table_catalog: unknown
+          f_table_name: unknown
+          f_table_schema: unknown
+          srid: number | null
+          type: string | null
+        }
+        Relationships: []
+      }
+      geometry_columns: {
+        Row: {
+          coord_dimension: number | null
+          f_geometry_column: unknown
+          f_table_catalog: string | null
+          f_table_name: unknown
+          f_table_schema: unknown
+          srid: number | null
+          type: string | null
+        }
+        Insert: {
+          coord_dimension?: number | null
+          f_geometry_column?: unknown
+          f_table_catalog?: string | null
+          f_table_name?: unknown
+          f_table_schema?: unknown
+          srid?: number | null
+          type?: string | null
+        }
+        Update: {
+          coord_dimension?: number | null
+          f_geometry_column?: unknown
+          f_table_catalog?: string | null
+          f_table_name?: unknown
+          f_table_schema?: unknown
+          srid?: number | null
+          type?: string | null
+        }
+        Relationships: []
+      }
+      ki_audit_stats: {
+        Row: {
+          avg_latency_ms: number | null
+          day: string | null
+          endpoint: string | null
+          error_count: number | null
+          model_version: string | null
+          success_rate_pct: number | null
+          total_calls: number | null
+          total_tokens_in: number | null
+          total_tokens_out: number | null
+        }
+        Relationships: []
+      }
+      mdk_compliance_uebersicht: {
+        Row: {
+          anbieter_id: string | null
+          anbieter_name: string | null
+          betreute_personen: number | null
+          checks_erfuellt: number | null
+          checks_gesamt: number | null
+          doku_eintraege_90d: number | null
+          doku_signiert_90d: number | null
+          kritische_beschwerden: number | null
+          letzte_mdk_pruefung: string | null
+          letzter_mdk_note: number | null
+          offene_beschwerden: number | null
+          ueberfaellige_checks: number | null
+        }
+        Relationships: []
+      }
+      schicht_konflikte: {
+        Row: {
+          a_ende: string | null
+          a_start: string | null
+          b_ende: string | null
+          b_start: string | null
+          care_worker_id: string | null
+          schicht_a_id: string | null
+          schicht_b_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schichten_care_worker_id_fkey"
+            columns: ["care_worker_id"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schichten_wochenuebersicht: {
+        Row: {
+          absagen: number | null
+          anbieter_id: string | null
+          anzahl_schichten: number | null
+          care_worker_id: string | null
+          care_worker_name: string | null
+          geleistete_stunden: number | null
+          geplante_stunden: number | null
+          kalenderwoche: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schichten_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schichten_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "schichten_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "schichten_care_worker_id_fkey"
+            columns: ["care_worker_id"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vitalwert_verlauf: {
+        Row: {
+          anbieter_id: string | null
+          anzahl_messungen: number | null
+          avg_blutzucker: number | null
+          avg_dia: number | null
+          avg_gewicht: number | null
+          avg_puls: number | null
+          avg_sys: number | null
+          avg_temp: number | null
+          datum: string | null
+          familie_profile_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pflegedokumentation_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pflegedokumentation_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "pflegedokumentation_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "pflegedokumentation_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wohlbefinden_verlauf: {
+        Row: {
+          anzahl_eintraege: number | null
+          avg_appetit: number | null
+          avg_mobilitaet: number | null
+          avg_schlaf: number | null
+          avg_schmerz: number | null
+          avg_stimmung: number | null
+          familie_profile_id: string | null
+          woche: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wohlbefinden_familie_profile_id_fkey"
+            columns: ["familie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zertifikat_ablaufwarnungen: {
+        Row: {
+          anbieter_id: string | null
+          bezeichnung: string | null
+          care_worker_id: string | null
+          care_worker_name: string | null
+          gueltig_bis: string | null
+          id: string | null
+          status: string | null
+          tage_bis_ablauf: number | null
+          typ: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_worker_zertifikate_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_worker_zertifikate_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "anbieter_zahlungs_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "care_worker_zertifikate_anbieter_id_fkey"
+            columns: ["anbieter_id"]
+            isOneToOne: false
+            referencedRelation: "mdk_compliance_uebersicht"
+            referencedColumns: ["anbieter_id"]
+          },
+          {
+            foreignKeyName: "care_worker_zertifikate_care_worker_id_fkey"
+            columns: ["care_worker_id"]
+            isOneToOne: false
+            referencedRelation: "care_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Functions: {
+      _postgis_deprecate: {
+        Args: { newname: string; oldname: string; version: string }
+        Returns: undefined
+      }
+      _postgis_index_extent: {
+        Args: { col: string; tbl: unknown }
+        Returns: unknown
+      }
+      _postgis_pgsql_version: { Args: never; Returns: string }
+      _postgis_scripts_pgsql_version: { Args: never; Returns: string }
+      _postgis_selectivity: {
+        Args: { att_name: string; geom: unknown; mode?: string; tbl: unknown }
+        Returns: number
+      }
+      _postgis_stats: {
+        Args: { ""?: string; att_name: string; tbl: unknown }
+        Returns: string
+      }
+      _st_3dintersects: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_containsproperly: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_coveredby:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      _st_covers:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      _st_crosses: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_dwithin: {
+        Args: {
+          geog1: unknown
+          geog2: unknown
+          tolerance: number
+          use_spheroid?: boolean
+        }
+        Returns: boolean
+      }
+      _st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      _st_intersects: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_linecrossingdirection: {
+        Args: { line1: unknown; line2: unknown }
+        Returns: number
+      }
+      _st_longestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      _st_maxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      _st_orderingequals: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_sortablehash: { Args: { geom: unknown }; Returns: number }
+      _st_touches: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_voronoi: {
+        Args: {
+          clip?: unknown
+          g1: unknown
+          return_polygons?: boolean
+          tolerance?: number
+        }
+        Returns: unknown
+      }
+      _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      addauth: { Args: { "": string }; Returns: boolean }
+      addgeometrycolumn:
+        | {
+            Args: {
+              catalog_name: string
+              column_name: string
+              new_dim: number
+              new_srid_in: number
+              new_type: string
+              schema_name: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: string
+              new_dim: number
+              new_srid: number
+              new_type: string
+              schema_name: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: string
+              new_dim: number
+              new_srid: number
+              new_type: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
+          }
+      anbieter_im_umkreis: {
+        Args: { lat_eingabe: number; lng_eingabe: number; radius_km?: number }
+        Returns: {
+          entfernung_m: number
+          id: string
+          lat: number
+          lng: number
+          name: string
+          ort: string
+          plz: string
+          verifiziert: boolean
+        }[]
+      }
+      create_ki_audit_partition: {
+        Args: { target_month: string }
+        Returns: undefined
+      }
+      disablelongtransactions: { Args: never; Returns: string }
+      dropgeometrycolumn:
+        | {
+            Args: {
+              catalog_name: string
+              column_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
+        | { Args: { column_name: string; table_name: string }; Returns: string }
+      dropgeometrytable:
+        | {
+            Args: {
+              catalog_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
+        | { Args: { schema_name: string; table_name: string }; Returns: string }
+        | { Args: { table_name: string }; Returns: string }
+      enablelongtransactions: { Args: never; Returns: string }
+      equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      geometry: { Args: { "": string }; Returns: unknown }
+      geometry_above: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_below: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_cmp: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_contained_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_contains_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_distance_box: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_distance_centroid: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_eq: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_ge: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_gt: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_le: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_left: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_lt: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overabove: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overbelow: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overlaps_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overleft: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overright: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_right: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_same: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_same_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_within: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geomfromewkt: { Args: { "": string }; Returns: unknown }
+      gettransactionid: { Args: never; Returns: unknown }
+      longtransactionsenabled: { Args: never; Returns: boolean }
+      match_leistungen: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          id: string
+          lebenslage: string
+          leistung_beschreibung: string
+          leistung_code: string
+          leistung_titel: string
+          max_betrag_eur: number
+          rechtsgrundlage: string
+          similarity: number
+        }[]
+      }
+      populate_geometry_columns:
+        | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
+        | { Args: { use_typmod?: boolean }; Returns: string }
+      postgis_constraint_dims: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: number
+      }
+      postgis_constraint_srid: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: number
+      }
+      postgis_constraint_type: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: string
+      }
+      postgis_extensions_upgrade: { Args: never; Returns: string }
+      postgis_full_version: { Args: never; Returns: string }
+      postgis_geos_version: { Args: never; Returns: string }
+      postgis_lib_build_date: { Args: never; Returns: string }
+      postgis_lib_revision: { Args: never; Returns: string }
+      postgis_lib_version: { Args: never; Returns: string }
+      postgis_libjson_version: { Args: never; Returns: string }
+      postgis_liblwgeom_version: { Args: never; Returns: string }
+      postgis_libprotobuf_version: { Args: never; Returns: string }
+      postgis_libxml_version: { Args: never; Returns: string }
+      postgis_proj_version: { Args: never; Returns: string }
+      postgis_scripts_build_date: { Args: never; Returns: string }
+      postgis_scripts_installed: { Args: never; Returns: string }
+      postgis_scripts_released: { Args: never; Returns: string }
+      postgis_svn_version: { Args: never; Returns: string }
+      postgis_type_name: {
+        Args: {
+          coord_dimension: number
+          geomname: string
+          use_new_name?: boolean
+        }
+        Returns: string
+      }
+      postgis_version: { Args: never; Returns: string }
+      postgis_wagyu_version: { Args: never; Returns: string }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      st_3dclosestpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3ddistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_3dintersects: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_3dlongestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3dmakebox: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3dmaxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_3dshortestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_addpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_angle:
+        | { Args: { line1: unknown; line2: unknown }; Returns: number }
+        | {
+            Args: { pt1: unknown; pt2: unknown; pt3: unknown; pt4?: unknown }
+            Returns: number
+          }
+      st_area:
+        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }
+        | { Args: { "": string }; Returns: number }
+      st_asencodedpolyline: {
+        Args: { geom: unknown; nprecision?: number }
+        Returns: string
+      }
+      st_asewkt: { Args: { "": string }; Returns: string }
+      st_asgeojson:
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | {
+            Args: {
+              geom_column?: string
+              maxdecimaldigits?: number
+              pretty_bool?: boolean
+              r: Record<string, unknown>
+            }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_asgml:
+        | {
+            Args: {
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+            }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+        | {
+            Args: {
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              geom: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
+            }
+            Returns: string
+          }
+      st_askml:
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; nprefix?: string }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; nprefix?: string }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_aslatlontext: {
+        Args: { geom: unknown; tmpl?: string }
+        Returns: string
+      }
+      st_asmarc21: { Args: { format?: string; geom: unknown }; Returns: string }
+      st_asmvtgeom: {
+        Args: {
+          bounds: unknown
+          buffer?: number
+          clip_geom?: boolean
+          extent?: number
+          geom: unknown
+        }
+        Returns: unknown
+      }
+      st_assvg:
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; rel?: number }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; rel?: number }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_astext: { Args: { "": string }; Returns: string }
+      st_astwkb:
+        | {
+            Args: {
+              geom: unknown
+              prec?: number
+              prec_m?: number
+              prec_z?: number
+              with_boxes?: boolean
+              with_sizes?: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              geom: unknown[]
+              ids: number[]
+              prec?: number
+              prec_m?: number
+              prec_z?: number
+              with_boxes?: boolean
+              with_sizes?: boolean
+            }
+            Returns: string
+          }
+      st_asx3d: {
+        Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+        Returns: string
+      }
+      st_azimuth:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: number }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
+      st_boundingdiagonal: {
+        Args: { fits?: boolean; geom: unknown }
+        Returns: unknown
+      }
+      st_buffer:
+        | {
+            Args: { geom: unknown; options?: string; radius: number }
+            Returns: unknown
+          }
+        | {
+            Args: { geom: unknown; quadsegs: number; radius: number }
+            Returns: unknown
+          }
+      st_centroid: { Args: { "": string }; Returns: unknown }
+      st_clipbybox2d: {
+        Args: { box: unknown; geom: unknown }
+        Returns: unknown
+      }
+      st_closestpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_collect: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
+      st_concavehull: {
+        Args: {
+          param_allow_holes?: boolean
+          param_geom: unknown
+          param_pctconvex: number
+        }
+        Returns: unknown
+      }
+      st_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_containsproperly: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_coorddim: { Args: { geometry: unknown }; Returns: number }
+      st_coveredby:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_covers:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_crosses: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_curvetoline: {
+        Args: { flags?: number; geom: unknown; tol?: number; toltype?: number }
+        Returns: unknown
+      }
+      st_delaunaytriangles: {
+        Args: { flags?: number; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_difference: {
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_disjoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_distance:
+        | {
+            Args: { geog1: unknown; geog2: unknown; use_spheroid?: boolean }
+            Returns: number
+          }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
+      st_distancesphere:
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
+        | {
+            Args: { geom1: unknown; geom2: unknown; radius: number }
+            Returns: number
+          }
+      st_distancespheroid: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_dwithin: {
+        Args: {
+          geog1: unknown
+          geog2: unknown
+          tolerance: number
+          use_spheroid?: boolean
+        }
+        Returns: boolean
+      }
+      st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_expand:
+        | { Args: { box: unknown; dx: number; dy: number }; Returns: unknown }
+        | {
+            Args: { box: unknown; dx: number; dy: number; dz?: number }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              dm?: number
+              dx: number
+              dy: number
+              dz?: number
+              geom: unknown
+            }
+            Returns: unknown
+          }
+      st_force3d: { Args: { geom: unknown; zvalue?: number }; Returns: unknown }
+      st_force3dm: {
+        Args: { geom: unknown; mvalue?: number }
+        Returns: unknown
+      }
+      st_force3dz: {
+        Args: { geom: unknown; zvalue?: number }
+        Returns: unknown
+      }
+      st_force4d: {
+        Args: { geom: unknown; mvalue?: number; zvalue?: number }
+        Returns: unknown
+      }
+      st_generatepoints:
+        | { Args: { area: unknown; npoints: number }; Returns: unknown }
+        | {
+            Args: { area: unknown; npoints: number; seed: number }
+            Returns: unknown
+          }
+      st_geogfromtext: { Args: { "": string }; Returns: unknown }
+      st_geographyfromtext: { Args: { "": string }; Returns: unknown }
+      st_geohash:
+        | { Args: { geog: unknown; maxchars?: number }; Returns: string }
+        | { Args: { geom: unknown; maxchars?: number }; Returns: string }
+      st_geomcollfromtext: { Args: { "": string }; Returns: unknown }
+      st_geometricmedian: {
+        Args: {
+          fail_if_not_converged?: boolean
+          g: unknown
+          max_iter?: number
+          tolerance?: number
+        }
+        Returns: unknown
+      }
+      st_geometryfromtext: { Args: { "": string }; Returns: unknown }
+      st_geomfromewkt: { Args: { "": string }; Returns: unknown }
+      st_geomfromgeojson:
+        | { Args: { "": Json }; Returns: unknown }
+        | { Args: { "": Json }; Returns: unknown }
+        | { Args: { "": string }; Returns: unknown }
+      st_geomfromgml: { Args: { "": string }; Returns: unknown }
+      st_geomfromkml: { Args: { "": string }; Returns: unknown }
+      st_geomfrommarc21: { Args: { marc21xml: string }; Returns: unknown }
+      st_geomfromtext: { Args: { "": string }; Returns: unknown }
+      st_gmltosql: { Args: { "": string }; Returns: unknown }
+      st_hasarc: { Args: { geometry: unknown }; Returns: boolean }
+      st_hausdorffdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_hexagon: {
+        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }
+        Returns: unknown
+      }
+      st_hexagongrid: {
+        Args: { bounds: unknown; size: number }
+        Returns: Record<string, unknown>[]
+      }
+      st_interpolatepoint: {
+        Args: { line: unknown; point: unknown }
+        Returns: number
+      }
+      st_intersection: {
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_intersects:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_isvaliddetail: {
+        Args: { flags?: number; geom: unknown }
+        Returns: Database["public"]["CompositeTypes"]["valid_detail"]
+        SetofOptions: {
+          from: "*"
+          to: "valid_detail"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      st_length:
+        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }
+        | { Args: { "": string }; Returns: number }
+      st_letters: { Args: { font?: Json; letters: string }; Returns: unknown }
+      st_linecrossingdirection: {
+        Args: { line1: unknown; line2: unknown }
+        Returns: number
+      }
+      st_linefromencodedpolyline: {
+        Args: { nprecision?: number; txtin: string }
+        Returns: unknown
+      }
+      st_linefromtext: { Args: { "": string }; Returns: unknown }
+      st_linelocatepoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_linetocurve: { Args: { geometry: unknown }; Returns: unknown }
+      st_locatealong: {
+        Args: { geometry: unknown; leftrightoffset?: number; measure: number }
+        Returns: unknown
+      }
+      st_locatebetween: {
+        Args: {
+          frommeasure: number
+          geometry: unknown
+          leftrightoffset?: number
+          tomeasure: number
+        }
+        Returns: unknown
+      }
+      st_locatebetweenelevations: {
+        Args: { fromelevation: number; geometry: unknown; toelevation: number }
+        Returns: unknown
+      }
+      st_longestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makebox2d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makeline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makevalid: {
+        Args: { geom: unknown; params: string }
+        Returns: unknown
+      }
+      st_maxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_minimumboundingcircle: {
+        Args: { inputgeom: unknown; segs_per_quarter?: number }
+        Returns: unknown
+      }
+      st_mlinefromtext: { Args: { "": string }; Returns: unknown }
+      st_mpointfromtext: { Args: { "": string }; Returns: unknown }
+      st_mpolyfromtext: { Args: { "": string }; Returns: unknown }
+      st_multilinestringfromtext: { Args: { "": string }; Returns: unknown }
+      st_multipointfromtext: { Args: { "": string }; Returns: unknown }
+      st_multipolygonfromtext: { Args: { "": string }; Returns: unknown }
+      st_node: { Args: { g: unknown }; Returns: unknown }
+      st_normalize: { Args: { geom: unknown }; Returns: unknown }
+      st_offsetcurve: {
+        Args: { distance: number; line: unknown; params?: string }
+        Returns: unknown
+      }
+      st_orderingequals: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_perimeter: {
+        Args: { geog: unknown; use_spheroid?: boolean }
+        Returns: number
+      }
+      st_pointfromtext: { Args: { "": string }; Returns: unknown }
+      st_pointm: {
+        Args: {
+          mcoordinate: number
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+        }
+        Returns: unknown
+      }
+      st_pointz: {
+        Args: {
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+          zcoordinate: number
+        }
+        Returns: unknown
+      }
+      st_pointzm: {
+        Args: {
+          mcoordinate: number
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+          zcoordinate: number
+        }
+        Returns: unknown
+      }
+      st_polyfromtext: { Args: { "": string }; Returns: unknown }
+      st_polygonfromtext: { Args: { "": string }; Returns: unknown }
+      st_project: {
+        Args: { azimuth: number; distance: number; geog: unknown }
+        Returns: unknown
+      }
+      st_quantizecoordinates: {
+        Args: {
+          g: unknown
+          prec_m?: number
+          prec_x: number
+          prec_y?: number
+          prec_z?: number
+        }
+        Returns: unknown
+      }
+      st_reduceprecision: {
+        Args: { geom: unknown; gridsize: number }
+        Returns: unknown
+      }
+      st_relate: { Args: { geom1: unknown; geom2: unknown }; Returns: string }
+      st_removerepeatedpoints: {
+        Args: { geom: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_segmentize: {
+        Args: { geog: unknown; max_segment_length: number }
+        Returns: unknown
+      }
+      st_setsrid:
+        | { Args: { geog: unknown; srid: number }; Returns: unknown }
+        | { Args: { geom: unknown; srid: number }; Returns: unknown }
+      st_sharedpaths: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_shortestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_simplifypolygonhull: {
+        Args: { geom: unknown; is_outer?: boolean; vertex_fraction: number }
+        Returns: unknown
+      }
+      st_split: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
+      st_square: {
+        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }
+        Returns: unknown
+      }
+      st_squaregrid: {
+        Args: { bounds: unknown; size: number }
+        Returns: Record<string, unknown>[]
+      }
+      st_srid:
+        | { Args: { geog: unknown }; Returns: number }
+        | { Args: { geom: unknown }; Returns: number }
+      st_subdivide: {
+        Args: { geom: unknown; gridsize?: number; maxvertices?: number }
+        Returns: unknown[]
+      }
+      st_swapordinates: {
+        Args: { geom: unknown; ords: unknown }
+        Returns: unknown
+      }
+      st_symdifference: {
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_symmetricdifference: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_tileenvelope: {
+        Args: {
+          bounds?: unknown
+          margin?: number
+          x: number
+          y: number
+          zoom: number
+        }
+        Returns: unknown
+      }
+      st_touches: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_transform:
+        | {
+            Args: { from_proj: string; geom: unknown; to_proj: string }
+            Returns: unknown
+          }
+        | {
+            Args: { from_proj: string; geom: unknown; to_srid: number }
+            Returns: unknown
+          }
+        | { Args: { geom: unknown; to_proj: string }; Returns: unknown }
+      st_triangulatepolygon: { Args: { g1: unknown }; Returns: unknown }
+      st_union:
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
+        | {
+            Args: { geom1: unknown; geom2: unknown; gridsize: number }
+            Returns: unknown
+          }
+      st_voronoilines: {
+        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_voronoipolygons: {
+        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_wkbtosql: { Args: { wkb: string }; Returns: unknown }
+      st_wkttosql: { Args: { "": string }; Returns: unknown }
+      st_wrapx: {
+        Args: { geom: unknown; move: number; wrap: number }
+        Returns: unknown
+      }
+      suche_care_workers_geo: {
+        Args: {
+          p_fuehrungszeugnis?: boolean
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_max_stundensatz?: number
+          p_offset?: number
+          p_qualifikation?: string
+          p_radius_m?: number
+          p_sprache?: string
+          p_verfuegbar_ab?: string
+        }
+        Returns: {
+          anbieter_id: string
+          anbieter_logo_url: string
+          anbieter_name: string
+          anbieter_verifiziert: boolean
+          berufserfahrung_jahre: number
+          bio: string
+          entfernung_m: number
+          fuehrungszeugnis_vorhanden: boolean
+          id: string
+          max_stunden_woche: number
+          nachname: string
+          ort: string
+          plz: string
+          qualifikationen: string[]
+          sprachen: string[]
+          stundensatz_ct: number
+          verfuegbar_ab: string
+          vorname: string
+          zertifikate: string[]
+        }[]
+      }
+      unlockrows: { Args: { "": string }; Returns: number }
+      updategeometrysrid: {
+        Args: {
+          catalogn_name: string
+          column_name: string
+          new_srid_in: number
+          schema_name: string
+          table_name: string
+        }
+        Returns: string
+      }
+    }
+    Enums: {
+      anbieter_plan: "free" | "starter" | "professional" | "enterprise"
+      haushalt_rolle:
+        | "pflegebeduerftig"
+        | "pflegeperson"
+        | "betreuer"
+        | "vormund"
+        | "bevollmaechtigter"
+        | "kind"
+        | "angehoeriger"
+      vollmacht_typ:
+        | "generalvollmacht"
+        | "vorsorgevollmacht"
+        | "betreuungsverfuegung"
+        | "patientenverfuegung"
+        | "sorgerechtsverfuegung"
+    }
+    CompositeTypes: {
+      geometry_dump: {
+        path: number[] | null
+        geom: unknown
+      }
+      valid_detail: {
+        valid: boolean | null
+        reason: string | null
+        location: unknown
+      }
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      anbieter_plan: ["free", "starter", "professional", "enterprise"],
+      haushalt_rolle: [
+        "pflegebeduerftig",
+        "pflegeperson",
+        "betreuer",
+        "vormund",
+        "bevollmaechtigter",
+        "kind",
+        "angehoeriger",
+      ],
+      vollmacht_typ: [
+        "generalvollmacht",
+        "vorsorgevollmacht",
+        "betreuungsverfuegung",
+        "patientenverfuegung",
+        "sorgerechtsverfuegung",
+      ],
+    },
+  },
+} as const
