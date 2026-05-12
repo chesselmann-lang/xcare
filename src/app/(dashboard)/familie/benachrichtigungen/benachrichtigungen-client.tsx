@@ -57,7 +57,7 @@ export function BenachrichtigungenClient({
 
   function handleMarkAllRead() {
     startTransition(async () => {
-      await alleAlsGelesenMarkieren(profileId);
+      await alleAlsGelesenMarkieren();
       setItems((prev) => prev.map((n) => ({ ...n, gelesen: true })));
       toast.success("Alle als gelesen markiert");
     });
@@ -72,7 +72,7 @@ export function BenachrichtigungenClient({
 
   function handleDeleteAll() {
     startTransition(async () => {
-      await alleLoeschen(profileId);
+      await alleLoeschen();
       setItems([]);
       toast.success("Alle Benachrichtigungen gelöscht");
     });
