@@ -65,10 +65,22 @@ export async function POST(req: NextRequest) {
       .from("profiles").select("id, role").eq("user_id", user.id).single();
     if (profile?.role !== "anbieter") return NextResponse.json({ error: "Nur für Anbieter" }, { status: 403 });
 
+    const { data: anbieter } = await supabase
+      .from("anbieter").select("id").eq("profile_id", profile!.id).single();
+    if (!anbieter) return NextResponse.json({ error: "Kein Anbieter-Konto" }, { status: 403 });
+
     const body = await req.json();
     const parsed = Schema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
     const d = parsed.data;
+
+    // Verify the care_worker belongs to this anbieter (IDOR prevention)
+    const { data: worker } = await supabase
+      .from("care_workers").select("id")
+      .eq("id", d.care_worker_id)
+      .eq("anbieter_id", anbieter.id)
+      .single();
+    if (!worker) return NextResponse.json({ error: "Pflegekraft nicht gefunden" }, { status: 404 });
 
     const { data: entry, error } = await supabase
       .from("care_worker_zertifikate")

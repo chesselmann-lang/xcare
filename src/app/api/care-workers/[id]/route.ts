@@ -60,11 +60,20 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const { id } = await params;
 
-  // Verify ownership via RLS — fetch with user context
+  // Resolve caller's anbieter
+  const { data: anbieter } = await supabase
+    .from("anbieter")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  if (!anbieter) return NextResponse.json({ error: "Kein Anbieter-Konto" }, { status: 403 });
+
+  // Verify the worker belongs to this anbieter
   const { data: worker } = await supabase
     .from("care_workers")
     .select("id, anbieter_id")
     .eq("id", id)
+    .eq("anbieter_id", anbieter.id)
     .single();
 
   if (!worker) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
@@ -109,10 +118,19 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const { id } = await params;
 
+  // Resolve caller's anbieter — only the owner may delete their worker
+  const { data: anbieter } = await supabase
+    .from("anbieter")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  if (!anbieter) return NextResponse.json({ error: "Kein Anbieter-Konto" }, { status: 403 });
+
   const { error } = await supabase
     .from("care_workers")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("anbieter_id", anbieter.id); // ownership gate
 
   if (error) {
     return NextResponse.json({ error: "Löschen fehlgeschlagen" }, { status: 500 });
