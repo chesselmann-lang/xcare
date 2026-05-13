@@ -202,7 +202,7 @@ const notifyFamilieStatusUpdate = inngest.createFunction(
 
 // ─── 4. 48h-Erinnerung → Anbieter (nur wenn Anfrage noch offen) ───────────────
 const remind48hAnbieter = inngest.createFunction(
-  { id: "remind-anbieter-48h", concurrency: { limit: 50 } },
+  { id: "remind-anbieter-48h", concurrency: { limit: 5 } },
   { event: "anfrage/created" },
   async ({ event, step }) => {
     const { anfrage_id, anbieter_email, anbieter_name, familie_name, lebenslage } = event.data as {
@@ -385,7 +385,7 @@ const notifyNeueNachricht = inngest.createFunction(
 
 // ─── 7. 48h-Erinnerung → Familie (Angebot wartet auf Bestätigung) ─────────────
 const remind48hFamilieAngebot = inngest.createFunction(
-  { id: "remind-familie-48h-angebot", concurrency: { limit: 50 } },
+  { id: "remind-familie-48h-angebot", concurrency: { limit: 5 } },
   { event: "anfrage/status-changed" },
   async ({ event, step }) => {
     const { new_status, familie_email, familie_name, anbieter_name, anfrage_id } = event.data as {
@@ -462,7 +462,7 @@ const remind48hFamilieAngebot = inngest.createFunction(
 
 // ─── 8. Erinnerung offen gebliebene Anfrage → Anbieter nach 7 Tagen ──────────
 const remind7dAnbieterOffen = inngest.createFunction(
-  { id: "remind-anbieter-7d-offen", concurrency: { limit: 20 } },
+  { id: "remind-anbieter-7d-offen", concurrency: { limit: 5 } },
   { event: "anfrage/created" },
   async ({ event, step }) => {
     const { anfrage_id, anbieter_email, anbieter_name, familie_name, lebenslage } = event.data as {
@@ -531,7 +531,7 @@ const remind7dAnbieterOffen = inngest.createFunction(
 
 // ─── 9. Wöchentlicher Digest für Anbieter (jeden Montag 08:00) ─────────────────
 const weeklyDigestAnbieter = inngest.createFunction(
-  { id: "weekly-digest-anbieter", concurrency: { limit: 10 } },
+  { id: "weekly-digest-anbieter", concurrency: { limit: 5 } },
   { cron: "0 8 * * 1" }, // Every Monday at 08:00 UTC
   async ({ step }) => {
     const supabase = getServiceClient();
