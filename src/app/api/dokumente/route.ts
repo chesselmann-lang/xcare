@@ -75,8 +75,8 @@ export async function POST(request: Request) {
       groesse_bytes: groesse_bytes ?? null,
       ablaufdatum: ablaufdatum || null,
       notizen: notizen?.trim() || null,
-      // TODO: Implement client-side AES-256 encryption before upload
-      verschluesselt: false,
+      // AES-256-GCM encryption is performed client-side before upload (S276)
+      verschluesselt: true,
     })
     .select()
     .single();

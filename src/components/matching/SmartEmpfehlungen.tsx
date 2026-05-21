@@ -79,7 +79,7 @@ export function SmartEmpfehlungen({ pflegegrad, lebenslage, plz }: SmartEmpfehlu
 
       {/* Fehler-Zustand */}
       {error && !isLoading && (
-        <div className="text-center py-6 text-[--muted-foreground]">
+        <div role="alert" className="text-center py-6 text-[--muted-foreground]">
           <p className="text-xs">{error}</p>
           <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={ladeEmpfehlungen}>
             Erneut versuchen

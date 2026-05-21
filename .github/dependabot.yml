@@ -1,0 +1,86 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Dependabot — Automatische Dependency-Updates (S315)
+#
+# npm:            Wöchentlich montags, max 10 PRs gleichzeitig
+# github-actions: Wöchentlich montags, max 5 PRs gleichzeitig
+#
+# Major-Upgrades für kritische Pakete sind deaktiviert — diese benötigen
+# manuelle Migration und Build-Tests vor dem Update.
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: 2
+
+updates:
+  # ── npm (Node.js / Next.js App) ─────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    groups:
+      # Radix UI Primitives — viele kleine Pakete, als Gruppe updaten
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+      # Supabase — Client + SSR immer gemeinsam updaten
+      supabase:
+        patterns:
+          - "@supabase/*"
+      # Sentry — alle Sentry-Pakete als Gruppe
+      sentry:
+        patterns:
+          - "@sentry/*"
+      # Testing Tools — Playwright + Vitest als Gruppe
+      testing:
+        patterns:
+          - "@playwright/*"
+          - "vitest"
+          - "@vitest/*"
+          - "playwright"
+      # TypeScript Types — alle @types/* als Gruppe
+      types:
+        patterns:
+          - "@types/*"
+    ignore:
+      # Next.js Major-Upgrades: Manuelle Migration + Build-Test erforderlich
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      # React Major-Upgrades: Breaking Changes bei Server Components möglich
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      # Stripe SDK: Manuelle API-Migration erforderlich
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
+      # Anthropic SDK: Breaking Changes im Message-Format möglich
+      - dependency-name: "@anthropic-ai/sdk"
+        update-types: ["version-update:semver-major"]
+      # Tailwind v4: Breaking Design-System-Änderungen
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(actions)"
+      include: scope

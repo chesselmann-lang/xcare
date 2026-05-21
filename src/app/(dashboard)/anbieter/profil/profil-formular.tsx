@@ -291,7 +291,7 @@ export default function ProfilFormular({ anbieter, profile }: ProfilFormularProp
 
         {/* Status */}
         {error && (
-          <p className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">{error}</p>
+          <p role="alert" className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">{error}</p>
         )}
         {success && (
           <p className="text-sm text-green-700 bg-green-50 rounded-md px-4 py-3 flex items-center gap-2">

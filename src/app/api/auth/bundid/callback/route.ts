@@ -3,6 +3,7 @@
  * Wird von Supabase Auth nach erfolgreichem OIDC-Login aufgerufen.
  * Erstellt oder verknüpft das xcare-Profil mit dem BundID-Account.
  */
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { mapBundIdClaims, pruefeBundIdLoa } from "@/lib/auth/bundid";
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   // Fehler vom OIDC-Provider
   if (error) {
-    console.error("[BundID Callback] OIDC Error:", error, errorDescription);
+    logger.error("[BundID Callback] OIDC Error:", error, errorDescription);
     return NextResponse.redirect(
       new URL(`/login?error=bundid_${error}`, req.url)
     );
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/familie", req.url));
 
   } catch (err) {
-    console.error("[BundID Callback] Error:", err);
+    logger.error("[BundID Callback] Error:", err);
     return NextResponse.redirect(new URL("/login?error=bundid_callback_error", req.url));
   }
 }

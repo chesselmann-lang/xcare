@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,7 +22,7 @@ export async function GET() {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ prefs: data?.email_prefs ?? {} });
   } catch (err) {
-    console.error("[email-prefs GET] Unexpected error:", err);
+    logger.error("[email-prefs GET] Unexpected error:", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }
@@ -62,7 +63,7 @@ export async function PUT(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, prefs: merged });
   } catch (err) {
-    console.error("[email-prefs PUT] Unexpected error:", err);
+    logger.error("[email-prefs PUT] Unexpected error:", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }

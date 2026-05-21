@@ -299,7 +299,7 @@ export function LeistungBearbeitenForm({ leistung }: { leistung: Leistung }) {
         </Card>
 
         {error && (
-          <p className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">{error}</p>
+          <p role="alert" className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">{error}</p>
         )}
 
         <div className="flex gap-3">

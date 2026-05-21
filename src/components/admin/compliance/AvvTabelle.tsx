@@ -126,7 +126,7 @@ export function AvvTabelle() {
   return (
     <div className="space-y-4">
       {fehler && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{fehler}</div>
+        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{fehler}</div>
       )}
 
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
@@ -184,7 +184,7 @@ export function AvvTabelle() {
                       <div className="space-y-3 max-w-2xl">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-semibold text-gray-700 text-sm">Partner bearbeiten</span>
-                          <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-gray-600">
+                          <button onClick={() => setEditId(null)} aria-label="Bearbeitung abbrechen" className="text-gray-400 hover:text-gray-600">
                             <X className="h-4 w-4" />
                           </button>
                         </div>
@@ -272,7 +272,7 @@ export function AvvTabelle() {
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-gray-700 text-sm">Neuen Partner anlegen</span>
-              <button onClick={() => setNeuOffen(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setNeuOffen(false)} aria-label="Formular schließen" className="text-gray-400 hover:text-gray-600">
                 <X className="h-4 w-4" />
               </button>
             </div>

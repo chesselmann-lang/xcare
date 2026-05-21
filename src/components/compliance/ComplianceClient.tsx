@@ -268,7 +268,7 @@ export function ComplianceClient({ initialChecks, pruefungen, beschwerden, anbie
         <Card className="p-5 border-blue-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">Neuen Check hinzufügen</h3>
-            <button onClick={() => setShowAddForm(false)}>
+            <button onClick={() => setShowAddForm(false)} aria-label="Schließen">
               <X className="h-4 w-4 text-gray-400" />
             </button>
           </div>

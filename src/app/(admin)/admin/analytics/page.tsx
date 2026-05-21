@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { BarChart3, TrendingUp, Clock } from "lucide-react";
+import { BarChart3, TrendingUp, Clock, Grid3X3 } from "lucide-react";
 
 export default async function AdminAnalyticsPage() {
   const supabase = await createClient();
@@ -75,6 +75,24 @@ export default async function AdminAnalyticsPage() {
   }, {});
 
   const maxPerDay = Math.max(...Object.values(byDay), 1);
+
+  // S330: Heatmap — fetch all anfragen for weekday×hour distribution
+  const { data: allAnfragen } = await supabase
+    .from("anfragen")
+    .select("created_at");
+
+  // Build 7×24 grid (weekday 0=Mo … 6=So, hour 0-23)
+  // JS getDay(): 0=Sun,1=Mon..6=Sat → remap to 0=Mo..6=So
+  const heatmap: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+  for (const row of allAnfragen ?? []) {
+    const d = new Date(row.created_at);
+    const jsDay = d.getDay(); // 0=Sun
+    const wday = jsDay === 0 ? 6 : jsDay - 1; // 0=Mo..6=So
+    const hour = d.getHours();
+    heatmap[wday][hour]++;
+  }
+  const maxCell = Math.max(...heatmap.flat(), 1);
+  const WDAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
   return (
     <div>
@@ -170,6 +188,60 @@ export default async function AdminAnalyticsPage() {
             </div>
           )}
           <p className="text-xs text-gray-400 pt-3">Gesamt: {totalLeistungen} aktive Leistungen</p>
+        </div>
+
+        {/* S330: Anfragen-Heatmap Wochentag × Uhrzeit */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 lg:col-span-2">
+          <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <Grid3X3 className="h-4 w-4 text-violet-500" /> Anfragen-Heatmap (Wochentag &times; Uhrzeit)
+          </h2>
+          {(allAnfragen?.length ?? 0) === 0 ? (
+            <p className="text-sm text-gray-400">Noch keine Anfragen vorhanden.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              {/* Hour header */}
+              <div className="flex items-center gap-px mb-1 pl-7">
+                {Array.from({ length: 24 }, (_, h) => (
+                  <div key={h} className="w-6 text-center text-[9px] text-gray-300 shrink-0">
+                    {h % 3 === 0 ? String(h).padStart(2, "0") : ""}
+                  </div>
+                ))}
+              </div>
+              {/* Grid rows */}
+              <div className="space-y-px">
+                {WDAY_LABELS.map((label, wi) => (
+                  <div key={wi} className="flex items-center gap-px">
+                    <span className="w-6 text-[10px] text-gray-400 shrink-0 text-right pr-1">{label}</span>
+                    {heatmap[wi].map((count, hi) => {
+                      const intensity = count / maxCell;
+                      // opacity 0.08 → 1.0 across violet-500
+                      const opacity = count === 0 ? 0 : Math.max(0.08, intensity);
+                      return (
+                        <div
+                          key={hi}
+                          className="w-6 h-5 rounded-sm shrink-0 transition-opacity"
+                          style={{ backgroundColor: `rgba(139, 92, 246, ${opacity})` }}
+                          title={`${label} ${String(hi).padStart(2, "0")}:00 — ${count} Anfrage${count !== 1 ? "n" : ""}`}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+              {/* Legend */}
+              <div className="flex items-center gap-1 mt-3">
+                <span className="text-[10px] text-gray-400">Wenig</span>
+                {[0.08, 0.25, 0.5, 0.75, 1].map((op) => (
+                  <div
+                    key={op}
+                    className="w-4 h-4 rounded-sm"
+                    style={{ backgroundColor: `rgba(139, 92, 246, ${op})` }}
+                  />
+                ))}
+                <span className="text-[10px] text-gray-400">Viel</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Verlauf letzte 30 Tage */}

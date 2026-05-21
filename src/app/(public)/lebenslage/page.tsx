@@ -4,10 +4,14 @@ import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
 import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+
 export const metadata: Metadata = {
   title: "Lebenslagen – Pflegeangebote nach Thema | xcare",
   description:
     "Finden Sie passende Pflegedienste und Unterstützungsangebote für Ihre Lebenssituation – von Geburt & Kindheit bis Alter & Pflege.",
+  alternates: { canonical: `${APP_URL}/lebenslage` },
+  openGraph: { url: `${APP_URL}/lebenslage`, type: "website" },
 };
 
 const KATEGORIEN = [

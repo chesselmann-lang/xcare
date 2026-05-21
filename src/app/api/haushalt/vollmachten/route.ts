@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ vollmacht }, { status: 201 });
   } catch (err) {
-    console.error("[haushalt/vollmachten POST] Unexpected error:", err);
+    logger.error("[haushalt/vollmachten POST] Unexpected error:", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -17,7 +18,8 @@ export async function GET() {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ data });
-  } catch {
+  } catch (err) {
+    logger.error("GET /api/notfallkontakte failed", { error: String(err) }); // S279
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }
@@ -60,7 +62,8 @@ export async function POST(request: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ data }, { status: 201 });
-  } catch {
+  } catch (err) {
+    logger.error("POST /api/notfallkontakte failed", { error: String(err) }); // S279
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }
@@ -94,7 +97,8 @@ export async function PATCH(request: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ data });
-  } catch {
+  } catch (err) {
+    logger.error("PATCH /api/notfallkontakte failed", { error: String(err) }); // S279
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }
@@ -117,7 +121,8 @@ export async function DELETE(request: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    logger.error("DELETE /api/notfallkontakte failed", { error: String(err) }); // S279
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }

@@ -58,15 +58,27 @@ export default function SuchePage() {
 
   const [plz, setPlz] = useState(searchParams.get("plz") ?? "");
   const [suchtext, setSuchtext] = useState(searchParams.get("q") ?? "");
-  const [umkreis, setUmkreis] = useState(20);
+  const [umkreis, setUmkreis] = useState(
+    Number(searchParams.get("umkreis") ?? "20") || 20
+  );
   const [kategorie, setKategorie] = useState<LeistungsKategorie | "">(
     (searchParams.get("kategorie") as LeistungsKategorie | null) ?? ""
   );
-  const [kostentraeger, setKostentraeger] = useState<Kostentraeger | "">("");
-  const [maxPreis, setMaxPreis] = useState<string>("");
-  const [nurVerifiziert, setNurVerifiziert] = useState(false);
-  const [nurVerfuegbar, setNurVerfuegbar] = useState(true);
-  const [sortBy, setSortBy] = useState<SortOption>("relevanz");
+  const [kostentraeger, setKostentraeger] = useState<Kostentraeger | "">(
+    (searchParams.get("kt") as Kostentraeger | null) ?? ""
+  );
+  const [maxPreis, setMaxPreis] = useState<string>(
+    searchParams.get("maxPreis") ?? ""
+  );
+  const [nurVerifiziert, setNurVerifiziert] = useState(
+    searchParams.get("verifiziert") === "1"
+  );
+  const [nurVerfuegbar, setNurVerfuegbar] = useState(
+    searchParams.get("verfuegbar") !== "0"
+  );
+  const [sortBy, setSortBy] = useState<SortOption>(
+    (searchParams.get("sort") as SortOption | null) ?? "relevanz"
+  );
   const [ergebnisse, setErgebnisse] = useState<ErgebnisAnbieter[]>([]);
   const [loading, setLoading] = useState(false);
   const [gesucht, setGesucht] = useState(false);
@@ -74,6 +86,9 @@ export default function SuchePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("liste");
   const [saving, setSaving] = useState(false);
   const [gespeichert, setGespeichert] = useState(false);
+  // S331: Erweiterte Kategorie-Filter mit UND/ODER-Logik
+  const [multiKategorien, setMultiKategorien] = useState<LeistungsKategorie[]>([]);
+  const [katLogik, setKatLogik] = useState<"oder" | "und">("oder");
   const [suchVerlauf, setSuchVerlauf] = useState<Array<{ label: string; plz: string; suchtext: string; kategorie: string }>>([]);
   // Stichwort-Autocomplete
   const [acSuggestions, setAcSuggestions] = useState<Array<{ id: string; name: string; ort: string }>>([]);
@@ -191,16 +206,47 @@ export default function SuchePage() {
     nurVerifiziert,
     !nurVerfuegbar,
     sortBy !== "relevanz",
+    multiKategorien.length > 0,
   ].filter(Boolean).length;
 
-  // Push URL params so searches are shareable / SEO-linkable
-  const pushUrl = useCallback((newPlz: string, newKat: string, newQ: string) => {
-    const params = new URLSearchParams();
-    if (newPlz) params.set("plz", newPlz);
-    if (newKat) params.set("kategorie", newKat);
-    if (newQ) params.set("q", newQ);
-    router.replace(`/suche${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
-  }, [router]);
+  // Push ALL active filter params to URL so searches are shareable + bookmarkable
+  const pushUrl = useCallback(
+    (
+      newPlz: string,
+      newKat: string,
+      newQ: string,
+      opts?: {
+        umkreis?: number;
+        kt?: string;
+        maxPreis?: string;
+        verifiziert?: boolean;
+        verfuegbar?: boolean;
+        sort?: string;
+      }
+    ) => {
+      const params = new URLSearchParams();
+      if (newPlz) params.set("plz", newPlz);
+      if (newKat) params.set("kategorie", newKat);
+      if (newQ) params.set("q", newQ);
+      const u = opts?.umkreis ?? umkreis;
+      if (u && u !== 20) params.set("umkreis", String(u));
+      const kt = opts?.kt ?? kostentraeger;
+      if (kt) params.set("kt", kt);
+      const mp = opts?.maxPreis ?? maxPreis;
+      if (mp) params.set("maxPreis", mp);
+      const ver = opts?.verifiziert ?? nurVerifiziert;
+      if (ver) params.set("verifiziert", "1");
+      const vf = opts?.verfuegbar ?? nurVerfuegbar;
+      if (!vf) params.set("verfuegbar", "0");
+      const s = opts?.sort ?? sortBy;
+      if (s && s !== "relevanz") params.set("sort", s);
+      router.replace(
+        `/suche${params.toString() ? `?${params.toString()}` : ""}`,
+        { scroll: false }
+      );
+    },
+    [router, umkreis, kostentraeger, maxPreis, nurVerifiziert, nurVerfuegbar, sortBy]
+  );
 
   const suchen = useCallback(async (overrideKategorie?: LeistungsKategorie | "") => {
     if (!plz || !/^\d{5}$/.test(plz)) return;
@@ -208,7 +254,14 @@ export default function SuchePage() {
     setGesucht(true);
 
     const kat = overrideKategorie !== undefined ? overrideKategorie : kategorie;
-    pushUrl(plz, kat, suchtext);
+    pushUrl(plz, kat, suchtext, {
+      umkreis,
+      kt: kostentraeger,
+      maxPreis,
+      verifiziert: nurVerifiziert,
+      verfuegbar: nurVerfuegbar,
+      sort: sortBy,
+    });
 
     let query = supabase
       .from("anbieter")
@@ -228,6 +281,18 @@ export default function SuchePage() {
 
     if (!error && data) {
       let gefiltert = (data as ErgebnisAnbieter[]).filter((a) => {
+        // S331: Multi-Kategorie UND/ODER Logik hat Vorrang vor Tab-Einzelfilter
+        if (multiKategorien.length > 0) {
+          if (katLogik === "und") {
+            return multiKategorien.every((mk) =>
+              a.leistungen?.some((l) => l.kategorie === mk)
+            );
+          } else {
+            return multiKategorien.some((mk) =>
+              a.leistungen?.some((l) => l.kategorie === mk)
+            );
+          }
+        }
         if (!kat) return true;
         return a.leistungen?.some((l) => l.kategorie === kat);
       });
@@ -326,6 +391,8 @@ export default function SuchePage() {
     setNurVerifiziert(false);
     setNurVerfuegbar(true);
     setSortBy("relevanz");
+    setMultiKategorien([]);
+    setKatLogik("oder");
   };
 
   const sucheSpeichern = async () => {
@@ -673,6 +740,63 @@ export default function SuchePage() {
               <span className="text-sm">Nur Verfügbare</span>
             </div>
 
+            {/* S331: Erweiterte Kategorien-Filter mit UND/ODER */}
+            <div className="sm:col-span-3 border-t border-[--border] pt-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-[--muted-foreground]">
+                  Leistungs-Kategorien kombinieren
+                </label>
+                {/* AND/OR toggle — only show when ≥1 category selected */}
+                {multiKategorien.length >= 1 && (
+                  <div className="flex items-center rounded-lg border border-[--border] overflow-hidden text-xs">
+                    <button
+                      onClick={() => setKatLogik("oder")}
+                      className={`px-3 py-1 transition-colors ${katLogik === "oder" ? "bg-[--primary] text-[--primary-foreground]" : "hover:bg-[--muted]"}`}
+                    >
+                      ODER
+                    </button>
+                    <button
+                      onClick={() => setKatLogik("und")}
+                      className={`px-3 py-1 transition-colors ${katLogik === "und" ? "bg-[--primary] text-[--primary-foreground]" : "hover:bg-[--muted]"}`}
+                    >
+                      UND
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {KATEGORIE_TABS.filter((k) => k.key !== "").map((k) => {
+                  const selected = multiKategorien.includes(k.key as LeistungsKategorie);
+                  return (
+                    <button
+                      key={k.key}
+                      onClick={() => {
+                        setMultiKategorien((prev) =>
+                          selected
+                            ? prev.filter((x) => x !== k.key)
+                            : [...prev, k.key as LeistungsKategorie]
+                        );
+                      }}
+                      className={`flex items-center gap-1 text-xs rounded-full px-3 py-1 border transition-colors ${
+                        selected
+                          ? "bg-[--primary] text-[--primary-foreground] border-[--primary]"
+                          : "border-[--border] hover:bg-[--muted]"
+                      }`}
+                    >
+                      <span>{k.emoji}</span> {k.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {multiKategorien.length >= 2 && (
+                <p className="text-[11px] text-[--muted-foreground] mt-1.5">
+                  {katLogik === "und"
+                    ? `Anbieter müssen ALLE ${multiKategorien.length} Kategorien anbieten.`
+                    : `Anbieter müssen mindestens eine der ${multiKategorien.length} Kategorien anbieten.`}
+                </p>
+              )}
+            </div>
+
             {activeFiltersCount > 0 && (
               <div className="sm:col-span-3 flex gap-2 flex-wrap">
                 {kostentraeger && (
@@ -693,6 +817,11 @@ export default function SuchePage() {
                 {!nurVerfuegbar && (
                   <Badge variant="secondary" className="gap-1 cursor-pointer" onClick={() => setNurVerfuegbar(true)}>
                     Inkl. Abwesende <X className="h-3 w-3" />
+                  </Badge>
+                )}
+                {multiKategorien.length > 0 && (
+                  <Badge variant="secondary" className="gap-1 cursor-pointer" onClick={() => setMultiKategorien([])}>
+                    {multiKategorien.length} Kat. ({katLogik.toUpperCase()}) <X className="h-3 w-3" />
                   </Badge>
                 )}
                 <button onClick={resetFilter} className="text-xs text-[--muted-foreground] hover:text-[--foreground]">
@@ -826,8 +955,9 @@ export default function SuchePage() {
                   <select
                     value={sortBy}
                     onChange={(e) => {
-                      setSortBy(e.target.value as SortOption);
-                      // Re-sort immediately without new network call
+                      const newSort = e.target.value as SortOption;
+                      setSortBy(newSort);
+                      pushUrl(plz, kategorie, suchtext, { sort: newSort });
                     }}
                     className="h-8 rounded-lg border border-[--input] bg-[--background] px-2 text-xs font-medium text-[--foreground]"
                     aria-label="Sortierung"

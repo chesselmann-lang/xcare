@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 
@@ -59,13 +60,9 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Create Stripe Billing Portal session ───────────────────────────────
-    const { default: Stripe } = await import("stripe" as never) as never as {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      default: new (...args: any[]) => any;
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stripe = new (Stripe as any)(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2024-12-18.acacia",
+    const { default: StripeLib } = await import("stripe");
+    const stripe = new StripeLib(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2024-12-18.acacia" as Stripe.LatestApiVersion,
     });
 
     const baseUrl =

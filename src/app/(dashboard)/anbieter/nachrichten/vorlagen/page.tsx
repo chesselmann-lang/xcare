@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface Vorlage {
   id: string;
@@ -93,7 +94,14 @@ export default function NachrichtenVorlagenPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">Nachrichten-Vorlagen</h1>
+            <Breadcrumb
+          items={[
+            { label: "Nachrichten", href: "/anbieter/nachrichten" },
+            { label: "Vorlagen" },
+          ]}
+          className="mb-2"
+        />
+        <h1 className="text-2xl font-bold">Nachrichten-Vorlagen</h1>
             <p className="text-sm text-[--muted-foreground] mt-0.5">
               Schnellantworten für häufige Anfragen
             </p>

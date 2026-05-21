@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { Shield, LayoutDashboard, Building2, Users, BarChart3, LogOut, Star, FileText, PieChart, ShieldCheck, CreditCard } from "lucide-react";
+import { Shield, LayoutDashboard, Building2, Users, BarChart3, LogOut, Star, FileText, PieChart, ShieldCheck, CreditCard, Mail, ToggleRight, Activity, Clock, SendHorizonal } from "lucide-react";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "christian@whatsdigital.de";
 
@@ -41,6 +41,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             { href: "/admin/bewertungen", label: "Bewertungen", icon: Star },
             { href: "/admin/anfragen", label: "Anfragen", icon: FileText },
             { href: "/admin/compliance", label: "Compliance", icon: ShieldCheck },
+            { href: "/admin/email-templates", label: "E-Mail-Templates", icon: Mail },
+            { href: "/admin/feature-flags", label: "Feature-Flags", icon: ToggleRight },
+            { href: "/admin/health", label: "Health-Status", icon: Activity },
+            { href: "/admin/aktivitaet", label: "Aktivitäts-Log", icon: Clock },
+            { href: "/admin/email-log", label: "E-Mail-Log", icon: SendHorizonal },
           ].map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
@@ -64,7 +69,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-auto">
+      <main id="main-content" className="flex-1 min-w-0 overflow-auto" tabIndex={-1}>
         <div className="max-w-6xl mx-auto px-6 py-8">
           {children}
         </div>

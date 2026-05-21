@@ -17,7 +17,7 @@ export default async function AdminWhiteLabelPage() {
 
   const { data: configs } = await supabase
     .from("white_label_configs")
-    .select("*")
+    .select("id, partner_name, subdomain, aktiv, created_at")
     .order("created_at", { ascending: false });
 
   return (

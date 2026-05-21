@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,7 +41,7 @@ export async function GET() {
 
     return NextResponse.json({ haushalt });
   } catch (err) {
-    console.error("[haushalt GET] Unexpected error:", err);
+    logger.error("[haushalt GET] Unexpected error:", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }
@@ -107,7 +108,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ haushalt }, { status: 201 });
   } catch (err) {
-    console.error("[haushalt POST] Unexpected error:", err);
+    logger.error("[haushalt POST] Unexpected error:", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }

@@ -72,7 +72,7 @@ export default async function AdminAnfrageDetailPage({
   // Fetch status history / audit log
   const { data: verlauf } = await supabase
     .from("anfragen_statusverlauf")
-    .select("*")
+    .select("id, alter_status, neuer_status, notiz, created_at")
     .eq("anfrage_id", id)
     .order("created_at", { ascending: false });
 

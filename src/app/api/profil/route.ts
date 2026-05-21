@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,7 +22,7 @@ export async function GET() {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ profile: data });
   } catch (err) {
-    console.error("[profil GET] Unexpected error:", err);
+    logger.error("[profil GET] Unexpected error:", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }
@@ -71,7 +72,7 @@ export async function PATCH(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ profile: data });
   } catch (err) {
-    console.error("[profil PATCH] Unexpected error:", err);
+    logger.error("[profil PATCH] Unexpected error:", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }

@@ -9,12 +9,12 @@ export default async function EinstellungenPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("id, email, role").eq("user_id", user.id).single();
   if (!profile) redirect("/login");
 
   const { data: prefs } = await supabase
     .from("notification_preferences")
-    .select("*")
+    .select("profile_id, email_anfragen, email_nachrichten, email_statusupdate, email_wochenbericht")
     .eq("profile_id", profile.id)
     .single();
 

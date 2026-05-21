@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,7 +19,7 @@ export async function GET(_request: Request) {
 
     return NextResponse.json({ haushaltsscheck: data ?? [] });
   } catch (err) {
-    console.error("[GET /api/haushaltsscheck]", err);
+    logger.error("[GET /api/haushaltsscheck]", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ haushaltsscheck: data }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/haushaltsscheck]", err);
+    logger.error("[POST /api/haushaltsscheck]", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }
@@ -121,7 +122,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ haushaltsscheck: data });
   } catch (err) {
-    console.error("[PATCH /api/haushaltsscheck]", err);
+    logger.error("[PATCH /api/haushaltsscheck]", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }

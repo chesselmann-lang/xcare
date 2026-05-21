@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FamilieProfilFormular } from "./familie-profil-formular";
 import { BenachrichtigungsEinstellungen } from "./benachrichtigungs-einstellungen";
 import { ModusWechsler } from "@/components/ui-modus/ModusWechsler";
+import { PushSubscribeButton } from "@/components/push/PushSubscribeButton";
 
 export const metadata = {
   title: "Einstellungen | xcare Familie",
@@ -21,7 +22,7 @@ export default async function FamilieEinstellungenPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, role, vorname, nachname, email, telefon, plz, avatar_url, ui_modus")
     .eq("user_id", user.id)
     .single();
 
@@ -57,6 +58,22 @@ export default async function FamilieEinstellungenPage() {
         </CardHeader>
         <CardContent>
           <BenachrichtigungsEinstellungen />
+        </CardContent>
+      </Card>
+
+      {/* Push-Benachrichtigungen (S322) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="h-4 w-4 text-[--primary]" /> Browser Push-Benachrichtigungen
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-[--muted-foreground] mb-4">
+            Erhalten Sie sofortige Browser-Benachrichtigungen, wenn sich der Status einer Anfrage
+            ändert — auch wenn xcare nicht geöffnet ist.
+          </p>
+          <PushSubscribeButton />
         </CardContent>
       </Card>
 

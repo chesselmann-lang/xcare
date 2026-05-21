@@ -116,7 +116,7 @@ export function NotificationBell({ profileId, initialCount = 0 }: { profileId: s
                   <Check className="h-3 w-3" /> Alle gelesen
                 </button>
               )}
-              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-[--muted]">
+              <button onClick={() => setOpen(false)} aria-label="Benachrichtigungen schließen" className="p-1.5 rounded-lg hover:bg-[--muted]">
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>

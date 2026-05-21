@@ -177,7 +177,7 @@ export function ImpfpassDigital() {
         <div className="rounded-xl border border-[--border] p-5 space-y-4 bg-[--card]">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Neue Impfung eintragen</h3>
-            <button onClick={() => setShowForm(false)} className="text-[--muted-foreground] hover:text-[--foreground]">
+            <button onClick={() => setShowForm(false)} aria-label="Schließen" className="text-[--muted-foreground] hover:text-[--foreground]">
               <X className="h-4 w-4" />
             </button>
           </div>

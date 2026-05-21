@@ -57,7 +57,7 @@ export default async function AdminNutzerDetailPage({
   // Load the target profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, role, vorname, nachname, email, telefon, plz, ort, created_at, onboarding_done")
     .eq("id", id)
     .single();
 

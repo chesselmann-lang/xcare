@@ -4,6 +4,7 @@
 // Authenticated. Deterministisch gespeichert (kein LLM-Output).
 // ============================================
 
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    console.error("[anspruch/save] DB error:", error.message);
+    logger.error("[anspruch/save] DB error:", error.message);
     return NextResponse.json(
       { error: "Speichern fehlgeschlagen", details: error.message },
       { status: 500 }

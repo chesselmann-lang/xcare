@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   ArrowRight, Compass, Search, Shield, Heart, Users, Building2,
   Zap, CheckCircle2, MapPin, Star, Clock, Headphones,
@@ -9,6 +10,22 @@ import type { LebenslageTyp } from "@/lib/types";
 import { AutocompleteSearch } from "@/components/suche/AutocompleteSearch";
 import { WebSiteJsonLd } from "@/components/seo/JsonLd";
 import { getCachedHomepageStats, getCachedTestimonials } from "@/lib/cache";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+
+export const metadata: Metadata = {
+  title: "xcare – Ihr Wegweiser durch Pflege & Sozialleistungen",
+  description:
+    "xcare verbindet Familien mit geprüften Pflegediensten, Beratungsstellen und Sozialdienstleistern. Kostenlos, transparent und schnell.",
+  alternates: { canonical: APP_URL },
+  openGraph: {
+    title: "xcare – Ihr Wegweiser durch Pflege & Sozialleistungen",
+    description:
+      "Geprüfte Pflegedienste, Beratungsstellen und Sozialdienstleister in Ihrer Nähe. Jetzt kostenlos starten.",
+    url: APP_URL,
+    type: "website",
+  },
+};
 
 export default async function HomePage() {
   const topLebenslagen = (

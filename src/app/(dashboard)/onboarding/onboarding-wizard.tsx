@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Heart, ChevronRight, ChevronLeft, CheckCircle2,
-  User, Building2, MapPin, Bell, Loader2
+  User, Building2, MapPin, Bell, Loader2, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ interface OnboardingWizardProps {
   anbieter: { id: string; name: string | null; beschreibung: string | null } | null;
 }
 
-// ── Steps ──────────────────────────────────────────────────────────────────
+// ── Step metadata ────────────────────────────────────────────────────────────
 
 type FamilieStep = "begruessung" | "profil" | "beduerfnisse" | "benachrichtigungen" | "fertig";
 type AnbieterStep = "begruessung" | "kontakt" | "beschreibung" | "benachrichtigungen" | "fertig";
@@ -27,17 +27,95 @@ type AnbieterStep = "begruessung" | "kontakt" | "beschreibung" | "benachrichtigu
 const FAMILIE_STEPS: FamilieStep[] = ["begruessung", "profil", "beduerfnisse", "benachrichtigungen", "fertig"];
 const ANBIETER_STEPS: AnbieterStep[] = ["begruessung", "kontakt", "beschreibung", "benachrichtigungen", "fertig"];
 
-function ProgressBar({ current, total }: { current: number; total: number }) {
+interface StepMeta {
+  label: string;
+  icon: React.ReactNode;
+}
+
+const FAMILIE_STEP_META: StepMeta[] = [
+  { label: "Willkommen", icon: <Heart className="h-3.5 w-3.5" /> },
+  { label: "Profil",     icon: <User className="h-3.5 w-3.5" /> },
+  { label: "Standort",   icon: <MapPin className="h-3.5 w-3.5" /> },
+  { label: "E-Mails",    icon: <Bell className="h-3.5 w-3.5" /> },
+  { label: "Fertig",     icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+];
+
+const ANBIETER_STEP_META: StepMeta[] = [
+  { label: "Willkommen",   icon: <Heart className="h-3.5 w-3.5" /> },
+  { label: "Kontakt",      icon: <Building2 className="h-3.5 w-3.5" /> },
+  { label: "Beschreibung", icon: <User className="h-3.5 w-3.5" /> },
+  { label: "E-Mails",      icon: <Bell className="h-3.5 w-3.5" /> },
+  { label: "Fertig",       icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+];
+
+// ── Progress Indicator ───────────────────────────────────────────────────────
+
+function StepProgressBar({
+  current,
+  steps,
+}: {
+  current: number;
+  steps: StepMeta[];
+}) {
+  const pct = Math.round((current / (steps.length - 1)) * 100);
+
   return (
-    <div className="flex gap-1.5 mb-8">
-      {Array.from({ length: total }).map((_, i) => (
+    <div className="mb-8">
+      {/* Percentage label */}
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-xs font-medium text-[--muted-foreground]">
+          Schritt {current + 1} von {steps.length}
+        </span>
+        <span className="text-xs font-semibold text-[--primary]">{pct}%</span>
+      </div>
+
+      {/* Thin percentage bar */}
+      <div className="h-1 bg-gray-100 rounded-full mb-4 overflow-hidden">
         <div
-          key={i}
-          className={`h-1.5 flex-1 rounded-full transition-all ${
-            i < current ? "bg-[--primary]" : i === current ? "bg-[--primary]/50" : "bg-gray-100"
-          }`}
+          className="h-full bg-[--primary] rounded-full transition-all duration-500"
+          style={{ width: `${pct}%` }}
         />
-      ))}
+      </div>
+
+      {/* Numbered step indicators */}
+      <div className="relative flex items-start justify-between">
+        {/* Connecting line behind the circles */}
+        <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-100 -z-0">
+          <div
+            className="h-full bg-[--primary] transition-all duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+
+        {steps.map((step, i) => {
+          const done = i < current;
+          const active = i === current;
+          return (
+            <div key={i} className="flex flex-col items-center gap-1.5 z-10">
+              {/* Circle */}
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 shrink-0 ${
+                  done
+                    ? "bg-[--primary] border-[--primary] text-white"
+                    : active
+                    ? "bg-white border-[--primary] text-[--primary] shadow-md shadow-[--primary]/20"
+                    : "bg-white border-gray-200 text-gray-300"
+                }`}
+              >
+                {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : step.icon}
+              </div>
+              {/* Label — hidden on very small screens, abbreviated */}
+              <span
+                className={`text-[10px] font-medium text-center leading-tight max-w-[48px] transition-colors hidden sm:block ${
+                  done ? "text-[--primary]" : active ? "text-[--foreground] font-semibold" : "text-gray-300"
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -70,9 +148,8 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
   const [emailNachrichten, setEmailNachrichten] = useState(true);
 
   const steps = role === "familie" ? FAMILIE_STEPS : ANBIETER_STEPS;
+  const stepMeta = role === "familie" ? FAMILIE_STEP_META : ANBIETER_STEP_META;
   const currentStep = steps[stepIndex];
-  const isFirst = stepIndex === 0;
-  const isLast = stepIndex === steps.length - 1;
 
   const next = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));
   const back = () => setStepIndex((i) => Math.max(i - 1, 0));
@@ -80,14 +157,12 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
   const finish = async () => {
     setSaving(true);
     try {
-      // Save profile
       await supabase.from("profiles").update({
         vorname, nachname, plz: plz || null, ort: ort || null,
         telefon: (role === "familie" ? telefon : telefon2) || null,
         onboarding_done: true,
       }).eq("id", profileId);
 
-      // Save anbieter if applicable
       if (role === "anbieter" && anbieter) {
         await supabase.from("anbieter").update({
           name: anbieterName,
@@ -97,7 +172,6 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
         }).eq("id", anbieter.id);
       }
 
-      // Save notification prefs
       await supabase.from("notification_preferences").upsert({
         profile_id: profileId,
         email_anfragen: emailAnfragen,
@@ -123,6 +197,10 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
       <div
         onClick={() => onChange(!checked)}
         className={`relative h-6 w-11 rounded-full transition-colors shrink-0 ${checked ? "bg-[--primary]" : "bg-gray-200"}`}
+        role="switch"
+        aria-checked={checked}
+        tabIndex={0}
+        onKeyDown={(e) => e.key === " " && onChange(!checked)}
       >
         <span className={`absolute top-1 left-1 h-4 w-4 bg-white rounded-full shadow transition-transform ${checked ? "translate-x-5" : ""}`} />
       </div>
@@ -133,7 +211,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
 
   if (role === "familie") {
     if (currentStep === "begruessung") return (
-      <Step progress={stepIndex} total={steps.length} title="Herzlich willkommen!" onNext={next}>
+      <Step stepIndex={stepIndex} stepMeta={stepMeta} title="Herzlich willkommen!" onNext={next}>
         <div className="text-center py-4">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[--primary-light]">
             <Heart className="h-10 w-10 text-[--primary] fill-[--primary]" />
@@ -153,7 +231,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
     );
 
     if (currentStep === "profil") return (
-      <Step progress={stepIndex} total={steps.length} title="Ihr Profil" icon={<User className="h-5 w-5" />} onBack={back} onNext={next}>
+      <Step stepIndex={stepIndex} stepMeta={stepMeta} title="Ihr Profil" icon={<User className="h-5 w-5" />} onBack={back} onNext={next}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -174,7 +252,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
     );
 
     if (currentStep === "beduerfnisse") return (
-      <Step progress={stepIndex} total={steps.length} title="Ihr Standort" icon={<MapPin className="h-5 w-5" />} onBack={back} onNext={next}>
+      <Step stepIndex={stepIndex} stepMeta={stepMeta} title="Ihr Standort" icon={<MapPin className="h-5 w-5" />} onBack={back} onNext={next}>
         <div className="space-y-4">
           <p className="text-sm text-[--muted-foreground]">
             Damit wir Ihnen passende Anbieter in Ihrer Nähe zeigen können.
@@ -199,7 +277,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
     );
 
     if (currentStep === "benachrichtigungen") return (
-      <Step progress={stepIndex} total={steps.length} title="Benachrichtigungen" icon={<Bell className="h-5 w-5" />} onBack={back} onNext={next}>
+      <Step stepIndex={stepIndex} stepMeta={stepMeta} title="Benachrichtigungen" icon={<Bell className="h-5 w-5" />} onBack={back} onNext={next}>
         <div>
           <p className="text-sm text-[--muted-foreground] mb-4">Wählen Sie, worüber Sie per E-Mail informiert werden möchten.</p>
           <div className="divide-y divide-[--border]">
@@ -211,7 +289,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
     );
 
     if (currentStep === "fertig") return (
-      <Step progress={stepIndex} total={steps.length} title="Alles bereit!" onNext={finish} nextLabel="Loslegen" saving={saving} isFinish>
+      <Step stepIndex={stepIndex} stepMeta={stepMeta} title="Alles bereit!" onNext={finish} nextLabel="Loslegen" saving={saving} isFinish>
         <div className="text-center py-4">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <CheckCircle2 className="h-8 w-8 text-green-600" />
@@ -227,7 +305,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
   // ── Anbieter Steps ──
 
   if (currentStep === "begruessung") return (
-    <Step progress={stepIndex} total={steps.length} title="Willkommen als Anbieter!" onNext={next}>
+    <Step stepIndex={stepIndex} stepMeta={stepMeta} title="Willkommen als Anbieter!" onNext={next}>
       <div className="text-center py-4">
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[--primary-light]">
           <Building2 className="h-10 w-10 text-[--primary]" />
@@ -241,7 +319,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
   );
 
   if (currentStep === "kontakt") return (
-    <Step progress={stepIndex} total={steps.length} title="Kontaktdaten" icon={<Building2 className="h-5 w-5" />} onBack={back} onNext={next}>
+    <Step stepIndex={stepIndex} stepMeta={stepMeta} title="Kontaktdaten" icon={<Building2 className="h-5 w-5" />} onBack={back} onNext={next}>
       <div className="space-y-4">
         <div>
           <label className="text-xs font-medium text-[--muted-foreground] mb-1 block">Organisationsname *</label>
@@ -267,7 +345,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
   );
 
   if (currentStep === "beschreibung") return (
-    <Step progress={stepIndex} total={steps.length} title="Über Ihre Organisation" onBack={back} onNext={next}>
+    <Step stepIndex={stepIndex} stepMeta={stepMeta} title="Über Ihre Organisation" onBack={back} onNext={next}>
       <div className="space-y-4">
         <p className="text-sm text-[--muted-foreground]">
           Beschreiben Sie Ihr Angebot, damit Familien verstehen, wie Sie helfen können.
@@ -285,7 +363,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
   );
 
   if (currentStep === "benachrichtigungen") return (
-    <Step progress={stepIndex} total={steps.length} title="Benachrichtigungen" icon={<Bell className="h-5 w-5" />} onBack={back} onNext={next}>
+    <Step stepIndex={stepIndex} stepMeta={stepMeta} title="Benachrichtigungen" icon={<Bell className="h-5 w-5" />} onBack={back} onNext={next}>
       <div>
         <p className="text-sm text-[--muted-foreground] mb-4">Wählen Sie, worüber Sie per E-Mail informiert werden möchten.</p>
         <div className="divide-y divide-[--border]">
@@ -297,7 +375,7 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
   );
 
   if (currentStep === "fertig") return (
-    <Step progress={stepIndex} total={steps.length} title="Profil eingerichtet!" onNext={finish} nextLabel="Zum Dashboard" saving={saving} isFinish>
+    <Step stepIndex={stepIndex} stepMeta={stepMeta} title="Profil eingerichtet!" onNext={finish} nextLabel="Zum Dashboard" saving={saving} isFinish>
       <div className="text-center py-4">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
           <CheckCircle2 className="h-8 w-8 text-green-600" />
@@ -312,11 +390,11 @@ export function OnboardingWizard({ profileId, role, vorname: initialVorname, nac
   return null;
 }
 
-// ── Step Wrapper ──
+// ── Step Wrapper ─────────────────────────────────────────────────────────────
 
 function Step({
-  progress,
-  total,
+  stepIndex,
+  stepMeta,
   title,
   icon,
   children,
@@ -326,8 +404,8 @@ function Step({
   saving = false,
   isFinish = false,
 }: {
-  progress: number;
-  total: number;
+  stepIndex: number;
+  stepMeta: StepMeta[];
   title: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
@@ -350,14 +428,11 @@ function Step({
       <div className="bg-white rounded-2xl shadow-lg border border-[--border] overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-[--primary-light] to-white px-6 pt-6 pb-4">
-          <ProgressBar current={progress} total={total} />
+          <StepProgressBar current={stepIndex} steps={stepMeta} />
           <div className="flex items-center gap-2">
             {icon && <span className="text-[--primary]">{icon}</span>}
             <h1 className="text-xl font-bold">{title}</h1>
           </div>
-          <p className="text-xs text-[--muted-foreground] mt-0.5">
-            Schritt {progress + 1} von {total}
-          </p>
         </div>
 
         {/* Content */}
@@ -388,14 +463,16 @@ function Step({
       </div>
 
       {/* Skip */}
-      <div className="text-center mt-4">
-        <button
-          className="text-xs text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
-          onClick={onNext}
-        >
-          Überspringen
-        </button>
-      </div>
+      {!isFinish && (
+        <div className="text-center mt-4">
+          <button
+            className="text-xs text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
+            onClick={onNext}
+          >
+            Überspringen
+          </button>
+        </div>
+      )}
     </div>
   );
 }

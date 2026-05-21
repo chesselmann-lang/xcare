@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LeistungBearbeitenForm } from "./leistung-bearbeiten-form";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 export default async function LeistungBearbeitenPage({
   params,
@@ -38,5 +39,16 @@ export default async function LeistungBearbeitenPage({
 
   if (!leistung) notFound();
 
-  return <LeistungBearbeitenForm leistung={leistung} />;
+  return (
+    <div>
+      <Breadcrumb
+        items={[
+          { label: "Leistungen", href: "/anbieter/leistungen" },
+          { label: leistung.name, href: undefined },
+          { label: "Bearbeiten" },
+        ]}
+      />
+      <LeistungBearbeitenForm leistung={leistung} />
+    </div>
+  );
 }

@@ -127,7 +127,7 @@ export function DokuForm({ familieProfileId, careWorkers, onCreated }: DokuFormP
     <Card className="p-5 border-blue-200 shadow-md">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-900">Neuen Eintrag anlegen</h3>
-        <button onClick={() => setOpen(false)} className="p-1 rounded hover:bg-gray-100">
+        <button onClick={() => setOpen(false)} aria-label="Schließen" className="p-1 rounded hover:bg-gray-100">
           <X className="h-4 w-4 text-gray-400" />
         </button>
       </div>

@@ -53,7 +53,7 @@ export default async function FamilieDashboard() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, role, plz")
     .eq("user_id", user.id)
     .single();
 

@@ -31,6 +31,8 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  // Honeypot — outside Zod schema; bots fill it, humans don't see it (S278)
+  const [honeypot, setHoneypot] = useState("");
   const router = useRouter();
   const supabase = createClient();
 
@@ -51,6 +53,11 @@ export function RegisterForm() {
 
   async function onSubmit(data: FormData) {
     setError(null);
+    // Honeypot check (S278) — silently succeed if bot filled the hidden field
+    if (honeypot) {
+      setSuccess(true);
+      return;
+    }
     const { error: signUpError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -189,8 +196,23 @@ export function RegisterForm() {
             {errors.plz && <p className="text-xs text-[--danger]">{errors.plz.message}</p>}
           </div>
 
+          {/* Honeypot field — visually hidden, intentionally not labeled (S278) */}
+          <div
+            aria-hidden="true"
+            style={{ position: "absolute", left: "-9999px", top: "-9999px", width: "1px", height: "1px", overflow: "hidden" }}
+          >
+            <input
+              type="text"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <div role="alert" className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           )}

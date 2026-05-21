@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { logger } from "@/lib/logger";
 import { inngest } from "@/lib/inngest";
 
@@ -35,14 +36,12 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Construct & verify event ────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let event: any;
+  let event: Stripe.Event;
 
   try {
-    const { default: Stripe } = await import("stripe");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stripe = new (Stripe as any)(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2024-12-18.acacia",
+    const { default: StripeLib } = await import("stripe");
+    const stripe = new StripeLib(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2024-12-18.acacia" as Stripe.LatestApiVersion,
     });
     event = stripe.webhooks.constructEvent(body, sig ?? "", process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {

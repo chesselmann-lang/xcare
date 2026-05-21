@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+
 export const metadata: Metadata = {
   title: "AGB – Allgemeine Geschäftsbedingungen | xcare",
   description:
     "Allgemeine Geschäftsbedingungen der xcare Pflegemarktplatz GmbH.",
+  alternates: { canonical: `${APP_URL}/agb` },
 };
 
 export default function AgbPage() {

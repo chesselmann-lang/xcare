@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Building2, Bell, Shield, KeyRound, ExternalLink, Eye, SlidersHorizontal } from "lucide-react";
+import { Building2, Bell, Shield, KeyRound, ExternalLink, Eye, SlidersHorizontal, QrCode, Code2 } from "lucide-react";
+import { EmbedCode } from "@/components/ui/embed-code";
+import { ProfileQrCode } from "@/components/ui/profile-qr-code";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnbieterBenachrichtigungsEinstellungen } from "./anbieter-benachrichtigungs-einstellungen";
@@ -17,7 +19,7 @@ export default async function AnbieterEinstellungenPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, role, created_at")
     .eq("user_id", user.id)
     .single();
 
@@ -102,6 +104,43 @@ export default async function AnbieterEinstellungenPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* QR-Code */}
+      {anbieter?.id && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <QrCode className="h-4 w-4 text-[--primary]" /> Profil-QR-Code
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-[--muted-foreground] mb-4">
+              Teilen Sie Ihr Profil per QR-Code — ideal für Flyer, Aushänge und Visitenkarten.
+            </p>
+            <ProfileQrCode
+              url={`${process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de"}/anbieter/${anbieter.id}`}
+              label={anbieter.name ?? undefined}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bewertungs-Widget Embed */}
+      {anbieter?.id && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Code2 className="h-4 w-4 text-[--primary]" /> Bewertungs-Widget einbetten
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-[--muted-foreground] mb-4">
+              Zeigen Sie Ihre xcare-Bewertungen auf Ihrer eigenen Website an.
+            </p>
+            <EmbedCode anbieterID={anbieter.id} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Benachrichtigungen */}
       <Card>

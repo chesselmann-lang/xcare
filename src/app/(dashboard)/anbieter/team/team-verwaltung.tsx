@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { UserPlus, Trash2, Loader2, Users, Mail, Crown, User } from "lucide-react";
+import { UserPlus, Trash2, Loader2, Users, Mail, Crown, User, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -214,11 +215,24 @@ export function TeamVerwaltung({
 
               return (
                 <div key={m.id} className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[--primary-light] text-[--primary] font-semibold">
+                  <Link
+                    href={`/anbieter/team/${m.id}`}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[--primary-light] text-[--primary] font-semibold hover:ring-2 hover:ring-[--primary]/40 transition-all"
+                    title="Profil anzeigen"
+                  >
                     {name.charAt(0).toUpperCase()}
-                  </div>
+                  </Link>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium truncate">{name}</p>
+                      <Link
+                        href={`/anbieter/team/${m.id}`}
+                        className="text-[--muted-foreground] hover:text-[--primary] transition-colors"
+                        title="Profil anzeigen"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    </div>
                     <p className="text-xs text-[--muted-foreground] truncate">{email}</p>
                     <p className="text-[10px] text-[--muted-foreground] mt-0.5">
                       Hinzugefügt: {formatDate(m.created_at)}

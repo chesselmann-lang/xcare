@@ -24,10 +24,17 @@ export async function generateMetadata({
     .eq("id", id)
     .single();
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
   if (!data) return { title: "Bewertungen" };
   return {
     title: `Bewertungen für ${data.name} | xcare`,
     description: `Alle Kundenbewertungen für ${data.name}${data.ort ? ` in ${data.ort}` : ""}. Lesen Sie ehrliche Erfahrungsberichte.`,
+    alternates: { canonical: `${appUrl}/anbieter/${id}/bewertungen` },
+    openGraph: {
+      title: `Bewertungen für ${data.name}`,
+      description: `Alle Kundenbewertungen für ${data.name}${data.ort ? ` in ${data.ort}` : ""}. Lesen Sie ehrliche Erfahrungsberichte.`,
+      url: `${appUrl}/anbieter/${id}/bewertungen`,
+    },
   };
 }
 

@@ -215,7 +215,7 @@ export function MedikamentenPlan() {
             {inaktive.map((med) => (
               <div key={med.id} className="flex items-center justify-between px-4 py-2 rounded-lg border border-[--border] opacity-50">
                 <span className="text-sm line-through">{med.name}</span>
-                <button onClick={() => loeschen(med.id)} className="text-red-400 hover:text-red-600">
+                <button onClick={() => loeschen(med.id)} aria-label="Medikament löschen" className="text-red-400 hover:text-red-600">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -229,7 +229,7 @@ export function MedikamentenPlan() {
         <div className="rounded-xl border border-[--border] p-5 space-y-4 bg-[--card]">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">{editId ? "Medikament bearbeiten" : "Neues Medikament"}</h3>
-            <button onClick={() => { setShowForm(false); setEditId(null); setForm(EMPTY_FORM); }} className="text-[--muted-foreground] hover:text-[--foreground]">
+            <button onClick={() => { setShowForm(false); setEditId(null); setForm(EMPTY_FORM); }} aria-label="Schließen" className="text-[--muted-foreground] hover:text-[--foreground]">
               <X className="h-4 w-4" />
             </button>
           </div>

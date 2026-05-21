@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { formatDate } from "@/lib/utils";
 import { Chat } from "@/components/nachrichten/Chat";
 import { BewertungAbgeben } from "@/components/bewertungen/BewertungAbgeben";
@@ -86,7 +87,7 @@ export default async function FamilieAnfrageDetailPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, role")
     .eq("user_id", user.id)
     .single();
 
@@ -180,6 +181,12 @@ export default async function FamilieAnfrageDetailPage({
     <div className="max-w-3xl mx-auto px-4 py-10">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
+      <Breadcrumb
+        items={[
+          { label: "Anfragen", href: "/familie/anfragen" },
+          { label: anbieter?.name ?? "Anfrage" },
+        ]}
+      />
         <Link href="/familie/anfragen">
           <Button variant="ghost" size="sm" className="gap-1">
             <ArrowLeft className="h-4 w-4" /> Zurück

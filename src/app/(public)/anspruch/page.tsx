@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { AnspruchsRechner } from "@/components/anspruch/AnspruchsRechner";
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+
 export const metadata: Metadata = {
   title: "Anspruchs-Rechner | xcare",
   description:
     "Berechnen Sie Ihre Leistungsansprüche nach SGB XI, SGB XII, SGB VIII, SGB IX und § 35a EStG – deterministisch, ohne KI-Urteil, kostenlos.",
   robots: { index: true, follow: true },
+  alternates: { canonical: `${APP_URL}/anspruch` },
+  openGraph: { url: `${APP_URL}/anspruch`, type: "website" },
 };
 
 export default function AnspruchPage() {

@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { CookieBanner } from "@/components/cookie/CookieBanner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
@@ -46,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="de" className={`${geist.variable} h-full antialiased`}>
+    <html lang="de" className={`${geist.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         {/* Preconnect to Supabase (auth, DB, storage) */}
         <link
@@ -65,7 +66,20 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-full bg-[--background] text-[--foreground]">
-        {children}
+        {/* Skip-to-content for keyboard / screen-reader users */}
+        <a
+          href="#main-content"
+          className={[
+            "sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4",
+            "focus:z-[9999] focus:rounded-lg focus:bg-[--primary] focus:px-4",
+            "focus:py-2 focus:text-white focus:font-semibold focus:shadow-lg focus:outline-none",
+          ].join(" ")}
+        >
+          Zum Hauptinhalt springen
+        </a>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
         <Toaster
           position="top-right"
           richColors

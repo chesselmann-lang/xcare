@@ -7,7 +7,7 @@ import {
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
   GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList, Wallet, Euro,
-  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt
+  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt, Calculator
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -43,6 +43,7 @@ const FAMILIE_NAV = [
   { href: "/familie/vergleich", label: "Anbieter vergleichen", icon: GitCompareArrows },
   { href: "/familie/pflegeplan", label: "Pflegeplan & Termine", icon: ClipboardList },
   { href: "/familie/pflegedokumentation", label: "Pflegedokumentation", icon: FileText },
+  { href: "/familie/pflegetagebuch", label: "Pflegetagebuch", icon: BookmarkCheck },
   { href: "/familie/wohlbefinden", label: "Wohlbefinden", icon: Heart },
   { href: "/familie/notfall", label: "Notfallplan", icon: AlertTriangle },
   { href: "/familie/pflegegrad", label: "Pflegegrad", icon: Stethoscope },
@@ -51,6 +52,7 @@ const FAMILIE_NAV = [
   { href: "/familie/medikamente", label: "Medikamente", icon: Pill },
   { href: "/familie/zahlungen", label: "Zahlungen", icon: CreditCard },
   { href: "/familie/finanzen", label: "Finanz-Hub", icon: Wallet },
+  { href: "/familie/kostenrechner", label: "Kostenrechner", icon: Calculator },
   { href: "/familie/gesundheit", label: "Gesundheits-Hub", icon: Activity },
   { href: "/familie/copilot", label: "KI-Co-Pilot", icon: Bot },
   { href: "/familie/leistungen", label: "Leistungen & Ansprüche", icon: Euro },

@@ -1,9 +1,13 @@
 import { Metadata } from "next";
 import { MapPin, Clock, Phone } from "lucide-react";
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+
 export const metadata: Metadata = {
   title: "Apotheken in der Nähe | xcare",
   description: "Finden Sie Apotheken in Ihrer Nähe — einfach PLZ eingeben.",
+  alternates: { canonical: `${APP_URL}/apotheken` },
+  openGraph: { url: `${APP_URL}/apotheken`, type: "website" },
 };
 
 interface OverpassNode {

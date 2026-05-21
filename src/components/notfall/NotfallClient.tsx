@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { AlertTriangle, Phone, User, Shield, Edit2, Check, X, Plus } from "lucide-react";
+import { AlertTriangle, Phone, User, Shield, Edit2, Check, X, Plus, Download } from "lucide-react";
+import Link from "next/link";
 
 interface NotfallPlan {
   id?: string;
@@ -117,14 +118,25 @@ export default function NotfallClient({ plan: initialPlan, kontakte: initialKont
   return (
     <div className="space-y-6">
       {/* Emergency Banner */}
-      <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
-        <AlertTriangle className="text-red-500 shrink-0" size={24} />
-        <div>
-          <div className="font-semibold text-red-700">Notfallplan</div>
-          <div className="text-sm text-red-600">
-            Diese Informationen sind im Notfall sofort verfügbar. Bitte aktuell halten.
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <AlertTriangle className="text-red-500 shrink-0" size={24} />
+          <div>
+            <div className="font-semibold text-red-700">Notfallplan</div>
+            <div className="text-sm text-red-600">
+              Diese Informationen sind im Notfall sofort verfügbar. Bitte aktuell halten.
+            </div>
           </div>
         </div>
+        {!isAnbieter && (
+          <Link
+            href="/familie/notfall/sperrbildschirm"
+            className="shrink-0 flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+          >
+            <Download size={15} />
+            Notfall-Karte (PDF)
+          </Link>
+        )}
       </div>
 
       {msg && (

@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createUnsubscribeToken, buildUnsubscribeUrl } from "@/lib/unsubscribe";
 import { logger } from "@/lib/logger";
+import { sendAndLog } from "@/lib/email-log";
 import { inngest } from "@/lib/inngest";
 
 export { inngest }; // re-export for legacy imports
@@ -44,7 +45,7 @@ const sendWelcomeEmail = inngest.createFunction(
     };
     const resend = new Resend(process.env.RESEND_API_KEY);
     const isAnbieter = rolle === "anbieter";
-    await resend.emails.send({
+    await sendAndLog(resend, {
       from: fromEmail,
       to: email,
       subject: `Willkommen bei xcare, ${vorname}!`,
@@ -85,7 +86,7 @@ const notifyAnbieterNeueAnfrage = inngest.createFunction(
     const unsubUrl = buildUnsubscribeUrl(appUrl, anbieter_email, "neue_anfrage", unsubToken);
 
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
+    await sendAndLog(resend, {
       from: fromEmail,
       to: anbieter_email,
       subject: `Neue Anfrage über xcare — ${familie_name}`,
@@ -182,7 +183,7 @@ const notifyFamilieStatusUpdate = inngest.createFunction(
     if (!msg) return;
 
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
+    await sendAndLog(resend, {
       from: fromEmail,
       to: familie_email,
       subject: msg.subject,
@@ -246,7 +247,7 @@ const remind48hAnbieter = inngest.createFunction(
     const unsubUrl48h = buildUnsubscribeUrl(appUrl, anbieter_email, "neue_anfrage", unsubToken48h);
 
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
+    await sendAndLog(resend, {
       from: fromEmail,
       to: anbieter_email,
       subject: `⏰ Erinnerung: Offene Anfrage von ${familie_name}`,
@@ -318,7 +319,7 @@ const requestBewertungNachAbschluss = inngest.createFunction(
     const unsubUrlBew = buildUnsubscribeUrl(appUrl, familie_email, "bewertung", unsubTokenBew);
 
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
+    await sendAndLog(resend, {
       from: fromEmail,
       to: familie_email,
       subject: `Wie war Ihre Erfahrung mit ${anbieter_name}? ⭐`,
@@ -363,7 +364,7 @@ const notifyNeueNachricht = inngest.createFunction(
     const unsubUrl = buildUnsubscribeUrl(appUrl, empfaenger_email, "neue_nachricht", unsubToken);
 
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
+    await sendAndLog(resend, {
       from: fromEmail,
       to: empfaenger_email,
       subject: `Neue Nachricht von ${sender_name}`,
@@ -436,7 +437,7 @@ const remind48hFamilieAngebot = inngest.createFunction(
       ? `${appUrl}/familie/anfragen/${anfrage_id}`
       : `${appUrl}/familie/anfragen`;
 
-    await resend.emails.send({
+    await sendAndLog(resend, {
       from: fromEmail,
       to: familie_email,
       subject: `⏳ Erinnerung: Angebot von ${anbieter_name} wartet auf Ihre Antwort`,
@@ -504,7 +505,7 @@ const remind7dAnbieterOffen = inngest.createFunction(
     const unsubUrl7d = buildUnsubscribeUrl(appUrl, anbieter_email, "neue_anfrage", unsubToken7d);
 
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
+    await sendAndLog(resend, {
       from: fromEmail,
       to: anbieter_email,
       subject: `📋 Letzte Erinnerung: Anfrage von ${familie_name} seit 7 Tagen offen`,
@@ -585,7 +586,7 @@ const weeklyDigestAnbieter = inngest.createFunction(
         const unsubUrl = buildUnsubscribeUrl(appUrl, email, "digest", unsubToken);
 
         const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
+        await sendAndLog(resend, {
           from: fromEmail,
           to: email,
           subject: `📊 Ihre xcare-Woche – ${neueAnfragen ?? 0} neue Anfrage${(neueAnfragen ?? 0) !== 1 ? "n" : ""}`,
@@ -701,7 +702,7 @@ const dailyWiedervorlagenCheck = inngest.createFunction(
           .join("");
 
         const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
+        await sendAndLog(resend, {
           from: fromEmail,
           to: email,
           subject: `🔔 ${items.length} Wiedervorlage${items.length !== 1 ? "n" : ""} fällig – xcare`,
@@ -906,7 +907,7 @@ const ablaufdatenCheck = inngest.createFunction(
           .join("");
 
         const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
+        await sendAndLog(resend, {
           from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
           to: profil.email,
           subject: `xcare Erinnerung: ${items.length} ${items.length === 1 ? "Frist" : "Fristen"} laufen bald ab`,
@@ -1037,7 +1038,7 @@ const impfungenErinnerung = inngest.createFunction(
           .join("");
 
         const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
+        await sendAndLog(resend, {
           from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
           to: profil.email,
           subject: `💉 Impf-Erinnerung: ${impfungen.length} ${impfungen.length === 1 ? "Impfung" : "Impfungen"} in den nächsten 30 Tagen`,
@@ -1085,7 +1086,7 @@ const notifyAboUpgrade = inngest.createFunction(
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
       const planLabel = plan === "professional" ? "Professional" : plan === "starter" ? "Starter" : plan;
 
-      await resend.emails.send({
+      await sendAndLog(resend, {
         from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
         to: email,
         subject: `Ihr xcare ${planLabel}-Plan ist jetzt aktiv ✅`,
@@ -1115,7 +1116,7 @@ const notifyZahlungFehlgeschlagen = inngest.createFunction(
       const resend = new Resend(process.env.RESEND_API_KEY);
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
 
-      await resend.emails.send({
+      await sendAndLog(resend, {
         from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
         to: email,
         subject: `xcare: Zahlung fehlgeschlagen (Versuch ${attempt_count}) ⚠️`,
@@ -1166,7 +1167,7 @@ const remindAboVerlaengerung = inngest.createFunction(
         const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
         const planLabel = anbieter.plan === "professional" ? "Professional" : "Starter";
 
-        await resend.emails.send({
+        await sendAndLog(resend, {
           from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
           to: profil.email,
           subject: `xcare: Ihr ${planLabel}-Abo verlängert sich am ${ablaufDatum}`,
@@ -1181,46 +1182,45 @@ const remindAboVerlaengerung = inngest.createFunction(
   }
 );
 
-// ─── Dead-Letter / Failure Handler ──────────────────────────────────────────
-const handleFunctionFailure = inngest.createFunction(
-  { id: "handle-function-failure" },
-  { event: "inngest/function.failed" },
-  async ({ event }) => {
-    const { function_id, run_id, error } = event.data as {
-      function_id: string;
-      run_id: string;
-      error: { name?: string; message?: string; stack?: string };
-    };
-    logger.error("Inngest function permanently failed (dead-letter)", {
-      function_id,
-      run_id,
-      error_name: error?.name ?? "UnknownError",
-      error_message: error?.message ?? "no message",
-    });
-  }
-);
+// ─── 17. S332: Automatische Angebots-Erinnerung (täglich 09:00 UTC) ──────────
+//
+// Findet offene Anfragen ohne Angebot die älter als 3 Tage sind und erinnert
+// den zugewiesenen Anbieter per E-Mail.
 
-// ─── Export (Inngest serve handler) ────────────────────────────────────────────
-export const { GET, POST, PUT } = serve({
-  client: inngest,
-  functions: [
-    sendWelcomeEmail,
-    notifyAnbieterNeueAnfrage,
-    notifyFamilieStatusUpdate,
-    remind48hAnbieter,
-    requestBewertungNachAbschluss,
-    notifyNeueNachricht,
-    remind48hFamilieAngebot,
-    remind7dAnbieterOffen,
-    weeklyDigestAnbieter,
-    dailyWiedervorlagenCheck,
-    // Phase 3D: Smart Reminders
-    ablaufdatenCheck,
-    impfungenErinnerung,
-    // Phase 13A: Billing Notifications
-    notifyAboUpgrade,
-    notifyZahlungFehlgeschlagen,
-    remindAboVerlaengerung,
-    handleFunctionFailure,
-  ],
-});
+const angebotsErinnerung = inngest.createFunction(
+  { id: "angebots-erinnerung", name: "Angebots-Erinnerung — offene Anfragen ohne Angebot" },
+  { cron: "0 9 * * *" }, // täglich 09:00 UTC
+  async ({ step }) => {
+    const supabase = getServiceClient();
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    // Find open Anfragen older than 3 days that still have no Angebot
+    const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+    const offene = await step.run("fetch-offene-anfragen", async () => {
+      const { data } = await supabase
+        .from("anfragen")
+        .select(`
+          id, lebenslage, created_at,
+          anbieter:anbieter_id (
+            id,
+            name,
+            profiles ( user_id, email_prefs )
+          )
+        `)
+        .eq("status", "offen")
+        .is("angeboten_at", null)
+        .lt("created_at", cutoff);
+      return data ?? [];
+    });
+
+    let sent = 0;
+
+    for (const anfrage of offene) {
+      await step.run(`erinnerung-${anfrage.id}`, async () => {
+        // Type-safe access
+        const anbieter = (anfrage as unknown as {
+          anbieter: {
+            id: string;
+            name: string;
+            profiles: { user_id: string; email_prefs: Record<string

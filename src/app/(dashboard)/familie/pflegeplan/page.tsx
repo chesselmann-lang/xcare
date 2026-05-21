@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { HeartHandshake } from "lucide-react";
 import { PflegeplanHub } from "@/components/pflegeplan/PflegeplanHub";
+import { PflegeplanGenerator } from "@/components/pflegeplan/PflegeplanGenerator";
 
 export const metadata = {
   title: "Pflegeplan | xcare Familie",
@@ -33,6 +34,11 @@ export default async function PflegeplanPage() {
         <p className="text-sm text-[--muted-foreground] mt-0.5">
           Termine, Aufgaben, Ziele, Tagebuch, Kosten und Notfallkontakte an einem Ort.
         </p>
+      </div>
+
+      {/* KI-Pflegeplan-Generator */}
+      <div className="rounded-2xl border border-[--border] bg-[--card] p-5">
+        <PflegeplanGenerator />
       </div>
 
       <PflegeplanHub />

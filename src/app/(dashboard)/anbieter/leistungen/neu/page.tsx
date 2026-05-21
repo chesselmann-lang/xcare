@@ -284,7 +284,7 @@ export default function NeueLeistungPage() {
         </Card>
 
         {error && (
-          <p className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">{error}</p>
+          <p role="alert" className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">{error}</p>
         )}
 
         <Button type="submit" disabled={loading} className="w-full gap-2">

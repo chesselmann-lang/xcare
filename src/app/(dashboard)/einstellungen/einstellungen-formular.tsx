@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Bell, Shield, Trash2 } from "lucide-react";
+import { Loader2, Bell, Shield, Trash2, Palette } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@/lib/types";
@@ -85,6 +86,13 @@ export function EinstellungenFormular({
         <h2 className="font-semibold mb-1 flex items-center gap-2"><Shield className="h-4 w-4" /> Konto</h2>
         <p className="text-sm text-[--muted-foreground]">{profile.email}</p>
         <p className="text-xs text-[--muted-foreground] mt-0.5 capitalize">Rolle: {profile.role === "anbieter" ? "Anbieter" : "Familie"}</p>
+      </div>
+
+      {/* Darstellung */}
+      <div className="bg-[--card] rounded-xl border border-[--border] p-5">
+        <h2 className="font-semibold mb-4 flex items-center gap-2"><Palette className="h-4 w-4" /> Darstellung</h2>
+        <p className="text-sm text-[--muted-foreground] mb-3">Wählen Sie Ihr bevorzugtes Farbschema.</p>
+        <ThemeToggle />
       </div>
 
       {/* E-Mail-Benachrichtigungen */}

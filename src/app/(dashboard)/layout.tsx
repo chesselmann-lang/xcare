@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/navigation/Sidebar";
 import { UiModusProvider } from "@/components/ui-modus/UiModusProvider";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
+import { SystemBanner } from "@/components/ui/system-banner";
 
 export default async function DashboardLayout({
   children,
@@ -103,9 +104,12 @@ export default async function DashboardLayout({
         initialUnreadCount={unreadCount ?? 0}
         unreadNachrichten={unreadNachrichten}
       />
-      <main id="dashboard-main" className="flex-1 min-w-0 overflow-auto pb-16 md:pb-0" tabIndex={-1}>
-        {children}
-      </main>
+      <div className="flex-1 min-w-0 flex flex-col overflow-auto pb-16 md:pb-0">
+        <SystemBanner role={profile.role} />
+        <main id="main-content" className="flex-1" tabIndex={-1}>
+          {children}
+        </main>
+      </div>
       <MobileBottomNav role={profile.role} badgeCount={offeneAnfragenCount} />
     </div>
     </UiModusProvider>

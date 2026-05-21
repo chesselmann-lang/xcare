@@ -20,6 +20,8 @@ export function KontaktFormular({ anbieterId, anbieterName }: KontaktFormularPro
     email: "",
     telefon: "",
     nachricht: "",
+    // Honeypot field — must stay empty; bots fill it, humans don't see it (S278)
+    website: "",
   });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
@@ -29,6 +31,11 @@ export function KontaktFormular({ anbieterId, anbieterName }: KontaktFormularPro
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Honeypot check (S278) — if bot filled the hidden field, silently pretend success
+    if (form.website) {
+      setSuccess(true);
+      return;
+    }
     startTransition(async () => {
       const result = await kontaktNachrichtSenden(anbieterId, {
         name: form.name,
@@ -123,8 +130,23 @@ export function KontaktFormular({ anbieterId, anbieterName }: KontaktFormularPro
         </p>
       </div>
 
+      {/* Honeypot field — visually hidden, intentionally not labeled (S278) */}
+      <div
+        aria-hidden="true"
+        style={{ position: "absolute", left: "-9999px", top: "-9999px", width: "1px", height: "1px", overflow: "hidden" }}
+      >
+        <input
+          type="text"
+          name="website"
+          value={form.website}
+          onChange={(e) => setForm((prev) => ({ ...prev, website: e.target.value }))}
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
+
       {error && (
-        <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+        <p role="alert" className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           {error}
         </p>
       )}

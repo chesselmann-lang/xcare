@@ -1,10 +1,35 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import {
   Package, MessageSquare, Building2, TrendingUp, ArrowRight,
   CheckCircle2, Clock, Star, AlertCircle, BarChart2, Zap,
   FileText, PlusCircle, Eye, Receipt, CalendarDays, Users, BellRing,
+  Heart, Sun, Activity, Home, Baby, HandHeart, Sparkles, HelpCircle,
 } from "lucide-react";
+
+// S335: Leistungs-Kategorien Icon-Mapping
+const KATEGORIE_CONFIG: Record<LeistungsKategorie, {
+  label: string;
+  icon: LucideIcon;
+  bg: string;
+  text: string;
+}> = {
+  pflege_ambulant:     { label: "Pflege ambulant",       icon: Heart,        bg: "bg-rose-50",    text: "text-rose-600" },
+  pflege_stationaer:   { label: "Pflege stationär",      icon: Building2,    bg: "bg-blue-50",    text: "text-blue-600" },
+  tagespflege:         { label: "Tagespflege",            icon: Sun,          bg: "bg-amber-50",   text: "text-amber-600" },
+  kurzzeitpflege:      { label: "Kurzzeitpflege",         icon: Clock,        bg: "bg-purple-50",  text: "text-purple-600" },
+  beratung:            { label: "Beratung",               icon: MessageSquare,bg: "bg-sky-50",     text: "text-sky-600" },
+  foerderung:          { label: "Förderung",              icon: TrendingUp,   bg: "bg-green-50",   text: "text-green-600" },
+  therapie:            { label: "Therapie",               icon: Activity,     bg: "bg-teal-50",    text: "text-teal-600" },
+  haushaltshilfe:      { label: "Haushaltshilfe",         icon: Home,         bg: "bg-orange-50",  text: "text-orange-600" },
+  kinderbetreuung:     { label: "Kinderbetreuung",        icon: Baby,         bg: "bg-pink-50",    text: "text-pink-600" },
+  jugendhilfe:         { label: "Jugendhilfe",            icon: Users,        bg: "bg-indigo-50",  text: "text-indigo-600" },
+  eingliederungshilfe: { label: "Eingliederungshilfe",    icon: HandHeart,    bg: "bg-violet-50",  text: "text-violet-600" },
+  hospizdienst:        { label: "Hospizdienst",           icon: Heart,        bg: "bg-red-50",     text: "text-red-700" },
+  trauerhilfe:         { label: "Trauerhilfe",            icon: Sparkles,     bg: "bg-slate-50",   text: "text-slate-600" },
+  sonstiges:           { label: "Sonstiges",              icon: HelpCircle,   bg: "bg-gray-50",    text: "text-gray-500" },
+};
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { VerfuegbarkeitToggle } from "@/components/anbieter/VerfuegbarkeitToggle";
 import { formatRelative } from "@/lib/utils";
-import type { AnfrageStatus } from "@/lib/types";
+import type { AnfrageStatus, LeistungsKategorie } from "@/lib/types";
 
 const statusLabel: Record<AnfrageStatus, string> = {
   offen: "Offen",
@@ -88,7 +113,7 @@ export default async function AnbieterDashboard() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, role, onboarding_done")
     .eq("user_id", user.id)
     .single();
 
@@ -97,7 +122,7 @@ export default async function AnbieterDashboard() {
 
   const { data: anbieter } = await supabase
     .from("anbieter")
-    .select("*")
+    .select("id, name, plz, ort, strasse, verfuegbarkeit, verifiziert, beschreibung, logo_url, telefon, email, website, aktiv, plan")
     .eq("profile_id", profile?.id)
     .single();
 
@@ -142,7 +167,7 @@ export default async function AnbieterDashboard() {
     { count: anfragenAngeboten },
     { count: anfragenBestaetigt },
   ] = await Promise.all([
-    supabase.from("leistungen").select("id, name, aktiv").eq("anbieter_id", anbieter?.id ?? "").eq("aktiv", true),
+    supabase.from("leistungen").select("id, name, aktiv, kategorie").eq("anbieter_id", anbieter?.id ?? "").eq("aktiv", true),
     supabase.from("anfragen").select("id, lebenslage, status, created_at").eq("anbieter_id", anbieter?.id ?? "").order("created_at", { ascending: false }).limit(5),
     supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? "").eq("status", "offen"),
     supabase.from("anfragen").select("*", { count: "exact", head: true }).eq("anbieter_id", anbieter?.id ?? ""),
@@ -185,6 +210,14 @@ export default async function AnbieterDashboard() {
   const funnelAngeboten = anfragenAngeboten ?? 0;
   const funnelBestaetigt = anfragenBestaetigt ?? 0;
   const conversionRate = gesamt > 0 ? Math.round((funnelBestaetigt / gesamt) * 100) : 0;
+
+  // S335: Leistungs-Kategorien Breakdown
+  const kategorieBreakdown = (leistungen ?? []).reduce<Record<string, number>>((acc, l) => {
+    if (l.kategorie) acc[l.kategorie] = (acc[l.kategorie] ?? 0) + 1;
+    return acc;
+  }, {});
+  const sortedKategorien = (Object.entries(kategorieBreakdown) as [LeistungsKategorie, number][])
+    .sort((a, b) => b[1] - a[1]);
 
   // Trend: this month vs last month
   const dieserMonat = anfragenDieserMonat ?? 0;
@@ -346,6 +379,40 @@ export default async function AnbieterDashboard() {
           </Link>
         ))}
       </div>
+
+      {/* S335: Leistungs-Kategorien mit Icons */}
+      {sortedKategorien.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-[--foreground]">Meine Leistungs-Kategorien</h2>
+            <Link href="/anbieter/leistungen" className="text-xs text-[--primary] hover:underline flex items-center gap-0.5">
+              Verwalten <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {sortedKategorien.map(([kat, count]) => {
+              const cfg = KATEGORIE_CONFIG[kat];
+              if (!cfg) return null;
+              const Icon = cfg.icon;
+              return (
+                <Link key={kat} href="/anbieter/leistungen">
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border border-transparent hover:border-[--border] transition-all ${cfg.bg}`}>
+                    <div className={`flex items-center justify-center h-6 w-6 rounded-lg ${cfg.bg}`}>
+                      <Icon className={`h-3.5 w-3.5 ${cfg.text}`} />
+                    </div>
+                    <span className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</span>
+                    {count > 1 && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/70 ${cfg.text}`}>
+                        {count}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Trend-Zeile */}
       <div className="grid sm:grid-cols-3 gap-3 mb-8">
@@ -631,6 +698,84 @@ export default async function AnbieterDashboard() {
                     <BellRing className="h-4 w-4 text-amber-500" />
                     Wiedervorlagen
                     <span className="ml-auto inline-flex h-5 min-w-[1.25rem] px-1 items-center justify-center rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
+                      {pendingWiedervorlagen!.length}
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {pendingWiedervorlagen!.map((w) => {
+                    const overdue = w.faellig_am < todayStr;
+                    const anfrageLebenslage = (w.anfragen as { lebenslage: string } | null)?.lebenslage ?? "";
+                    const datum = new Date(w.faellig_am).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+                    return (
+                      <Link key={w.id} href={`/anbieter/anfragen/${w.anfrage_id}`}>
+                        <div className={`flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-[--muted] transition-colors cursor-pointer ${overdue ? "bg-red-50 border border-red-100" : "border border-[--border]"}`}>
+                          <div className={`h-1.5 w-1.5 rounded-full mt-1.5 shrink-0 ${overdue ? "bg-red-500" : "bg-amber-400"}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-semibold ${overdue ? "text-red-700" : "text-[--foreground]"}`}>
+                              {datum}{overdue ? " · überfällig" : ""}
+                            </p>
+                            {w.notiz ? (
+                              <p className="text-xs text-[--muted-foreground] truncate">{w.notiz}</p>
+                            ) : anfrageLebenslage ? (
+                              <p className="text-xs text-[--muted-foreground] capitalize truncate">
+                                {anfrageLebenslage.replace(/_/g, " ")}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            );
+          })()}
+
+          {/* Bewertungen */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Star className="h-4 w-4 text-amber-400 fill-amber-400" /> Bewertungen
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {bewCount > 0 ? (
+                <div>
+                  <Link href={`/anbieter/${anbieter?.id}/bewertungen`} target="_blank" className="inline-block mb-2 hover:opacity-80">
+                    <SterneDisplay average={avgSterne} count={bewCount} size="md" />
+                  </Link>
+                  <div className="mt-1 space-y-1">
+                    {[5, 4, 3, 2, 1].map((s) => {
+                      const cnt = bewertungen?.filter((b) => b.sterne === s).length ?? 0;
+                      const pct = bewCount > 0 ? (cnt / bewCount) * 100 : 0;
+                      return (
+                        <div key={s} className="flex items-center gap-2 text-xs">
+                          <span className="w-3 text-right">{s}</span>
+                          <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                          <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                            <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-[--muted-foreground] w-4 text-right">{cnt}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-3 text-[--muted-foreground]">
+                  <Star className="h-6 w-6 mx-auto mb-2 opacity-30" />
+                  <p className="text-xs">Noch keine Bewertungen</p>
+                  <p className="text-xs mt-0.5 opacity-70">Abgeschlossene Anfragen generieren Bewertungen</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
                       {pendingWiedervorlagen!.length}
                     </span>
                   </CardTitle>

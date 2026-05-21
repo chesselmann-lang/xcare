@@ -5,6 +5,7 @@
 // DELETE — Care-Worker löschen (Anbieter-Auth)
 // ============================================
 
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -104,7 +105,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     .single();
 
   if (error) {
-    console.error("[care-workers/patch]", error.message);
+    logger.error("[care-workers/patch]", error.message);
     return NextResponse.json({ error: "Aktualisierung fehlgeschlagen" }, { status: 500 });
   }
 

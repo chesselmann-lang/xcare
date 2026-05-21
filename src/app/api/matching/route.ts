@@ -3,6 +3,7 @@
 // POST /api/matching
 // ============================================
 
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rankAnbieter, type AnbieterRaw, type MatchingInput } from "@/lib/matching/engine";
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
       .limit(20);
 
     if (error) {
-      console.error("[matching] DB error:", error.message);
+      logger.error("[matching] DB error:", error.message);
       return NextResponse.json({ error: "Datenbankfehler" }, { status: 500 });
     }
 
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
       authenticated: !!user,
     });
   } catch (err) {
-    console.error("[matching] Unexpected error:", err);
+    logger.error("[matching] Unexpected error:", err);
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }

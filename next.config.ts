@@ -20,8 +20,8 @@ const withBundleAnalyzer = withBundleAnalyzerFactory({
 const CSP = [
   "default-src 'self'",
 
-  // Scripts — Next.js needs unsafe-inline for hydration + Stripe + Inngest
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://cdn.jsdelivr.net",
+  // Scripts — unsafe-eval intentionally omitted (S277); nonces injected via middleware for dynamic routes
+  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://cdn.jsdelivr.net",
 
   // Styles — Tailwind + inline <style> tags
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -69,10 +69,10 @@ const CSP = [
 
 const nextConfig: NextConfig = {
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   images: {
     remotePatterns: [

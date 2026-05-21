@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -382,7 +383,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, ergebnis });
   } catch (err) {
-    console.error("[anspruch-pruefen]", err);
+    logger.error("[anspruch-pruefen]", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

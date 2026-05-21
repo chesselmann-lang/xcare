@@ -16,7 +16,9 @@ import { AnfragePrioritaetToggle } from "@/components/anfragen/AnfragePrioritaet
 import { AnbieterAnfrageDokumente } from "@/components/anfragen/AnbieterAnfrageDokumente";
 import { AnfrageQuickNotiz } from "@/components/anfragen/AnfrageQuickNotiz";
 import { LeistungSchnellErstellen } from "@/components/anbieter/LeistungSchnellErstellen";
+import { AnfrageCheckliste } from "./anfrage-checkliste";
 import type { AnfrageStatus } from "@/lib/types";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 const statusVariant: Record<AnfrageStatus, "default" | "success" | "warning" | "destructive" | "secondary"> = {
   offen: "warning",
@@ -61,7 +63,7 @@ export default async function AnfrageDetailPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, role")
     .eq("user_id", user.id)
     .single();
 
@@ -75,7 +77,7 @@ export default async function AnfrageDetailPage({
 
   const { data: anfrage } = await supabase
     .from("anfragen")
-    .select("*, profiles!familie_id(*), leistungen(*)")
+    .select("id, familie_id, anbieter_id, leistung_id, lebenslage, beschreibung, status, ki_empfehlung, wichtig, created_at, updated_at, profiles!familie_id(id, vorname, nachname, email, telefon, plz), leistungen(id, name, kategorie)")
     .eq("id", id)
     .eq("anbieter_id", anbieter?.id ?? "")
     .single();
@@ -162,6 +164,12 @@ export default async function AnfrageDetailPage({
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
+      <Breadcrumb
+        items={[
+          { label: "Anfragen", href: "/anbieter/anfragen" },
+          { label: lebenslageLabel[anfrage.lebenslage] ?? anfrage.lebenslage.replace(/_/g, " ") },
+        ]}
+      />
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Link href="/anbieter/anfragen">
@@ -395,6 +403,15 @@ export default async function AnfrageDetailPage({
               />
             </CardContent>
           </Card>
+        )}
+
+        {/* Aufgaben-Checkliste — S328 */}
+        {anbieter && (
+          <AnfrageCheckliste
+            anfrageId={anfrage.id}
+            anbieterId={anbieter.id}
+            lebenslage={anfrage.lebenslage}
+          />
         )}
 
         {/* Status-Historie */}

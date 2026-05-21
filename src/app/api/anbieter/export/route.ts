@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { planFeatureGate } from "@/lib/stripe/features";
@@ -78,7 +79,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("[anbieter/export] Unexpected error:", err);
+    logger.error("[anbieter/export] Unexpected error:", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }

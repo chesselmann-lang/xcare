@@ -5,7 +5,8 @@ import { createAdminClient } from "@/lib/supabase/service";
 import {
   MapPin, Phone, Globe, CheckCircle2, Mail,
   Package, Euro, Clock, ArrowLeft, Building2,
-  Facebook, Instagram, Linkedin, Award, FileCheck, PlaneLanding, Images
+  Facebook, Instagram, Linkedin, Award, FileCheck, PlaneLanding, Images,
+  Users, CalendarClock, AlertCircle
 } from "lucide-react";
 import { VerifizierungsBadge } from "@/components/anbieter/VerifizierungsBadge";
 import Image from "next/image";
@@ -30,6 +31,8 @@ import { VerfuegbarkeitBadge } from "@/components/anbieter/VerfuegbarkeitBadge";
 import { KontaktFormular } from "@/components/anbieter/KontaktFormular";
 import { StickyMobileCTA } from "@/components/anbieter/StickyMobileCTA";
 import { LeistungsBadgeGroup } from "@/components/anbieter/LeistungsBadge";
+import { OeffentlicherVerfuegbarkeitskalender } from "@/components/anbieter/OeffentlicherVerfuegbarkeitskalender";
+import { ZuverlaessigkeitsScore } from "@/components/anbieter/ZuverlaessigkeitsScore";
 
 // ── Lebenslage-Mapping: Leistungskategorie → Lebenslage-Slug ─────────────────
 const KATEGORIE_TO_LEBENSLAGE: Record<string, string[]> = {
@@ -168,12 +171,23 @@ export async function generateMetadata({
 
   if (!anbieter) return { title: "Anbieter nicht gefunden" };
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+  const canonicalUrl = `${appUrl}/anbieter/${id}`;
+
+  // Build a rich description: truncate raw beschreibung to 155 chars, fall back to location snippet
+  const rawDesc = anbieter.beschreibung ?? "";
+  const description = rawDesc.length > 0
+    ? rawDesc.slice(0, 155).trimEnd() + (rawDesc.length > 155 ? "…" : "")
+    : `${anbieter.name} – Pflegedienstleister in ${anbieter.plz} ${anbieter.ort}. Jetzt Profil ansehen und Anfrage stellen auf xcare.`;
+
   return {
     title: `${anbieter.name} – xcare`,
-    description: anbieter.beschreibung ?? `${anbieter.name} in ${anbieter.plz} ${anbieter.ort}`,
+    description,
+    alternates: { canonical: canonicalUrl },
     openGraph: {
       title: anbieter.name,
-      description: anbieter.beschreibung ?? undefined,
+      description,
+      url: canonicalUrl,
     },
   };
 }
@@ -281,6 +295,56 @@ export default async function AnbieterDetailPage({
     .eq("anbieter_id", id)
     .order("position", { ascending: true })
     .limit(8);
+
+  // Antwortzeit-Metrik: Durchschnitt (created_at → aktualisiert_at) für beantwortete Anfragen
+  let avgAntwortzeit: number | null = null;
+  try {
+    const { data: anfragen } = await supabase
+      .from("anfragen")
+      .select("created_at, aktualisiert_at")
+      .eq("anbieter_id", id)
+      .neq("status", "offen")
+      .limit(20);
+    if (anfragen && anfragen.length > 0) {
+      const diffs = anfragen
+        .map((a) => {
+          const ms =
+            new Date(a.aktualisiert_at).getTime() -
+            new Date(a.created_at).getTime();
+          return ms / 3_600_000;
+        })
+        .filter((h) => h > 0 && h < 168);
+      if (diffs.length > 0) {
+        avgAntwortzeit = Math.round(
+          diffs.reduce((s, h) => s + h, 0) / diffs.length
+        );
+      }
+    }
+  } catch {
+    /* Nicht-kritisch — Antwortzeit wird einfach nicht angezeigt */
+  }
+
+  // Abschlussquote für Zuverlässigkeits-Score (S324)
+  let abgeschlossenCount = 0;
+  let totalAnfragenCount = 0;
+  try {
+    const [{ count: abg }, { count: total }] = await Promise.all([
+      supabase
+        .from("anfragen")
+        .select("*", { count: "exact", head: true })
+        .eq("anbieter_id", id)
+        .eq("status", "abgeschlossen"),
+      supabase
+        .from("anfragen")
+        .select("*", { count: "exact", head: true })
+        .eq("anbieter_id", id)
+        .neq("status", "offen"),
+    ]);
+    abgeschlossenCount = abg ?? 0;
+    totalAnfragenCount = total ?? 0;
+  } catch {
+    /* non-critical */
+  }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
 
@@ -393,6 +457,27 @@ export default async function AnbieterDetailPage({
                 <SterneDisplay average={avgSterne} count={bewertungenCount} size="sm" />
               </Link>
             )}
+            {avgAntwortzeit !== null && (
+              <p className="flex items-center gap-1 text-xs text-[--muted-foreground] mb-2">
+                <Clock className="h-3 w-3 shrink-0" aria-hidden />
+                Antwortet meist innerhalb von{" "}
+                {avgAntwortzeit < 24
+                  ? `${avgAntwortzeit} Std.`
+                  : `${Math.round(avgAntwortzeit / 24)} Tag(en)`}
+              </p>
+            )}
+            {/* Zuverlässigkeits-Score (S324) */}
+            <div className="mb-2">
+              <ZuverlaessigkeitsScore
+                compact
+                daten={{
+                  avgAntwortzeit_h: avgAntwortzeit,
+                  avgSterne: bewertungenCount > 0 ? avgSterne : null,
+                  abgeschlossen: abgeschlossenCount,
+                  totalAnfragen: totalAnfragenCount,
+                }}
+              />
+            </div>
             {lebenslageSlugs.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {lebenslageSlugs.map((slug) => (
@@ -559,6 +644,45 @@ export default async function AnbieterDetailPage({
             </Card>
           )}
 
+          {/* Wartelisten-Übersicht — only if any leistung has wartezeit data */}
+          {(() => {
+            const mitWarteliste = leistungen.filter(
+              (l) => l.wartezeit_wochen != null
+            );
+            if (mitWarteliste.length === 0) return null;
+            const sofortVerfuegbar = mitWarteliste.filter((l) => l.wartezeit_wochen === 0).length;
+            const aufWarteliste = mitWarteliste.filter((l) => (l.wartezeit_wochen ?? 0) > 0).length;
+            return (
+              <Card className="border-amber-200 bg-amber-50/50">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <CalendarClock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm text-amber-900 mb-1">Verfügbarkeit & Wartelisten</p>
+                      <div className="flex flex-wrap gap-3 text-xs">
+                        {sofortVerfuegbar > 0 && (
+                          <span className="flex items-center gap-1 text-green-700 font-medium">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            {sofortVerfuegbar} Leistung{sofortVerfuegbar !== 1 ? "en" : ""} sofort verfügbar
+                          </span>
+                        )}
+                        {aufWarteliste > 0 && (
+                          <span className="flex items-center gap-1 text-amber-700 font-medium">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            {aufWarteliste} Leistung{aufWarteliste !== 1 ? "en" : ""} mit Wartezeit
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-amber-700 mt-1.5">
+                        Genauere Informationen finden Sie bei den jeweiligen Leistungen unten.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
+
           {/* Leistungen */}
           {Object.keys(leistungenByKategorie).length > 0 && (
             <div className="space-y-4">
@@ -614,10 +738,27 @@ export default async function AnbieterDetailPage({
                                       : ""}
                                   </span>
                                 )}
-                                {l.wartezeit_wochen != null && (
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {l.wartezeit_wochen === 0 ? "Sofort verfügbar" : `${l.wartezeit_wochen} Wo. Wartezeit`}
+                                {l.wartezeit_wochen != null && (() => {
+                                  const w = l.wartezeit_wochen as number;
+                                  const cls =
+                                    w === 0
+                                      ? "bg-green-50 text-green-700 border-green-200"
+                                      : w <= 4
+                                      ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                      : w <= 12
+                                      ? "bg-orange-50 text-orange-700 border-orange-200"
+                                      : "bg-red-50 text-red-700 border-red-200";
+                                  return (
+                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-medium ${cls}`}>
+                                      <Clock className="h-3 w-3" />
+                                      {w === 0 ? "Sofort verfügbar" : w === 1 ? "1 Woche Wartezeit" : `${w} Wochen Wartezeit`}
+                                    </span>
+                                  );
+                                })()}
+                                {(l as { kapazitaet?: number | null }).kapazitaet != null && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-medium">
+                                    <Users className="h-3 w-3" />
+                                    {(l as { kapazitaet: number }).kapazitaet} Plätze verfügbar
                                   </span>
                                 )}
                               </div>
@@ -784,6 +925,33 @@ export default async function AnbieterDetailPage({
               })()}
             </CardContent>
           </Card>
+
+          {/* Öffnungszeiten & Verfügbarkeitskalender */}
+          {(anbieter.oeffnungszeiten || (anbieter as { verfuegbarkeit?: string }).verfuegbarkeit) && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Öffnungszeiten &amp; Verfügbarkeit
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {anbieter.oeffnungszeiten && (
+                  <OeffnungszeitenDisplay
+                    oeffnungszeiten={anbieter.oeffnungszeiten as OeffnungszeitenMap}
+                  />
+                )}
+                <div className="border-t border-[--border] pt-3">
+                  <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-2">
+                    4-Wochen-Vorschau
+                  </p>
+                  <OeffentlicherVerfuegbarkeitskalender
+                    oeffnungszeiten={(anbieter.oeffnungszeiten as OeffnungszeitenMap) ?? null}
+                    verfuegbarkeit={(anbieter as { verfuegbarkeit?: string }).verfuegbarkeit as "verfuegbar" | "eingeschraenkt" | "ausgebucht" | "abwesend" | null}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

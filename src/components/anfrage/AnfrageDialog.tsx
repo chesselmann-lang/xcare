@@ -113,6 +113,7 @@ export function AnfrageDialog({
               </div>
               <button
                 onClick={() => !loading && setOpen(false)}
+                aria-label="Dialog schließen"
                 className="p-1.5 rounded-lg hover:bg-[--muted] transition-colors"
               >
                 <X className="h-4 w-4" />
@@ -170,7 +171,7 @@ export function AnfrageDialog({
                 </div>
 
                 {error && (
-                  <p className="text-sm text-red-700 bg-red-50 rounded-lg px-3 py-2 border border-red-100">
+                  <p role="alert" className="text-sm text-red-700 bg-red-50 rounded-lg px-3 py-2 border border-red-100">
                     {error}
                   </p>
                 )}

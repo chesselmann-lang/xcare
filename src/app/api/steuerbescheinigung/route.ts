@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -104,7 +105,7 @@ export async function GET(request: Request) {
       hinweis: "§ 35a EStG — Haushaltsnahe Dienstleistungen und Pflegeleistungen",
     });
   } catch (err) {
-    console.error("[GET /api/steuerbescheinigung]", err);
+    logger.error("[GET /api/steuerbescheinigung]", err);
     return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 });
   }
 }

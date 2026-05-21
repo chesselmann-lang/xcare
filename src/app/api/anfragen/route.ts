@@ -121,8 +121,9 @@ export async function POST(req: NextRequest) {
           }),
         });
       }
-    } catch {
-      // Non-critical: email notification failed, don't fail the request
+    } catch (emailErr) {
+      // Non-critical: email notification failed, don't fail the request (S279)
+      logger.warn("Anfrage email notification failed", { error: String(emailErr) });
     }
 
     return NextResponse.json({ anfrage }, { status: 201 });

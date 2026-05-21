@@ -239,7 +239,7 @@ export function SchichtplanClient({ initialSchichten, careWorkers, familieOption
         <Card className="p-5 border-blue-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">Neue Schicht anlegen</h3>
-            <button onClick={() => setShowForm(false)}>
+            <button onClick={() => setShowForm(false)} aria-label="Schließen">
               <X className="h-4 w-4 text-gray-400" />
             </button>
           </div>

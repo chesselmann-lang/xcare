@@ -8,13 +8,18 @@ import { Suspense } from "react";
 import { Users, Search } from "lucide-react";
 import { CareWorkerSuche } from "@/components/care-workers/CareWorkerSuche";
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+
 export const metadata: Metadata = {
   title: "Pflegekräfte finden | xcare",
   description:
     "Finden Sie qualifizierte Pflegekräfte in Ihrer Nähe — mit Radius-Suche, Qualifikationsfilter und Führungszeugnis-Verifikation.",
+  alternates: { canonical: `${APP_URL}/pflegekraefte` },
   openGraph: {
     title: "Pflegekräfte finden | xcare",
     description: "Qualifizierte Pflegekräfte in Ihrer Nähe — direkt anfragen.",
+    url: `${APP_URL}/pflegekraefte`,
+    type: "website",
   },
 };
 

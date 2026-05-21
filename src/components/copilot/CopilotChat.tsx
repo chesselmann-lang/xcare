@@ -5,6 +5,12 @@ import { toast } from "sonner";
 import { Send, Bot, User, Loader2, CheckCircle2, Search, Pill, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CopilotChunk, ToolCallInfo } from "@/lib/ai/copilot";
+import {
+  markKiRequestStart,
+  recordKiTtfb,
+  recordKiStreamComplete,
+  recordKiError,
+} from "@/lib/monitoring/ki-vitals";
 
 interface Message {
   id: string;
@@ -140,6 +146,12 @@ export function CopilotChat({ kontext = {} }: CopilotChatProps) {
 
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
 
+    // ── Performance Tracking (S317) ───────────────────────────────────────────
+    const vitalsOpts = { feature: "copilot" as const };
+    const measurement = markKiRequestStart(vitalsOpts);
+    let ttfbRecorded = false;
+    let chunkCount = 0;
+
     try {
       const res = await fetch("/api/copilot", {
         method: "POST",
@@ -161,6 +173,12 @@ export function CopilotChat({ kontext = {} }: CopilotChatProps) {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+
+        chunkCount++;
+        if (!ttfbRecorded) {
+          recordKiTtfb(measurement, vitalsOpts);
+          ttfbRecorded = true;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
@@ -208,7 +226,9 @@ export function CopilotChat({ kontext = {} }: CopilotChatProps) {
           );
         }
       }
+      recordKiStreamComplete(measurement, vitalsOpts, chunkCount);
     } catch (err) {
+      recordKiError(measurement, vitalsOpts, (err as Error).message);
       toast.error((err as Error).message || "Fehler beim Senden.");
       setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId));
     } finally {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { encryptFile, decryptBlob } from "@/lib/tresor-crypto";
 import {
   Lock,
   Upload,
@@ -12,6 +13,8 @@ import {
   Loader2,
   Plus,
   Calendar,
+  Eye,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,6 +61,11 @@ export function DokumentenTresor({ initialDokumente }: DokumentenTresorProps) {
   const [modalOffen, setModalOffen] = useState(false);
   const [hochladen, setHochladen] = useState(false);
   const [loeschenId, setLoeschenId] = useState<string | null>(null);
+
+  // Vorschau-State — S333
+  const [vorschauDok, setVorschauDok] = useState<Dokument | null>(null);
+  const [vorschauUrl, setVorschauUrl] = useState<string | null>(null);
+  const [vorschauLaden, setVorschauLaden] = useState(false);
 
   // Upload-Formular
   const [uploadName, setUploadName] = useState("");
@@ -113,13 +121,13 @@ export function DokumentenTresor({ initialDokumente }: DokumentenTresorProps) {
 
       if (!user) throw new Error("Nicht eingeloggt");
 
-      // TODO: Implement client-side AES-256 encryption before upload
-      // Aktuell: Upload ohne Verschlüsselung (Phase 2C MVP)
-      const dateiPfad = `${user.id}/${Date.now()}_${uploadDatei.name}`;
+      // AES-256-GCM client-side encryption (S276)
+      const encryptedFile = await encryptFile(uploadDatei, user.id);
+      const dateiPfad = `${user.id}/${Date.now()}_${uploadDatei.name}.enc`;
 
       const { error: storageError } = await supabase.storage
         .from("dokumente")
-        .upload(dateiPfad, uploadDatei, {
+        .upload(dateiPfad, encryptedFile, {
           cacheControl: "3600",
           upsert: false,
         });
@@ -169,6 +177,44 @@ export function DokumentenTresor({ initialDokumente }: DokumentenTresorProps) {
     } catch {
       toast.error("Download fehlgeschlagen.");
     }
+  };
+
+  // S333: Dokument-Vorschau — entschlüsseln & Blob-URL erzeugen
+  const dokumentVorschau = async (dok: Dokument) => {
+    setVorschauLaden(true);
+    setVorschauDok(dok);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Nicht eingeloggt");
+
+      const { data, error } = await supabase.storage
+        .from("dokumente")
+        .createSignedUrl(dok.storage_path, 60);
+      if (error) throw error;
+
+      const resp = await fetch(data.signedUrl);
+      const encrypted = await resp.arrayBuffer();
+      const decrypted = await decryptBlob(
+        encrypted,
+        user.id,
+        dok.mime_type ?? "application/octet-stream"
+      );
+      const url = URL.createObjectURL(decrypted);
+      setVorschauUrl(url);
+    } catch {
+      toast.error("Vorschau konnte nicht geladen werden.");
+      setVorschauDok(null);
+    } finally {
+      setVorschauLaden(false);
+    }
+  };
+
+  const vorschauSchliessen = () => {
+    if (vorschauUrl) URL.revokeObjectURL(vorschauUrl);
+    setVorschauDok(null);
+    setVorschauUrl(null);
   };
 
   const dokumentLoeschen = async (id: string) => {
@@ -321,6 +367,23 @@ export function DokumentenTresor({ initialDokumente }: DokumentenTresorProps) {
                   )}
 
                   <div className="flex gap-2 pt-1">
+                    {/* Vorschau — nur für PDF/Bilder — S333 */}
+                    {(dok.mime_type?.startsWith("image/") || dok.mime_type === "application/pdf") && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        aria-label="Vorschau"
+                        className="shrink-0 h-8 w-8"
+                        onClick={() => dokumentVorschau(dok)}
+                        disabled={vorschauLaden && vorschauDok?.id === dok.id}
+                      >
+                        {vorschauLaden && vorschauDok?.id === dok.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Eye className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -332,6 +395,7 @@ export function DokumentenTresor({ initialDokumente }: DokumentenTresorProps) {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Dokument löschen"
                       className="shrink-0 h-8 w-8 text-red-500 hover:bg-red-50 hover:border-red-200"
                       onClick={() => dokumentLoeschen(dok.id)}
                       disabled={loeschenId === dok.id}
@@ -347,6 +411,80 @@ export function DokumentenTresor({ initialDokumente }: DokumentenTresorProps) {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* Vorschau-Modal — S333 */}
+      {vorschauDok && (
+        <div className="fixed inset-0 z-50 flex flex-col" role="dialog" aria-modal="true">
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={vorschauSchliessen}
+          />
+          <div className="relative z-10 flex flex-col h-full max-w-4xl w-full mx-auto p-4">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3 bg-white/10 backdrop-blur rounded-xl px-4 py-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xl shrink-0">{DOKUMENT_KATEGORIE_EMOJI[vorschauDok.kategorie]}</span>
+                <span className="text-sm font-medium text-white truncate">{vorschauDok.name}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {vorschauUrl && (
+                  <a
+                    href={vorschauUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg hover:bg-white/20 text-white transition-colors"
+                    aria-label="In neuem Tab öffnen"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                )}
+                <button
+                  onClick={vorschauSchliessen}
+                  className="p-1.5 rounded-lg hover:bg-white/20 text-white transition-colors"
+                  aria-label="Vorschau schließen"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 flex items-center justify-center min-h-0">
+              {!vorschauUrl ? (
+                <div className="flex flex-col items-center gap-3 text-white/70">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <p className="text-sm">Entschlüssele Dokument…</p>
+                </div>
+              ) : vorschauDok.mime_type === "application/pdf" ? (
+                <iframe
+                  src={vorschauUrl}
+                  className="w-full h-full rounded-xl bg-white"
+                  title={vorschauDok.name}
+                />
+              ) : vorschauDok.mime_type?.startsWith("image/") ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={vorschauUrl}
+                  alt={vorschauDok.name}
+                  className="max-w-full max-h-full rounded-xl object-contain"
+                />
+              ) : (
+                <div className="text-center text-white/70 space-y-2">
+                  <FileText className="h-12 w-12 mx-auto opacity-50" />
+                  <p className="text-sm">Dieses Dateiformat kann nicht direkt angezeigt werden.</p>
+                  <a
+                    href={vorschauUrl}
+                    download={vorschauDok.name}
+                    className="inline-flex items-center gap-1.5 text-sm underline text-white"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Herunterladen
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

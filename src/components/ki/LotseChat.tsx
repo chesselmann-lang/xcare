@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { LebenslageTyp, WizardAntwort } from "@/lib/types";
 import { LEBENSLAGEN } from "@/lib/constants";
+import {
+  markKiRequestStart,
+  recordKiTtfb,
+  recordKiStreamComplete,
+  recordKiError,
+} from "@/lib/monitoring/ki-vitals";
 
 interface Message {
   role: "user" | "assistant";
@@ -48,6 +54,12 @@ export function LotseChat({ lebenslage, antworten, plz, initialMessage }: LotseC
     const assistantMsg: Message = { role: "assistant", content: "" };
     setMessages((prev) => [...prev, assistantMsg]);
 
+    // ── Performance Tracking (S317) ───────────────────────────────────────────
+    const vitalsOpts = { feature: "lotse" as const, lebenslage };
+    const measurement = markKiRequestStart(vitalsOpts);
+    let ttfbRecorded = false;
+    let chunkCount = 0;
+
     try {
       const res = await fetch("/api/ki", {
         method: "POST",
@@ -55,7 +67,7 @@ export function LotseChat({ lebenslage, antworten, plz, initialMessage }: LotseC
         body: JSON.stringify({ lebenslage, antworten, frage: text, plz }),
       });
 
-      if (!res.ok) throw new Error("Fehler");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       if (!res.body) return;
 
       const reader = res.body.getReader();
@@ -65,6 +77,14 @@ export function LotseChat({ lebenslage, antworten, plz, initialMessage }: LotseC
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value);
+        chunkCount++;
+
+        // TTFB: erster nicht-leerer Chunk
+        if (!ttfbRecorded && chunk.length > 0) {
+          recordKiTtfb(measurement, vitalsOpts);
+          ttfbRecorded = true;
+        }
+
         setMessages((prev) => {
           const updated = [...prev];
           updated[updated.length - 1] = {
@@ -74,7 +94,12 @@ export function LotseChat({ lebenslage, antworten, plz, initialMessage }: LotseC
           return updated;
         });
       }
-    } catch {
+
+      recordKiStreamComplete(measurement, vitalsOpts, chunkCount);
+    } catch (err) {
+      const errorType = err instanceof Error ? err.message : "unknown";
+      recordKiError(measurement, vitalsOpts, errorType);
+
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = {
@@ -161,6 +186,7 @@ export function LotseChat({ lebenslage, antworten, plz, initialMessage }: LotseC
           onClick={() => sendMessage(input)}
           disabled={!input.trim() || isLoading}
           size="icon"
+          aria-label="Nachricht senden"
           className="shrink-0 self-end"
         >
           {isLoading ? (

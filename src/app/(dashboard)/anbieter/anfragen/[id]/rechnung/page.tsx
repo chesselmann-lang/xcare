@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import { PrintButton } from "./print-button";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 export const metadata = { title: "Rechnung – xcare" };
 
@@ -53,6 +54,16 @@ export default async function RechnungPage({
   const leistungName = (anfrage.lebenslage ?? "").replace(/_/g, " ");
 
   return (
+    <>
+      <div className="max-w-4xl mx-auto px-4 pt-4 print:hidden">
+        <Breadcrumb
+          items={[
+            { label: "Anfragen", href: "/anbieter/anfragen" },
+            { label: "Anfrage", href: `/anbieter/anfragen/${id}` },
+            { label: "Rechnung" },
+          ]}
+        />
+      </div>
     <div className="max-w-3xl mx-auto px-4 py-10">
       {/* Screen-only nav */}
       <div className="print:hidden flex items-center justify-between mb-6">
@@ -180,5 +191,6 @@ export default async function RechnungPage({
         </div>
       </div>
     </div>
+    </>
   );
 }

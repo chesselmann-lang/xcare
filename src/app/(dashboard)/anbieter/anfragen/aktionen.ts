@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { AnfrageStatus } from "@/lib/types";
+import { sendPushToProfile } from "@/lib/send-push";
 
 const STATUS_LABEL: Record<AnfrageStatus, string> = {
   offen:          "Offen",
@@ -111,6 +112,17 @@ export async function statusAendern(anfrageId: string, neuerStatus: AnfrageStatu
       nachricht: `${anbieterName}: ${nachrichtText}`,
       link: `/familie/anfragen/${anfrageId}`,
     });
+  }
+
+  // Web Push notification to familie (non-blocking, S322)
+  if (nachrichtText && anfrage.familie_id) {
+    const anbieterNamePush = (anfrage.anbieter as { name?: string } | null)?.name ?? "Der Anbieter";
+    sendPushToProfile(
+      anfrage.familie_id,
+      `Anfragen-Status: ${STATUS_LABEL[neuerStatus]}`,
+      `${anbieterNamePush}: ${nachrichtText}`,
+      `/familie/anfragen/${anfrageId}`
+    ).catch(() => {/* non-critical */});
   }
 
   // Fire Inngest status-changed email notification (non-blocking)

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { VerfuegbarkeitBadge } from "@/components/anbieter/VerfuegbarkeitBadge";
 import { SterneDisplay } from "@/components/bewertungen/SterneRating";
 import { LEISTUNGSKATEGORIEN } from "@/lib/constants";
+import { VergleichDruckenButton } from "@/components/vergleich/VergleichDruckenButton";
 import type { LeistungsKategorie } from "@/lib/types";
 
 export const metadata = {
@@ -101,23 +102,38 @@ export default async function VergleichPage({
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/familie/favoriten">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold">Anbieter vergleichen</h1>
-          <p className="text-sm text-[--muted-foreground]">
-            {colCount} Anbieter im Vergleich
-          </p>
+      {/* Print-only header (hidden on screen) */}
+      <div className="vergleich-print-header">
+        xcare — Anbieter-Vergleich
+      </div>
+      <div className="vergleich-print-date">
+        Erstellt am {new Date().toLocaleDateString("de-DE", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        })}
+      </div>
+
+      {/* Screen header */}
+      <div className="flex items-center justify-between gap-3 print:hidden">
+        <div className="flex items-center gap-3">
+          <Link href="/familie/favoriten">
+            <Button variant="ghost" size="icon" aria-label="Zurück zu Favoriten" className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold">Anbieter vergleichen</h1>
+            <p className="text-sm text-[--muted-foreground]">
+              {colCount} Anbieter im Vergleich
+            </p>
+          </div>
         </div>
+        <VergleichDruckenButton />
       </div>
 
       {/* Comparison grid */}
-      <div className="overflow-x-auto rounded-xl border border-[--border]">
+      <div className="vergleich-table-wrapper overflow-x-auto rounded-xl border border-[--border]">
         <table className="w-full border-collapse min-w-[600px]">
           <thead>
             <tr className="border-b border-[--border] bg-[--muted]/30">
