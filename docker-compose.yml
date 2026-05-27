@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  # ── Next.js application ───────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c "npm run dev"
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # ── PostgreSQL (Supabase-compatible) ──────────────────────────────────────
+  postgres:
+    image: supabase/postgres:15.1.1.54
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: xcare
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  # ── Inbucket (local e-mail testing) ──────────────────────────────────────
+  inbucket:
+    image: inbucket/inbucket
+    ports:
+      - "9000:9000"   # Web UI
+      - "2500:2500"   # SMTP
+
+  # ── Inngest (local event-driven jobs) ────────────────────────────────────
+  inngest:
+    image: inngest/inngest
+    ports:
+      - "8288:8288"
+    command: inngest dev -u http://app:3000/api/inngest
+    depends_on:
+      - app
+
+  # ── Supabase Studio ───────────────────────────────────────────────────────
+  studio:
+    image: supabase/studio:latest
+    ports:
+      - "3001:3000"
+    environment:
+      SUPABASE_URL: http://postgres:5432
+      POSTGRES_PASSWORD: postgres
+      STUDIO_PG_META_URL: http://postgres:5432
+
+volumes:
+  postgres_data:
+  redis_data:

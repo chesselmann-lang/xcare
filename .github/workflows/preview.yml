@@ -1,0 +1,171 @@
+name: Preview Deploy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # ── Vercel Preview Deployment + Lighthouse ─────────────────────────────────
+  preview-deploy:
+    name: Preview Deploy & Lighthouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel preview environment
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build preview
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel (preview)
+        id: deploy
+        run: |
+          PREVIEW_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$PREVIEW_URL" >> $GITHUB_OUTPUT
+          echo "Preview URL: $PREVIEW_URL"
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const previewUrl = '${{ steps.deploy.outputs.url }}';
+            const branch = '${{ github.head_ref }}';
+            const sha = '${{ github.event.pull_request.head.sha }}'.substring(0, 7);
+
+            // Find and update an existing preview comment, or create a new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existingComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('<!-- xcare-preview -->')
+            );
+
+            const body = `<!-- xcare-preview -->
+            🚀 Preview: ${previewUrl}
+            📊 Branch: ${branch}
+            🔒 Commit: ${sha}`;
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.14.x
+
+      - name: Run Lighthouse against preview URL
+        id: lighthouse
+        run: |
+          lhci autorun \
+            --collect.url=${{ steps.deploy.outputs.url }} \
+            --collect.numberOfRuns=1 \
+            --upload.target=temporary-public-storage \
+            --output=json \
+            --outputPath=./lhci-results.json || true
+
+          # Extract scores (default to 0 if not available)
+          PERF=$(node -e "try { const r=require('./lhci-results.json'); const s=r[0]?.summary; console.log(Math.round((s?.performance||0)*100)); } catch(e) { console.log('N/A'); }" 2>/dev/null || echo "N/A")
+          A11Y=$(node -e "try { const r=require('./lhci-results.json'); const s=r[0]?.summary; console.log(Math.round((s?.accessibility||0)*100)); } catch(e) { console.log('N/A'); }" 2>/dev/null || echo "N/A")
+          BP=$(node -e "try { const r=require('./lhci-results.json'); const s=r[0]?.summary; console.log(Math.round((s?.['best-practices']||0)*100)); } catch(e) { console.log('N/A'); }" 2>/dev/null || echo "N/A")
+          SEO=$(node -e "try { const r=require('./lhci-results.json'); const s=r[0]?.summary; console.log(Math.round((s?.seo||0)*100)); } catch(e) { console.log('N/A'); }" 2>/dev/null || echo "N/A")
+          REPORT_URL=$(node -e "try { const r=require('./lhci-results.json'); console.log(r[0]?.url||''); } catch(e) { console.log(''); }" 2>/dev/null || echo "")
+
+          echo "performance=$PERF" >> $GITHUB_OUTPUT
+          echo "accessibility=$A11Y" >> $GITHUB_OUTPUT
+          echo "best-practices=$BP" >> $GITHUB_OUTPUT
+          echo "seo=$SEO" >> $GITHUB_OUTPUT
+          echo "report_url=$REPORT_URL" >> $GITHUB_OUTPUT
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Post Lighthouse scores as PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const perf = '${{ steps.lighthouse.outputs.performance }}';
+            const a11y = '${{ steps.lighthouse.outputs.accessibility }}';
+            const bp   = '${{ steps.lighthouse.outputs.best-practices }}';
+            const seo  = '${{ steps.lighthouse.outputs.seo }}';
+            const reportUrl = '${{ steps.lighthouse.outputs.report_url }}';
+
+            const score = (val) => {
+              const n = parseInt(val);
+              if (isNaN(n)) return '⚪ N/A';
+              if (n >= 90)  return `🟢 ${n}`;
+              if (n >= 50)  return `🟡 ${n}`;
+              return `🔴 ${n}`;
+            };
+
+            const reportLink = reportUrl ? `\n[📄 Full Report](${reportUrl})` : '';
+
+            const body = `<!-- xcare-lighthouse -->
+            ## Lighthouse Scores
+            | Metric | Score |
+            |---|---|
+            | Performance | ${score(perf)} |
+            | Accessibility | ${score(a11y)} |
+            | Best Practices | ${score(bp)} |
+            | SEO | ${score(seo)} |
+            ${reportLink}`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('<!-- xcare-lighthouse -->')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

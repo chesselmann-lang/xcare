@@ -1,0 +1,107 @@
+name: Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      dry_run:
+        description: 'Dry run only (diff, no push)'
+        required: true
+        default: true
+        type: boolean
+
+concurrency:
+  group: db-migrate-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  # ── Run Supabase Migration ─────────────────────────────────────────────────
+  migrate:
+    name: Migrate (${{ github.event.inputs.environment }}${{ github.event.inputs.dry_run == 'true' && ' – dry run' || '' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: ${{ github.event.inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz \
+            | tar -xz
+          sudo mv supabase /usr/local/bin/
+          supabase --version
+
+      - name: Select DB URL for environment
+        id: db
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            echo "url=${{ secrets.SUPABASE_DB_URL_PRODUCTION }}" >> $GITHUB_OUTPUT
+          else
+            echo "url=${{ secrets.SUPABASE_DB_URL_STAGING }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Dry run – diff pending migrations
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "=== Pending migration diff (dry run) ==="
+          supabase db diff --db-url "${{ steps.db.outputs.url }}" || true
+
+      - name: Apply migrations
+        if: github.event.inputs.dry_run == 'false'
+        run: |
+          echo "=== Applying migrations to ${{ github.event.inputs.environment }} ==="
+          supabase db push --db-url "${{ steps.db.outputs.url }}"
+
+      - name: List migration status
+        if: always()
+        run: |
+          echo "=== Migration list ==="
+          supabase migration list --db-url "${{ steps.db.outputs.url }}" || true
+
+      - name: Notify Slack on completion
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          STATUS="${{ job.status }}"
+          ENV="${{ github.event.inputs.environment }}"
+          DRY="${{ github.event.inputs.dry_run }}"
+          ACTOR="${{ github.actor }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          if [ "$DRY" = "true" ]; then
+            MODE="dry run"
+          else
+            MODE="live migration"
+          fi
+
+          if [ "$STATUS" = "success" ]; then
+            ICON=":white_check_mark:"
+          else
+            ICON=":x:"
+          fi
+
+          curl -fsSL -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"text\": \"${ICON} DB Migration (${MODE}) on *${ENV}* — ${STATUS}\",
+              \"attachments\": [{
+                \"color\": \"$([ '$STATUS' = 'success' ] && echo good || echo danger)\",
+                \"fields\": [
+                  { \"title\": \"Environment\", \"value\": \"${ENV}\", \"short\": true },
+                  { \"title\": \"Mode\",        \"value\": \"${MODE}\", \"short\": true },
+                  { \"title\": \"Triggered by\",\"value\": \"${ACTOR}\", \"short\": true },
+                  { \"title\": \"Status\",      \"value\": \"${STATUS}\", \"short\": true }
+                ],
+                \"footer\": \"<${RUN_URL}|View run>\"
+              }]
+            }"

@@ -1,0 +1,33 @@
+version: "3.9"
+
+# Production override — use with:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  app:
+    image: ghcr.io/chesselmann-lang/xcare:latest
+    build: !reset null
+    command: !reset null
+    volumes: !reset []
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  postgres:
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped
+
+  inbucket:
+    restart: unless-stopped
+
+  inngest:
+    restart: unless-stopped
+
+  studio:
+    restart: unless-stopped

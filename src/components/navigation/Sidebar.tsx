@@ -7,7 +7,7 @@ import {
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
   GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList, Wallet, Euro,
-  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt, Calculator
+  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt, Calculator, Brain
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -47,6 +47,7 @@ const FAMILIE_NAV = [
   { href: "/familie/wohlbefinden", label: "Wohlbefinden", icon: Heart },
   { href: "/familie/notfall", label: "Notfallplan", icon: AlertTriangle },
   { href: "/familie/pflegegrad", label: "Pflegegrad", icon: Stethoscope },
+  { href: "/familie/pflegegrad-coach", label: "KI Pflegegrad-Coach", icon: Brain },
   { href: "/familie/uebergabe", label: "Übergaben", icon: RefreshCcw },
   { href: "/familie/pinnwand", label: "Pinnwand", icon: PinIcon },
   { href: "/familie/medikamente", label: "Medikamente", icon: Pill },
