@@ -1,86 +1,86 @@
 /**
- * BundID OIDC Integration
- * BundID ist das zentrale Nutzerkonto der deutschen Bundesverwaltung.
- * Technisch: OpenID Connect (OIDC) mit PKCE
+ * BundID OAuth 2.0 / OIDC Integration
+ * BundID is Germany's national digital identity service (BSI/BMI)
+ * Production: https://id.bund.de/
+ * Sandbox: https://int.id.bund.de/
  *
- * Produktions-Endpunkt: https://int.id.bund.de/  (Integration)
- *                       https://id.bund.de/        (Production)
- *
- * Supabase Custom OIDC: wird als "Custom OIDC Provider" in der Supabase-Auth konfiguriert.
- * Bis zur BundID-Zertifizierung: Supabase Google/Apple Auth als primäre Social-Login-Methode.
- *
- * Zertifizierungsanforderungen:
- * - BSI TR-03130 eID-Server Zertifizierung
- * - FITKO-Registrierung (Föderale IT-Kooperation)
- * - Datenschutz-Folgenabschätzung nach DSGVO Art. 35
+ * Setup: Register at https://id.bund.de/de/anbieter/registrierung
+ * Requires ELSTER-based client certificate for production
  */
 
-export const BUNDID_CONFIG = {
-  // Integration-Umgebung (kein echter Account erforderlich)
-  issuer_staging: "https://int.id.bund.de/",
-  authorization_endpoint_staging: "https://int.id.bund.de/realms/master/protocol/openid-connect/auth",
-  token_endpoint_staging: "https://int.id.bund.de/realms/master/protocol/openid-connect/token",
-  userinfo_endpoint_staging: "https://int.id.bund.de/realms/master/protocol/openid-connect/userinfo",
-  jwks_uri_staging: "https://int.id.bund.de/realms/master/protocol/openid-connect/certs",
+const BUNDID_BASE =
+  process.env.NODE_ENV === "production"
+    ? "https://id.bund.de"
+    : "https://int.id.bund.de"; // sandbox
 
-  // Produktions-Umgebung
-  issuer_prod: "https://id.bund.de/",
+const CLIENT_ID = process.env.BUNDID_CLIENT_ID;
+const CLIENT_SECRET = process.env.BUNDID_CLIENT_SECRET;
+const REDIRECT_URI = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/bundid/callback`;
 
-  // Scopes
-  scopes: ["openid", "profile", "email"],
-
-  // Vertrauensniveaus (eIDAS)
-  loa_low: "http://eidas.europa.eu/LoA/low",
-  loa_substantial: "http://eidas.europa.eu/LoA/substantial",
-  loa_high: "http://eidas.europa.eu/LoA/high",
-
-  // Für Care-App: "substantial" erforderlich (Basisregistrierung reicht)
-  required_loa: "http://eidas.europa.eu/LoA/substantial",
-} as const;
-
-/**
- * BundID OIDC Callback-Handler
- * Wird aufgerufen nachdem Supabase den OIDC-Token validiert hat.
- * Mappt BundID-Claims auf xcare-Profile.
- */
-export function mapBundIdClaims(claims: Record<string, unknown>) {
-  return {
-    // BundID gibt pseudonymisierte Identifier zurück
-    bundid_sub: claims.sub as string,
-    // Vertrauensniveau
-    loa: (claims.acr as string) ?? BUNDID_CONFIG.loa_low,
-    // Optionale Attribute (nur wenn vom Nutzer freigegeben)
-    vorname: (claims.given_name as string) ?? null,
-    nachname: (claims.family_name as string) ?? null,
-    email: (claims.email as string) ?? null,
-    // BundID-spezifische Claims
-    verified: (claims.acr as string) >= BUNDID_CONFIG.loa_substantial,
+export interface BundIDUserInfo {
+  sub: string; // Unique identifier
+  given_name?: string;
+  family_name?: string;
+  birthdate?: string;
+  address?: {
+    street_address?: string;
+    locality?: string;
+    postal_code?: string;
+    country?: string;
+  };
+  // German-specific claims
+  "urn:de:bund:bundid:claim:einwohnermeldedaten"?: {
+    vorname: string;
+    nachname: string;
+    geburtsdatum: string;
+    geburtsort: string;
+    anschrift: {
+      strasse: string;
+      hausnummer: string;
+      postleitzahl: string;
+      ort: string;
+    };
   };
 }
 
-/**
- * Prüft ob ein BundID-Token das erforderliche Vertrauensniveau hat.
- */
-export function pruefeBundIdLoa(
-  claims: Record<string, unknown>,
-  required: string = BUNDID_CONFIG.required_loa
-): { ok: boolean; reason?: string } {
-  const acr = claims.acr as string;
-  if (!acr) return { ok: false, reason: "Kein ACR-Claim vorhanden" };
+export function getBundIDAuthUrl(state: string): string {
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: CLIENT_ID || "",
+    redirect_uri: REDIRECT_URI,
+    scope: "openid profile email address",
+    state,
+    // Request Einwohnermeldedaten (address data) — requires user consent
+    acr_values: "urn:de:bund:requiresOpenID",
+  });
+  return `${BUNDID_BASE}/oidc/auth?${params}`;
+}
 
-  const loaLevel = { low: 1, substantial: 2, high: 3 };
-  const extractLevel = (loa: string): number => {
-    if (loa.includes("high")) return loaLevel.high;
-    if (loa.includes("substantial")) return loaLevel.substantial;
-    return loaLevel.low;
-  };
+export async function exchangeCodeForToken(
+  code: string
+): Promise<{ access_token: string; id_token: string }> {
+  if (!CLIENT_ID || !CLIENT_SECRET) throw new Error("BundID not configured");
 
-  if (extractLevel(acr) < extractLevel(required)) {
-    return {
-      ok: false,
-      reason: `Vertrauensniveau ${acr} nicht ausreichend — ${required} erforderlich`,
-    };
-  }
+  const res = await fetch(`${BUNDID_BASE}/oidc/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
+    },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: REDIRECT_URI,
+    }),
+  });
 
-  return { ok: true };
+  if (!res.ok) throw new Error(`BundID token exchange failed: ${await res.text()}`);
+  return res.json();
+}
+
+export async function getUserInfo(accessToken: string): Promise<BundIDUserInfo> {
+  const res = await fetch(`${BUNDID_BASE}/oidc/userinfo`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return res.json();
 }

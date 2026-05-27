@@ -1,78 +1,28 @@
-/**
- * BundID OIDC Callback Route
- * Wird von Supabase Auth nach erfolgreichem OIDC-Login aufgerufen.
- * Erstellt oder verknüpft das xcare-Profil mit dem BundID-Account.
- */
-import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { mapBundIdClaims, pruefeBundIdLoa } from "@/lib/auth/bundid";
+import { exchangeCodeForToken, getUserInfo } from "@/lib/auth/bundid";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
-  const code = searchParams.get("code");
-  const error = searchParams.get("error");
-  const errorDescription = searchParams.get("error_description");
+export async function GET(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get("code");
+  const state = request.nextUrl.searchParams.get("state");
+  const cookieState = request.cookies.get("bundid_state")?.value;
 
-  // Fehler vom OIDC-Provider
-  if (error) {
-    logger.error("[BundID Callback] OIDC Error:", error, errorDescription);
-    return NextResponse.redirect(
-      new URL(`/login?error=bundid_${error}`, req.url)
-    );
-  }
-
-  if (!code) {
-    return NextResponse.redirect(new URL("/login?error=bundid_no_code", req.url));
+  if (!code || state !== cookieState) {
+    return NextResponse.redirect(new URL("/login?error=bundid_invalid", request.url));
   }
 
   try {
-    const supabase = await createClient();
+    const tokens = await exchangeCodeForToken(code);
+    const userInfo = await getUserInfo(tokens.access_token);
 
-    // Supabase tauscht den Code aus und holt den User
-    const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (exchangeError || !data.user) {
-      throw exchangeError ?? new Error("Kein User nach Code-Exchange");
-    }
-
-    // BundID-Claims prüfen
-    const claims = data.user.user_metadata ?? {};
-    const loaPruefung = pruefeBundIdLoa(claims);
-
-    if (!loaPruefung.ok) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(
-        new URL(`/login?error=bundid_loa_insufficient`, req.url)
-      );
-    }
-
-    const mappedClaims = mapBundIdClaims(claims);
-
-    // Profil aktualisieren / erstellen
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", data.user.id)
-      .single();
-
-    if (!existingProfile) {
-      // Neues Profil
-      await supabase.from("profiles").insert({
-        user_id: data.user.id,
-        email: mappedClaims.email ?? data.user.email ?? "",
-        vorname: mappedClaims.vorname,
-        nachname: mappedClaims.nachname,
-        role: "familie",
-        onboarding_done: false,
-      });
-    }
-
-    // Redirect zum Dashboard
-    return NextResponse.redirect(new URL("/familie", req.url));
-
-  } catch (err) {
-    logger.error("[BundID Callback] Error:", err);
-    return NextResponse.redirect(new URL("/login?error=bundid_callback_error", req.url));
+    // TODO: Link BundID identity to Supabase user
+    // For now: redirect with success + user data for profile prefill
+    const params = new URLSearchParams({
+      bundid_verified: "true",
+      given_name: userInfo.given_name || "",
+      family_name: userInfo.family_name || "",
+    });
+    return NextResponse.redirect(new URL(`/profil?${params}`, request.url));
+  } catch {
+    return NextResponse.redirect(new URL("/login?error=bundid_failed", request.url));
   }
 }
