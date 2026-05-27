@@ -5,6 +5,7 @@ import { createUnsubscribeToken, buildUnsubscribeUrl } from "@/lib/unsubscribe";
 import { logger } from "@/lib/logger";
 import { sendAndLog } from "@/lib/email-log";
 import { inngest } from "@/lib/inngest";
+import { deteriorationCheckFn } from "@/inngest/functions/deterioration-check";
 
 export { inngest }; // re-export for legacy imports
 
@@ -1223,4 +1224,61 @@ const angebotsErinnerung = inngest.createFunction(
           anbieter: {
             id: string;
             name: string;
-            profiles: { user_id: string; email_prefs: Record<string
+            profiles: { user_id: string; email_prefs: Record<string, unknown>; };
+          };
+        }>) => anfrage.anbieter;
+
+        if (!anbieter || !anbieter.profiles) return;
+
+        const profil = anbieter.profiles as unknown as { user_id: string; email_prefs: Record<string, unknown> };
+        const emailPrefs = profil.email_prefs as Record<string, boolean> | null;
+        if (emailPrefs?.angebots_erinnerung === false) return;
+
+        const { data: anbieterProfil } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("user_id", profil.user_id)
+          .single();
+
+        if (!anbieterProfil?.email) return;
+
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xcare.de";
+
+        await sendAndLog(resend, {
+          from: process.env.RESEND_FROM_EMAIL ?? "noreply@xcare.de",
+          to: anbieterProfil.email,
+          subject: `xcare: Erinnerung — offene Anfrage wartet auf Angebot`,
+          html: `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;max-width:600px;"><tr><td style="background:#1A5276;padding:24px 32px;"><p style="margin:0;color:#fff;font-size:22px;font-weight:700;">xcare</p></td></tr><tr><td style="padding:32px;"><h2 style="color:#1A5276;margin-top:0;">Offene Anfrage wartet auf Ihr Angebot</h2><p style="color:#333;line-height:1.6;">Eine Pflegeanfrage (${anfrage.lebenslage}) ist seit mehr als 3 Tagen offen und hat noch kein Angebot erhalten. Bitte prüfen Sie die Anfrage und erstellen Sie ein Angebot.</p><a href="${appUrl}/anbieter/anfragen/${anfrage.id}" style="display:inline-block;background:#1A5276;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;margin:20px 0;">Anfrage anzeigen</a></td></tr><tr><td style="background:#f8f9fa;padding:16px 32px;border-top:1px solid #e9ecef;"><p style="margin:0;color:#6c757d;font-size:12px;text-align:center;">© ${new Date().getFullYear()} xcare gemeinnützige GmbH</p></td></tr></table></td></tr></table></body></html>`,
+        });
+        sent++;
+      });
+    }
+
+    logger.info("angebots-erinnerung cron done", { sent });
+    return { sent };
+  }
+);
+
+// ─── Export (Inngest serve handler) ────────────────────────────────────────────
+export const { GET, POST, PUT } = serve({
+  client: inngest,
+  functions: [
+    sendWelcomeEmail,
+    notifyAnbieterNeueAnfrage,
+    notifyFamilieStatusUpdate,
+    remind48hAnbieter,
+    requestBewertungNachAbschluss,
+    notifyNeueNachricht,
+    remind48hFamilieAngebot,
+    remind7dAnbieterOffen,
+    weeklyDigestAnbieter,
+    dailyWiedervorlagenCheck,
+    ablaufdatenCheck,
+    impfungenErinnerung,
+    notifyAboUpgrade,
+    notifyZahlungFehlgeschlagen,
+    remindAboVerlaengerung,
+    angebotsErinnerung,
+    deteriorationCheckFn,
+  ],
+});
