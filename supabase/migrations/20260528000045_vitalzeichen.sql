@@ -1,0 +1,3 @@
+-- F51: Vitalzeichen-Protokoll (applied via Supabase MCP)
+-- Tables: vitalzeichen, vitalzeichen_grenzwerte
+-- Applied: 2026-05-28

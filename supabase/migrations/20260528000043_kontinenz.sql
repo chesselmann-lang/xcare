@@ -1,0 +1,3 @@
+-- F49: Kontinenz-Management (applied via Supabase MCP)
+-- Tables: kontinenz_assessments, miktionsprotokoll, kontinenz_tagesbilanzen
+-- Applied: 2026-05-28

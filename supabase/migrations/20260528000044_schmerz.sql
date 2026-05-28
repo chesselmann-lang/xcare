@@ -1,0 +1,3 @@
+-- F50: Schmerzmanagement (applied via Supabase MCP)
+-- Tables: schmerz_eintraege (NRS + BESD), schmerz_therapieplaene
+-- Applied: 2026-05-28
