@@ -68,6 +68,9 @@ const CSP = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // Required for Docker multi-stage build (Dockerfile copies .next/standalone)
+  output: "standalone",
+
   typescript: {
     ignoreBuildErrors: false,
   },

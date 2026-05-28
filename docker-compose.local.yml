@@ -1,0 +1,70 @@
+version: "3.9"
+
+# Simplified local dev stack — uses Supabase Cloud (no local Postgres/Studio)
+# Usage: docker compose -f docker-compose.local.yml up
+#
+# What runs locally:
+#   - Next.js app (dev mode, hot-reload via volume mounts)
+#   - Redis (session cache, rate limiting)
+#   - Inngest (local job runner)
+#   - Inbucket (local SMTP / email testing UI at http://localhost:9000)
+#
+# What uses the cloud:
+#   - Supabase DB + Auth + Storage → set NEXT_PUBLIC_SUPABASE_URL + keys in .env.local
+
+services:
+  # ── Next.js (dev mode, hot-reload) ────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps          # only install deps layer; skip full build
+    command: sh -c "npm run dev"
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      REDIS_URL: redis://redis:6379
+      SMTP_HOST: inbucket
+      SMTP_PORT: "2500"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - redis
+      - inbucket
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Inbucket (local e-mail testing) ──────────────────────────────────────
+  inbucket:
+    image: inbucket/inbucket
+    ports:
+      - "9000:9000"   # Web UI  → http://localhost:9000
+      - "2500:2500"   # SMTP
+
+  # ── Inngest (local event-driven jobs) ────────────────────────────────────
+  inngest:
+    image: inngest/inngest
+    ports:
+      - "8288:8288"   # Dev UI → http://localhost:8288
+    command: inngest dev -u http://app:3000/api/inngest
+    depends_on:
+      - app
+
+volumes:
+  redis_data:
