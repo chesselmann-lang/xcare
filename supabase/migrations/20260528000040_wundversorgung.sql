@@ -1,0 +1,2 @@
+-- F46: Wundversorgung-Protokoll (applied via Supabase MCP)
+-- See wundversorgung_f46 migration in Supabase dashboard

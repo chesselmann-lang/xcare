@@ -1,0 +1,2 @@
+-- F48: Dekubitusprophylaxe & Lagerungsplan (applied via Supabase MCP)
+-- See dekubitus_f48 migration in Supabase dashboard

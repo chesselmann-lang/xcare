@@ -1,0 +1,2 @@
+-- F47: Pflegegrad-Widerspruch-Assistent (applied via Supabase MCP)
+-- See widerspruch_f47 migration in Supabase dashboard

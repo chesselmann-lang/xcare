@@ -1,336 +1,718 @@
-"use client";
-import { useState } from "react";
-import { format, parseISO } from "date-fns";
-import { de } from "date-fns/locale";
-import { Plus, Activity } from "lucide-react";
+'use client'
 
-interface Wundversorgung {
-  id: string;
-  wunde_id?: string | null;
-  lokalisation: string;
-  wundart: string;
-  wundgroesse_cm2?: number | null;
-  tiefe_grad?: number | null;
-  wundzustand?: string | null;
-  exsudat?: string | null;
-  wundrand?: string | null;
-  massnahmen?: string | null;
-  verbandsmaterial?: string | null;
-  naechster_verbandwechsel?: string | null;
-  schmerz_nrs?: number | null;
-  notizen?: string | null;
-  created_at: string;
-}
+import { useState, useEffect, useCallback } from 'react'
+import {
+  Wunde, Verbandswechsel,
+  WUNDARTEN, WUND_STATUS, EXSUDAT_MENGEN, HEILUNGSFORTSCHRITT,
+  LOKALISATION_VORSCHLAEGE, WUNDAUFLAGE_VORSCHLAEGE,
+  leereWunde, leererVerbandswechsel,
+  wechselFaellig
+} from '@/lib/wundversorgung/protokoll'
 
-interface Props {
-  versorgungen: Wundversorgung[];
-  isAnbieter: boolean;
-  familieProfileId?: string;
-}
+type Tab = 'wunden' | 'neu' | 'wechsel' | 'verlauf'
 
-const WUNDART_CONFIG: Record<string, { label: string; color: string }> = {
-  dekubitus: { label: "Dekubitus", color: "bg-red-100 text-red-700" },
-  ulcus_cruris: { label: "Ulcus cruris", color: "bg-orange-100 text-orange-700" },
-  diabetisches_fusssyndrom: { label: "Diab. Fußsyndrom", color: "bg-yellow-100 text-yellow-700" },
-  traumatisch: { label: "Traumatisch", color: "bg-blue-100 text-blue-700" },
-  operativ: { label: "Operativ", color: "bg-purple-100 text-purple-700" },
-  sonstige: { label: "Sonstige", color: "bg-gray-100 text-gray-700" },
-};
+export default function WundversorgungClient() {
+  const [tab, setTab] = useState<Tab>('wunden')
+  const [wunden, setWunden] = useState<Wunde[]>([])
+  const [protokolle, setProtokolle] = useState<Verbandswechsel[]>([])
+  const [selectedWunde, setSelectedWunde] = useState<Wunde | null>(null)
+  const [neueWunde, setNeueWunde] = useState<Wunde>(leereWunde())
+  const [neuerWechsel, setNeuerWechsel] = useState<Verbandswechsel | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState('')
 
-const ZUSTAND_COLORS: Record<string, string> = {
-  granulierend: "text-green-700 bg-green-50",
-  epithelisierend: "text-teal-700 bg-teal-50",
-  nekrotisch: "text-gray-700 bg-gray-100",
-  infiziert: "text-red-700 bg-red-50",
-  exsudierend: "text-yellow-700 bg-yellow-50",
-  trocken: "text-blue-700 bg-blue-50",
-};
-
-export default function WundversorgungClient({ versorgungen: initial, isAnbieter, familieProfileId }: Props) {
-  const [versorgungen, setVersorgungen] = useState(initial);
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [selectedWunde, setSelectedWunde] = useState<string | null>(null);
-
-  const [form, setForm] = useState({
-    lokalisation: "",
-    wundart: "sonstige" as Wundversorgung["wundart"],
-    wundgroesse_cm2: "",
-    tiefe_grad: "",
-    wundzustand: "",
-    exsudat: "",
-    wundrand: "",
-    massnahmen: "",
-    verbandsmaterial: "",
-    naechster_verbandwechsel: "",
-    schmerz_nrs: "",
-    notizen: "",
-    wunde_id: "",
-  });
-
-  // Group by wunde_id (or id for first entries)
-  const wunden = versorgungen.reduce<Record<string, Wundversorgung[]>>((acc, v) => {
-    const key = v.wunde_id ?? v.id;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(v);
-    return acc;
-  }, {});
-
-  async function handleSubmit() {
-    if (!form.lokalisation) return;
-    setSaving(true);
-    setMsg(null);
+  const load = useCallback(async () => {
+    setLoading(true)
     try {
-      const body = {
-        ...form,
-        wundgroesse_cm2: form.wundgroesse_cm2 ? parseFloat(form.wundgroesse_cm2) : undefined,
-        tiefe_grad: form.tiefe_grad ? parseInt(form.tiefe_grad) : undefined,
-        schmerz_nrs: form.schmerz_nrs ? parseInt(form.schmerz_nrs) : undefined,
-        wundzustand: form.wundzustand || undefined,
-        exsudat: form.exsudat || undefined,
-        naechster_verbandwechsel: form.naechster_verbandwechsel || undefined,
-        wunde_id: form.wunde_id || undefined,
-        ...(isAnbieter && familieProfileId ? { familie_profile_id: familieProfileId } : {}),
-      };
-      const res = await fetch("/api/wundversorgung", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const entry = await res.json();
-      setVersorgungen((prev) => [entry, ...prev]);
-      setForm({ lokalisation: "", wundart: "sonstige", wundgroesse_cm2: "", tiefe_grad: "", wundzustand: "", exsudat: "", wundrand: "", massnahmen: "", verbandsmaterial: "", naechster_verbandwechsel: "", schmerz_nrs: "", notizen: "", wunde_id: "" });
-      setShowForm(false);
-      setMsg("✓ Wundversorgung dokumentiert");
-    } catch {
-      setMsg("Fehler beim Speichern");
+      const r = await fetch('/api/wundversorgung')
+      if (r.ok) {
+        const d = await r.json()
+        setWunden(d.wunden ?? [])
+      }
     } finally {
-      setSaving(false);
+      setLoading(false)
+    }
+  }, [])
+
+  const loadProtokolle = useCallback(async (wundeId: string) => {
+    const r = await fetch(`/api/wundversorgung/protokoll?wunde_id=${wundeId}&limit=20`)
+    if (r.ok) {
+      const d = await r.json()
+      setProtokolle(d.protokolle ?? [])
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (selectedWunde?.id) loadProtokolle(selectedWunde.id)
+  }, [selectedWunde, loadProtokolle])
+
+  const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 3000) }
+
+  const saveWunde = async () => {
+    setSaving(true)
+    try {
+      const method = neueWunde.id ? 'PUT' : 'POST'
+      const r = await fetch('/api/wundversorgung', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(neueWunde)
+      })
+      if (r.ok) {
+        flash('✅ Wunde gespeichert')
+        setNeueWunde(leereWunde())
+        setTab('wunden')
+        load()
+      } else {
+        flash('❌ Fehler beim Speichern')
+      }
+    } finally {
+      setSaving(false)
     }
   }
 
-  // Get unique wunden (first entry per wunde_id)
-  const wundeList = Object.entries(wunden).map(([key, entries]) => {
-    const latest = entries[0];
-    return { key, latest, count: entries.length };
-  });
+  const saveWechsel = async () => {
+    if (!neuerWechsel) return
+    setSaving(true)
+    try {
+      const r = await fetch('/api/wundversorgung/protokoll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(neuerWechsel)
+      })
+      if (r.ok) {
+        flash('✅ Verbandswechsel dokumentiert')
+        if (selectedWunde?.id) {
+          setNeuerWechsel(leererVerbandswechsel(selectedWunde.id))
+          loadProtokolle(selectedWunde.id)
+        }
+        load()
+      } else {
+        flash('❌ Fehler beim Speichern')
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
 
-  const displayedVersorgungen = selectedWunde
-    ? versorgungen.filter((v) => (v.wunde_id ?? v.id) === selectedWunde)
-    : versorgungen;
+  const selectWundeForWechsel = (w: Wunde) => {
+    setSelectedWunde(w)
+    setNeuerWechsel(leererVerbandswechsel(w.id!))
+    setTab('wechsel')
+  }
+
+  const selectWundeForVerlauf = (w: Wunde) => {
+    setSelectedWunde(w)
+    setTab('verlauf')
+  }
+
+  const editWunde = (w: Wunde) => {
+    setNeueWunde({ ...w })
+    setTab('neu')
+  }
+
+  const statusInfo = (s: string) => WUND_STATUS.find(x => x.value === s) ?? WUND_STATUS[0]
+  const fortschrittInfo = (f: string) => HEILUNGSFORTSCHRITT.find(x => x.value === f) ?? HEILUNGSFORTSCHRITT[1]
+
+  const faelligkeitDiff = (w: Wunde) => {
+    if (!w.naechster_wechsel) return null
+    const d = new Date(w.naechster_wechsel)
+    const today = new Date(); today.setHours(0,0,0,0)
+    return Math.round((d.getTime() - today.getTime()) / 86400000)
+  }
+
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'wunden', label: '🩹 Wunden' },
+    { id: 'neu', label: '➕ Neue Wunde' },
+    { id: 'wechsel', label: '🔄 Verbandswechsel' },
+    { id: 'verlauf', label: '📈 Verlauf' }
+  ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        {wundeList.length > 0 && (
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => setSelectedWunde(null)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium ${!selectedWunde ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
-            >
-              Alle Wunden ({versorgungen.length})
-            </button>
-            {wundeList.map(({ key, latest, count }) => (
-              <button
-                key={key}
-                onClick={() => setSelectedWunde(key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium ${selectedWunde === key ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
-              >
-                {latest.lokalisation} ({count}×)
-              </button>
-            ))}
-          </div>
-        )}
-        {isAnbieter && (
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 ml-auto"
-          >
-            <Plus size={16} /> Wundversorgung dokumentieren
-          </button>
-        )}
-      </div>
-
+    <div className="space-y-4">
       {msg && (
-        <div className={`text-sm px-4 py-2 rounded-lg ${msg.startsWith("✓") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+        <div className={`px-4 py-2 rounded text-sm font-medium ${msg.startsWith('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
           {msg}
         </div>
       )}
 
-      {showForm && isAnbieter && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-          <h3 className="font-semibold text-gray-800 mb-4">Neue Wundversorgung dokumentieren</h3>
+      {/* Tab Bar */}
+      <div className="flex gap-2 border-b border-gray-200">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`px-4 py-2 text-sm font-medium rounded-t transition-colors ${
+              tab === t.id
+                ? 'bg-white border border-b-white border-gray-200 text-rose-600 -mb-px'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-          {wundeList.length > 0 && (
-            <div className="mb-4">
-              <label className="text-xs font-medium text-gray-600">Folgedokumentation für vorhandene Wunde</label>
-              <select value={form.wunde_id} onChange={(e) => {
-                const selected = wundeList.find((w) => w.key === e.target.value);
-                setForm((f) => ({
-                  ...f,
-                  wunde_id: e.target.value,
-                  lokalisation: e.target.value ? (selected?.latest.lokalisation ?? "") : f.lokalisation,
-                  wundart: e.target.value ? ((selected?.latest.wundart ?? "sonstige") as Wundversorgung["wundart"]) : f.wundart,
-                }));
-              }} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                <option value="">— neue Wunde anlegen</option>
-                {wundeList.map(({ key, latest }) => (
-                  <option key={key} value={key}>{latest.lokalisation} ({latest.wundart})</option>
-                ))}
-              </select>
+      {/* ── Wunden Liste ───────────────────────────────────────────────────── */}
+      {tab === 'wunden' && (
+        <div className="space-y-3">
+          {loading && <p className="text-gray-400 text-sm">Lade Wunden…</p>}
+          {!loading && wunden.length === 0 && (
+            <div className="text-center py-12 text-gray-400">
+              <p className="text-4xl mb-2">🩹</p>
+              <p>Noch keine Wunden erfasst</p>
+              <button onClick={() => setTab('neu')} className="mt-3 text-rose-600 text-sm underline">
+                Erste Wunde anlegen
+              </button>
             </div>
           )}
+          {wunden.map(w => {
+            const st = statusInfo(w.status)
+            const diff = faelligkeitDiff(w)
+            const fällig = wechselFaellig(w.naechster_wechsel)
+            return (
+              <div key={w.id} className={`bg-white rounded-lg border p-4 ${fällig ? 'border-orange-300' : 'border-gray-200'}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-gray-900">{w.bezeichnung}</span>
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full font-medium"
+                        style={{ backgroundColor: st.farbe + '20', color: st.farbe }}
+                      >
+                        {st.label}
+                      </span>
+                      {w.infektion_zeichen && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+                          ⚠️ Infektion
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 text-sm text-gray-500 flex flex-wrap gap-3">
+                      <span>📍 {w.lokalisation}</span>
+                      <span>🏥 {WUNDARTEN.find(x => x.value === w.wundart)?.label ?? w.wundart}</span>
+                      {w.groesse_cm2 != null && <span>📐 {w.groesse_cm2} cm²</span>}
+                      {w.schmerz_nrs != null && <span>😣 NRS {w.schmerz_nrs}/10</span>}
+                    </div>
+                    {w.naechster_wechsel && (
+                      <div className={`mt-2 text-sm font-medium ${fällig ? 'text-orange-600' : 'text-gray-500'}`}>
+                        🔄 Nächster Wechsel: {new Date(w.naechster_wechsel).toLocaleDateString('de-DE')}
+                        {diff !== null && (
+                          <span className="ml-2">
+                            {diff < 0
+                              ? `(${Math.abs(diff)} Tag${Math.abs(diff) !== 1 ? 'e' : ''} überfällig!)`
+                              : diff === 0 ? '(heute)'
+                              : `(in ${diff} Tag${diff !== 1 ? 'en' : ''})`}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {w.wundauflage && <p className="mt-1 text-xs text-gray-400">Auflage: {w.wundauflage}</p>}
+                  </div>
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <button
+                      onClick={() => selectWundeForWechsel(w)}
+                      className="text-xs px-3 py-1 bg-rose-50 text-rose-700 rounded hover:bg-rose-100 transition-colors"
+                    >
+                      🔄 Wechsel
+                    </button>
+                    <button
+                      onClick={() => selectWundeForVerlauf(w)}
+                      className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
+                    >
+                      📈 Verlauf
+                    </button>
+                    <button
+                      onClick={() => editWunde(w)}
+                      className="text-xs px-3 py-1 bg-gray-50 text-gray-700 rounded hover:bg-gray-100 transition-colors"
+                    >
+                      ✏️ Bearb.
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-medium text-gray-600">Lokalisation *</label>
-              <input type="text" value={form.lokalisation} onChange={(e) => setForm((f) => ({ ...f, lokalisation: e.target.value }))}
-                placeholder="z.B. Sakral, linker Knöchel..." className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+      {/* ── Neue Wunde ─────────────────────────────────────────────────────── */}
+      {tab === 'neu' && (
+        <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
+          <h3 className="font-semibold text-gray-800">{neueWunde.id ? 'Wunde bearbeiten' : 'Neue Wunde anlegen'}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bezeichnung *</label>
+              <input
+                type="text"
+                value={neueWunde.bezeichnung}
+                onChange={e => setNeueWunde(p => ({ ...p, bezeichnung: e.target.value }))}
+                placeholder="z.B. Sakraldekubitus"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+              />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">Wundart</label>
-              <select value={form.wundart} onChange={(e) => setForm((f) => ({ ...f, wundart: e.target.value as Wundversorgung["wundart"] }))}
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                {Object.entries(WUNDART_CONFIG).map(([k, { label }]) => (
-                  <option key={k} value={k}>{label}</option>
-                ))}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Lokalisation *</label>
+              <input
+                type="text"
+                value={neueWunde.lokalisation}
+                onChange={e => setNeueWunde(p => ({ ...p, lokalisation: e.target.value }))}
+                list="lok-list"
+                placeholder="Wählen oder eingeben…"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+              />
+              <datalist id="lok-list">
+                {LOKALISATION_VORSCHLAEGE.map(l => <option key={l} value={l} />)}
+              </datalist>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Wundart *</label>
+              <select
+                value={neueWunde.wundart}
+                onChange={e => setNeueWunde(p => ({ ...p, wundart: e.target.value as Wunde['wundart'] }))}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              >
+                {WUNDARTEN.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">Wundgröße (cm²)</label>
-              <input type="number" min={0} step={0.1} value={form.wundgroesse_cm2}
-                onChange={(e) => setForm((f) => ({ ...f, wundgroesse_cm2: e.target.value }))}
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-600">Tiefe (Grad 1-4)</label>
-              <select value={form.tiefe_grad} onChange={(e) => setForm((f) => ({ ...f, tiefe_grad: e.target.value }))}
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                <option value="">—</option>
-                {[1,2,3,4].map((g) => <option key={g} value={g}>Grad {g}</option>)}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={neueWunde.status}
+                onChange={e => setNeueWunde(p => ({ ...p, status: e.target.value as Wunde['status'] }))}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              >
+                {WUND_STATUS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">Wundzustand</label>
-              <select value={form.wundzustand} onChange={(e) => setForm((f) => ({ ...f, wundzustand: e.target.value }))}
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                <option value="">—</option>
-                {Object.keys(ZUSTAND_COLORS).map((z) => <option key={z} value={z}>{z.charAt(0).toUpperCase() + z.slice(1)}</option>)}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ersterfassung *</label>
+              <input
+                type="date"
+                value={neueWunde.ersterfassung_datum}
+                onChange={e => setNeueWunde(p => ({ ...p, ersterfassung_datum: e.target.value }))}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Größe (cm²)</label>
+              <input
+                type="number" step="0.1" min="0"
+                value={neueWunde.groesse_cm2 ?? ''}
+                onChange={e => setNeueWunde(p => ({ ...p, groesse_cm2: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tiefe (mm)</label>
+              <input
+                type="number" step="0.5" min="0"
+                value={neueWunde.tiefe_mm ?? ''}
+                onChange={e => setNeueWunde(p => ({ ...p, tiefe_mm: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Wundgrund</label>
+              <input
+                type="text"
+                value={neueWunde.wundgrund ?? ''}
+                onChange={e => setNeueWunde(p => ({ ...p, wundgrund: e.target.value }))}
+                placeholder="granulierend, nekrotisch, fibrinös…"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Exsudatmenge</label>
+              <select
+                value={neueWunde.exsudat_menge ?? ''}
+                onChange={e => setNeueWunde(p => ({ ...p, exsudat_menge: e.target.value as Wunde['exsudat_menge'] }))}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              >
+                <option value="">-- wählen --</option>
+                {EXSUDAT_MENGEN.map(m => <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
               </select>
             </div>
-            <div>
-              <label className="text-xs font-medium text-gray-600">Exsudat</label>
-              <select value={form.exsudat} onChange={(e) => setForm((f) => ({ ...f, exsudat: e.target.value }))}
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                <option value="">—</option>
-                {["kein","gering","maessig","stark"].map((e) => <option key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</option>)}
-              </select>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Schmerz NRS: <span className="font-semibold">{neueWunde.schmerz_nrs ?? 0}/10</span>
+              </label>
+              <input
+                type="range" min="0" max="10"
+                value={neueWunde.schmerz_nrs ?? 0}
+                onChange={e => setNeueWunde(p => ({ ...p, schmerz_nrs: parseInt(e.target.value) }))}
+                className="w-full accent-rose-500"
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>kein Schmerz</span><span>stärkster Schmerz</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox" id="infektion-neu"
+                checked={neueWunde.infektion_zeichen}
+                onChange={e => setNeueWunde(p => ({ ...p, infektion_zeichen: e.target.checked }))}
+                className="w-4 h-4 accent-rose-500"
+              />
+              <label htmlFor="infektion-neu" className="text-sm font-medium text-gray-700">Infektionszeichen</label>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">Schmerzskala (NRS 0-10)</label>
-              <input type="number" min={0} max={10} value={form.schmerz_nrs}
-                onChange={(e) => setForm((f) => ({ ...f, schmerz_nrs: e.target.value }))}
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Wundauflage</label>
+              <input
+                type="text"
+                value={neueWunde.wundauflage ?? ''}
+                onChange={e => setNeueWunde(p => ({ ...p, wundauflage: e.target.value }))}
+                list="auflage-list"
+                placeholder="Wählen oder eingeben…"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              />
+              <datalist id="auflage-list">
+                {WUNDAUFLAGE_VORSCHLAEGE.map(a => <option key={a} value={a} />)}
+              </datalist>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">Nächster Verbandwechsel</label>
-              <input type="date" value={form.naechster_verbandwechsel}
-                onChange={(e) => setForm((f) => ({ ...f, naechster_verbandwechsel: e.target.value }))}
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Wechselintervall (Tage)</label>
+              <input
+                type="number" min="1" max="14"
+                value={neueWunde.wechselintervall_tage}
+                onChange={e => setNeueWunde(p => ({ ...p, wechselintervall_tage: parseInt(e.target.value) || 2 }))}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">Verbandsmaterial</label>
-              <input type="text" value={form.verbandsmaterial}
-                onChange={(e) => setForm((f) => ({ ...f, verbandsmaterial: e.target.value }))}
-                placeholder="z.B. Hydrokolloid, PU-Folie..." className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Behandelnder Arzt</label>
+              <input
+                type="text"
+                value={neueWunde.behandelnder_arzt ?? ''}
+                onChange={e => setNeueWunde(p => ({ ...p, behandelnder_arzt: e.target.value }))}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">Wundrand</label>
-              <input type="text" value={form.wundrand}
-                onChange={(e) => setForm((f) => ({ ...f, wundrand: e.target.value }))}
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Pflegeperson</label>
+              <input
+                type="text"
+                value={neueWunde.pflegeperson ?? ''}
+                onChange={e => setNeueWunde(p => ({ ...p, pflegeperson: e.target.value }))}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+              />
             </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-gray-600">Maßnahmen</label>
-              <textarea rows={2} value={form.massnahmen}
-                onChange={(e) => setForm((f) => ({ ...f, massnahmen: e.target.value }))}
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-gray-600">Notizen</label>
-              <textarea rows={2} value={form.notizen}
-                onChange={(e) => setForm((f) => ({ ...f, notizen: e.target.value }))}
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notizen</label>
+              <textarea
+                rows={3}
+                value={neueWunde.notizen ?? ''}
+                onChange={e => setNeueWunde(p => ({ ...p, notizen: e.target.value }))}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 resize-none"
+              />
             </div>
           </div>
-          <div className="flex gap-2 mt-4">
-            <button onClick={handleSubmit} disabled={saving || !form.lokalisation}
-              className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-              {saving ? "Speichern…" : "Dokumentieren"}
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={saveWunde}
+              disabled={saving || !neueWunde.bezeichnung || !neueWunde.lokalisation}
+              className="px-5 py-2 bg-rose-600 text-white rounded font-medium text-sm hover:bg-rose-700 disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'Speichern…' : '💾 Wunde speichern'}
             </button>
-            <button onClick={() => setShowForm(false)} className="px-5 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
+            <button
+              onClick={() => { setNeueWunde(leereWunde()); setTab('wunden') }}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50 transition-colors"
+            >
               Abbrechen
             </button>
           </div>
         </div>
       )}
 
-      {/* Versorgungen List */}
-      {displayedVersorgungen.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center text-gray-500">
-          Keine Wundversorgungen dokumentiert
-        </div>
-      ) : (
+      {/* ── Verbandswechsel ────────────────────────────────────────────────── */}
+      {tab === 'wechsel' && (
         <div className="space-y-4">
-          {displayedVersorgungen.map((v) => {
-            const wundCfg = WUNDART_CONFIG[v.wundart] ?? WUNDART_CONFIG.sonstige;
-            const zustandCls = v.wundzustand ? ZUSTAND_COLORS[v.wundzustand] ?? "" : "";
-            return (
-              <div key={v.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
-                      <Activity size={16} className="text-red-600" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-800">{v.lokalisation}</div>
-                      <div className="text-xs text-gray-500">
-                        {format(parseISO(v.created_at), "dd. MMM yyyy", { locale: de })}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${wundCfg.color}`}>{wundCfg.label}</span>
-                    {v.wundzustand && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${zustandCls}`}>{v.wundzustand}</span>
-                    )}
-                    {v.schmerz_nrs !== null && v.schmerz_nrs !== undefined && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${v.schmerz_nrs >= 7 ? "bg-red-100 text-red-700" : v.schmerz_nrs >= 4 ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
-                        NRS {v.schmerz_nrs}/10
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="px-5 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  {v.wundgroesse_cm2 && <div><span className="text-gray-500">Größe:</span> {v.wundgroesse_cm2} cm²</div>}
-                  {v.tiefe_grad && <div><span className="text-gray-500">Grad:</span> {v.tiefe_grad}</div>}
-                  {v.exsudat && <div><span className="text-gray-500">Exsudat:</span> {v.exsudat}</div>}
-                  {v.naechster_verbandwechsel && <div><span className="text-gray-500">Nächster VW:</span> {v.naechster_verbandwechsel}</div>}
-                </div>
-                {(v.massnahmen || v.verbandsmaterial || v.notizen) && (
-                  <div className="px-5 pb-4 space-y-2 text-sm text-gray-700">
-                    {v.verbandsmaterial && <div><span className="text-xs text-gray-500 uppercase">Material: </span>{v.verbandsmaterial}</div>}
-                    {v.massnahmen && <div className="whitespace-pre-wrap">{v.massnahmen}</div>}
-                    {v.notizen && <div className="italic text-gray-500">{v.notizen}</div>}
-                  </div>
-                )}
+          {!selectedWunde ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <h3 className="font-semibold text-gray-800 mb-3">Wunde auswählen</h3>
+              {wunden.length === 0 ? (
+                <p className="text-gray-400 text-sm">Keine Wunden vorhanden.</p>
+              ) : wunden.map(w => (
+                <button
+                  key={w.id}
+                  onClick={() => selectWundeForWechsel(w)}
+                  className="w-full text-left px-4 py-3 border border-gray-200 rounded hover:border-rose-300 hover:bg-rose-50 transition-colors text-sm mb-2"
+                >
+                  <span className="font-medium">{w.bezeichnung}</span>
+                  <span className="ml-2 text-gray-500">— {w.lokalisation}</span>
+                </button>
+              ))}
+            </div>
+          ) : neuerWechsel && (
+            <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-800">
+                  🔄 Verbandswechsel: <span className="text-rose-600">{selectedWunde.bezeichnung}</span>
+                </h3>
+                <button onClick={() => { setSelectedWunde(null); setNeuerWechsel(null) }} className="text-gray-400 hover:text-gray-600 text-sm">
+                  ✕ andere Wunde
+                </button>
               </div>
-            );
-          })}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Datum *</label>
+                  <input
+                    type="date"
+                    value={neuerWechsel.wechsel_datum}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, wechsel_datum: e.target.value } : p)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Uhrzeit</label>
+                  <input
+                    type="time"
+                    value={neuerWechsel.wechsel_zeit ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, wechsel_zeit: e.target.value } : p)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Aktuelle Größe (cm²)</label>
+                  <input
+                    type="number" step="0.1" min="0"
+                    value={neuerWechsel.groesse_cm2 ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, groesse_cm2: e.target.value ? parseFloat(e.target.value) : undefined } : p)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Aktuelle Tiefe (mm)</label>
+                  <input
+                    type="number" step="0.5" min="0"
+                    value={neuerWechsel.tiefe_mm ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, tiefe_mm: e.target.value ? parseFloat(e.target.value) : undefined } : p)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Wundgrund</label>
+                  <input
+                    type="text"
+                    value={neuerWechsel.wundgrund ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, wundgrund: e.target.value } : p)}
+                    placeholder="granulierend, nekrotisch…"
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Exsudatmenge</label>
+                  <select
+                    value={neuerWechsel.exsudat_menge ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, exsudat_menge: e.target.value as Verbandswechsel['exsudat_menge'] } : p)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  >
+                    <option value="">-- wählen --</option>
+                    {EXSUDAT_MENGEN.map(m => <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Schmerz NRS: <span className="font-semibold">{neuerWechsel.schmerz_nrs ?? 0}/10</span>
+                  </label>
+                  <input
+                    type="range" min="0" max="10"
+                    value={neuerWechsel.schmerz_nrs ?? 0}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, schmerz_nrs: parseInt(e.target.value) } : p)}
+                    className="w-full accent-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Entfernte Auflage</label>
+                  <input
+                    type="text"
+                    value={neuerWechsel.wundauflage_entfernt ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, wundauflage_entfernt: e.target.value } : p)}
+                    list="auflage-list2"
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  />
+                  <datalist id="auflage-list2">
+                    {WUNDAUFLAGE_VORSCHLAEGE.map(a => <option key={a} value={a} />)}
+                  </datalist>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Neue Auflage</label>
+                  <input
+                    type="text"
+                    value={neuerWechsel.wundauflage_neu ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, wundauflage_neu: e.target.value } : p)}
+                    list="auflage-list3"
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  />
+                  <datalist id="auflage-list3">
+                    {WUNDAUFLAGE_VORSCHLAEGE.map(a => <option key={a} value={a} />)}
+                  </datalist>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reinigung</label>
+                  <input
+                    type="text"
+                    value={neuerWechsel.reinigung ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, reinigung: e.target.value } : p)}
+                    placeholder="NaCl 0,9%, Octenisept, Prontosan…"
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Heilungsfortschritt</label>
+                  <select
+                    value={neuerWechsel.heilungsfortschritt ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, heilungsfortschritt: e.target.value as Verbandswechsel['heilungsfortschritt'] } : p)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  >
+                    <option value="">-- wählen --</option>
+                    {HEILUNGSFORTSCHRITT.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Durchgeführt von</label>
+                  <input
+                    type="text"
+                    value={neuerWechsel.durchgefuehrt_von ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, durchgefuehrt_von: e.target.value } : p)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-2 pt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={neuerWechsel.infektion_zeichen}
+                      onChange={e => setNeuerWechsel(p => p ? { ...p, infektion_zeichen: e.target.checked } : p)}
+                      className="w-4 h-4 accent-rose-500"
+                    />
+                    <span className="text-sm text-gray-700">Infektionszeichen vorhanden</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={neuerWechsel.arzt_informiert}
+                      onChange={e => setNeuerWechsel(p => p ? { ...p, arzt_informiert: e.target.checked } : p)}
+                      className="w-4 h-4 accent-rose-500"
+                    />
+                    <span className="text-sm text-gray-700">Arzt informiert</span>
+                  </label>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notizen</label>
+                  <textarea
+                    rows={3}
+                    value={neuerWechsel.notizen ?? ''}
+                    onChange={e => setNeuerWechsel(p => p ? { ...p, notizen: e.target.value } : p)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 resize-none"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={saveWechsel}
+                  disabled={saving}
+                  className="px-5 py-2 bg-rose-600 text-white rounded font-medium text-sm hover:bg-rose-700 disabled:opacity-50 transition-colors"
+                >
+                  {saving ? 'Speichern…' : '💾 Verbandswechsel dokumentieren'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Verlauf ────────────────────────────────────────────────────────── */}
+      {tab === 'verlauf' && (
+        <div className="space-y-4">
+          {!selectedWunde ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <h3 className="font-semibold text-gray-800 mb-3">Wunde auswählen</h3>
+              {wunden.map(w => (
+                <button
+                  key={w.id}
+                  onClick={() => selectWundeForVerlauf(w)}
+                  className="w-full text-left px-4 py-3 border border-gray-200 rounded hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm mb-2"
+                >
+                  <span className="font-medium">{w.bezeichnung}</span>
+                  <span className="ml-2 text-gray-500">— {w.lokalisation}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-800">📈 Verlauf: {selectedWunde.bezeichnung}</h3>
+                <button onClick={() => setSelectedWunde(null)} className="text-gray-400 text-sm hover:text-gray-600">✕ andere Wunde</button>
+              </div>
+
+              {/* Größen-Chart */}
+              {protokolle.some(p => p.groesse_cm2 != null) && (
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">📐 Wundgröße-Verlauf (cm²)</h4>
+                  <div className="flex items-end gap-1 h-24">
+                    {[...protokolle].reverse().filter(p => p.groesse_cm2 != null).slice(-12).map((p, i, arr) => {
+                      const maxG = Math.max(...arr.map(x => x.groesse_cm2 ?? 0))
+                      const h = maxG > 0 ? Math.max(4, Math.round(((p.groesse_cm2 ?? 0) / maxG) * 100)) : 4
+                      return (
+                        <div key={p.id ?? i} className="flex flex-col items-center flex-1" title={`${p.groesse_cm2} cm² — ${new Date(p.wechsel_datum).toLocaleDateString('de-DE')}`}>
+                          <span className="text-xs text-gray-500 mb-1">{p.groesse_cm2}</span>
+                          <div className="w-full bg-blue-400 rounded-t transition-all" style={{ height: `${h}%` }} />
+                          <span className="text-xs text-gray-400 mt-1">
+                            {new Date(p.wechsel_datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Protokoll-Einträge */}
+              <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+                {protokolle.length === 0 && (
+                  <p className="text-gray-400 text-sm p-4">Noch keine Verbandswechsel dokumentiert.</p>
+                )}
+                {protokolle.map(p => {
+                  const fi = p.heilungsfortschritt ? fortschrittInfo(p.heilungsfortschritt) : null
+                  return (
+                    <div key={p.id} className="p-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-sm text-gray-800">
+                          {new Date(p.wechsel_datum).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: '2-digit' })}
+                          {p.wechsel_zeit && <span className="ml-2 text-gray-400 font-normal">{p.wechsel_zeit.slice(0, 5)}</span>}
+                        </span>
+                        {fi && (
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-full font-medium"
+                            style={{ backgroundColor: fi.farbe + '20', color: fi.farbe }}
+                          >
+                            {fi.label}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+                        {p.groesse_cm2 != null && <span>📐 {p.groesse_cm2} cm²</span>}
+                        {p.tiefe_mm != null && <span>📏 {p.tiefe_mm} mm</span>}
+                        {p.exsudat_menge && <span>💧 Exsudat: {p.exsudat_menge}</span>}
+                        {p.schmerz_nrs != null && <span>😣 NRS {p.schmerz_nrs}</span>}
+                        {p.infektion_zeichen && <span className="text-red-500 font-medium">⚠️ Infektion</span>}
+                        {p.arzt_informiert && <span className="text-blue-500">👨‍⚕️ Arzt inf.</span>}
+                        {p.durchgefuehrt_von && <span>👤 {p.durchgefuehrt_von}</span>}
+                      </div>
+                      {p.wundauflage_neu && <p className="text-xs text-gray-400 mt-1">Auflage: {p.wundauflage_neu}</p>}
+                      {p.notizen && <p className="text-xs text-gray-500 mt-1 italic">{p.notizen}</p>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
-  );
+  )
 }
