@@ -1,0 +1,3 @@
+-- F52 Körperpflege: bereits via Supabase MCP apply_migration angelegt
+-- Tabellen: koerperpflege_protokoll, hautpflege_produkte
+-- RLS: aktiviert, user_id = auth.uid()

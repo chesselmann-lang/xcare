@@ -1,0 +1,3 @@
+-- F54 Kognitive Aktivierung: bereits via Supabase MCP apply_migration angelegt
+-- Tabellen: kognition_assessments, aktivierungs_eintraege, aktivierungs_vorlagen
+-- RLS: aktiviert, user_id = auth.uid()

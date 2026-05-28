@@ -1,0 +1,3 @@
+-- F53 Schlaf & Ruhe: bereits via Supabase MCP apply_migration angelegt
+-- Tabellen: schlaf_eintraege (mit GENERATED schlafdauer_min), schlaf_ziele
+-- RLS: aktiviert, user_id = auth.uid()
