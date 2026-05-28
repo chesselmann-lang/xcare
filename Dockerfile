@@ -7,8 +7,11 @@ RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json ./
+# package-lock.json contains stub entries (empty {}) for some packages which cause
+# npm ci / npm install to throw "Invalid Version:" errors. Omit the lockfile so
+# npm resolves versions fresh from the registry — acceptable for a dev hot-reload container.
+RUN npm install --legacy-peer-deps
 
 # ─── Stage 2: builder ────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
