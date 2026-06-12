@@ -7,7 +7,7 @@ import {
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
   GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList, Wallet, Euro,
-  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt, Calculator, Brain, PiggyBank, Clock, Target, ShieldCheck
+  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt, Calculator, Brain, PiggyBank, Clock, Target, ShieldCheck, Route
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -91,6 +91,9 @@ const ANBIETER_NAV = [
   { href: "/anbieter/arbeitszeit", label: "Arbeitszeit", icon: Clock },
   { href: "/anbieter/pflegeplanung", label: "Pflegeplanung 2.0", icon: Target },
   { href: "/anbieter/qualitaet", label: "Qualitätsindikatoren", icon: ShieldCheck },
+  { href: "/anbieter/dienstplan-ki", label: "Dienstplan KI", icon: Brain },
+  { href: "/anbieter/bewohner", label: "Bewohner", icon: Users },
+  { href: "/anbieter/tourenplanung", label: "Tourenplanung", icon: Route },
   { href: "/anbieter/medikamente", label: "Medikamente", icon: Pill },
   { href: "/anbieter/wundversorgung", label: "Wundversorgung", icon: Activity },
   { href: "/anbieter/zertifikate", label: "Kompetenz-Portfolio", icon: Award },
