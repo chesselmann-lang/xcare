@@ -1,0 +1,93 @@
+=== GC317 START === 
+--- STAGE --- 
+warning: in the working copy of 'src/lib/kontinenz/management.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/schmerz/management.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/vitalzeichen/monitoring.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/kontinenz/KontinenzClient.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/schmerz/SchmerzClient.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/vitalzeichen/VitalzeichenClient.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/api/kontinenz/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/api/kontinenz/tagesbilanz/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/api/schmerz/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/api/schmerz/therapieplan/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/api/vitalzeichen/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/api/vitalzeichen/grenzwerte/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(dashboard)/familie/kontinenz/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(dashboard)/familie/schmerz/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(dashboard)/familie/vitalzeichen/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'supabase/migrations/20260528000043_kontinenz.sql', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'supabase/migrations/20260528000044_schmerz.sql', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'supabase/migrations/20260528000045_vitalzeichen.sql', LF will be replaced by CRLF the next time Git touches it
+STAGE_EXIT=0 
+--- STATUS --- 
+A  src/app/(dashboard)/familie/kontinenz/page.tsx
+A  src/app/(dashboard)/familie/schmerz/page.tsx
+A  src/app/(dashboard)/familie/vitalzeichen/page.tsx
+A  src/app/api/kontinenz/route.ts
+A  src/app/api/kontinenz/tagesbilanz/route.ts
+A  src/app/api/schmerz/route.ts
+A  src/app/api/schmerz/therapieplan/route.ts
+A  src/app/api/vitalzeichen/grenzwerte/route.ts
+A  src/app/api/vitalzeichen/route.ts
+A  src/components/kontinenz/KontinenzClient.tsx
+A  src/components/schmerz/SchmerzClient.tsx
+A  src/components/vitalzeichen/VitalzeichenClient.tsx
+A  src/lib/kontinenz/management.ts
+A  src/lib/schmerz/management.ts
+A  src/lib/vitalzeichen/monitoring.ts
+A  supabase/migrations/20260528000043_kontinenz.sql
+A  supabase/migrations/20260528000044_schmerz.sql
+A  supabase/migrations/20260528000045_vitalzeichen.sql
+?? chk.bat
+?? chk2.bat
+?? chk2_log.txt
+?? chk_log.txt
+?? commit315_out.txt
+?? dircheck.txt
+?? do_commit.bat
+?? gc.bat
+?? gc315.bat
+?? gc315b.bat
+?? gc315b_log.txt
+?? gc316.bat
+?? gc316_log.txt
+?? gc316b_log.txt
+?? gc317.bat
+?? gc317_log.txt
+?? gc_fix.bat
+?? gc_fix2.bat
+?? gc_fix2_log.txt
+?? gc_fix_log.txt
+?? git315_stage.txt
+--- COMMIT --- 
+[main 8ab89a3] feat: F49-F51 Kontinenz-Management, Schmerzmanagement, Vitalzeichen-Protokoll -- v3.17.0
+ 18 files changed, 2255 insertions(+)
+ create mode 100644 src/app/(dashboard)/familie/kontinenz/page.tsx
+ create mode 100644 src/app/(dashboard)/familie/schmerz/page.tsx
+ create mode 100644 src/app/(dashboard)/familie/vitalzeichen/page.tsx
+ create mode 100644 src/app/api/kontinenz/route.ts
+ create mode 100644 src/app/api/kontinenz/tagesbilanz/route.ts
+ create mode 100644 src/app/api/schmerz/route.ts
+ create mode 100644 src/app/api/schmerz/therapieplan/route.ts
+ create mode 100644 src/app/api/vitalzeichen/grenzwerte/route.ts
+ create mode 100644 src/app/api/vitalzeichen/route.ts
+ create mode 100644 src/components/kontinenz/KontinenzClient.tsx
+ create mode 100644 src/components/schmerz/SchmerzClient.tsx
+ create mode 100644 src/components/vitalzeichen/VitalzeichenClient.tsx
+ create mode 100644 src/lib/kontinenz/management.ts
+ create mode 100644 src/lib/schmerz/management.ts
+ create mode 100644 src/lib/vitalzeichen/monitoring.ts
+ create mode 100644 supabase/migrations/20260528000043_kontinenz.sql
+ create mode 100644 supabase/migrations/20260528000044_schmerz.sql
+ create mode 100644 supabase/migrations/20260528000045_vitalzeichen.sql
+COMMIT_EXIT=0 
+--- PUSH --- 
+To https://github.com/chesselmann-lang/xcare.git
+   95fb2c1..8ab89a3  main -> main
+PUSH_EXIT=0 
+--- TAG --- 
+To https://github.com/chesselmann-lang/xcare.git
+ * [new tag]         v3.17.0 -> v3.17.0
+TAG_EXIT=0 
+=== GC317 DONE === 
+Die Syntax fr den Dateinamen, Verzeichnisnamen oder die Datentr„gerbezeichnung ist falsch.

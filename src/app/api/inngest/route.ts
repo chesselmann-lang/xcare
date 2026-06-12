@@ -1226,7 +1226,7 @@ const angebotsErinnerung = inngest.createFunction(
             name: string;
             profiles: { user_id: string; email_prefs: Record<string, unknown>; };
           };
-        }>) => anfrage.anbieter;
+        }).anbieter;
 
         if (!anbieter || !anbieter.profiles) return;
 

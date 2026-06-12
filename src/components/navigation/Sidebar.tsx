@@ -7,7 +7,7 @@ import {
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
   GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList, Wallet, Euro,
-  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt, Calculator, Brain
+  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt, Calculator, Brain, PiggyBank
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -53,6 +53,7 @@ const FAMILIE_NAV = [
   { href: "/familie/medikamente", label: "Medikamente", icon: Pill },
   { href: "/familie/zahlungen", label: "Zahlungen", icon: CreditCard },
   { href: "/familie/finanzen", label: "Finanz-Hub", icon: Wallet },
+  { href: "/familie/budget", label: "Budget-Übersicht", icon: PiggyBank },
   { href: "/familie/kostenrechner", label: "Kostenrechner", icon: Calculator },
   { href: "/familie/gesundheit", label: "Gesundheits-Hub", icon: Activity },
   { href: "/familie/copilot", label: "KI-Co-Pilot", icon: Bot },
@@ -78,16 +79,20 @@ const ANBIETER_NAV = [
   { href: "/anbieter/team", label: "Team", icon: Users },
   { href: "/anbieter/schichtplan", label: "Schichtplanung", icon: ClipboardList },
   { href: "/anbieter/dokumentation", label: "Pflegedokumentation", icon: FileText },
+  { href: "/anbieter/pflegebericht", label: "KI-Pflegebericht", icon: Brain },
   { href: "/anbieter/compliance", label: "MDK-Compliance", icon: Activity },
   { href: "/anbieter/uebergabe", label: "Übergabe", icon: RefreshCcw },
   { href: "/anbieter/wohlbefinden", label: "Wohlbefinden", icon: Heart },
   { href: "/anbieter/pflegegrad", label: "Pflegegrad", icon: Stethoscope },
+  { href: "/anbieter/pflegegrad-monitoring", label: "PG-Monitoring", icon: Activity },
+  { href: "/anbieter/interoperabilitaet", label: "Interop-Hub", icon: GitCompareArrows },
   { href: "/anbieter/notfall", label: "Notfall", icon: AlertTriangle },
   { href: "/anbieter/pinnwand", label: "Pinnwand", icon: PinIcon },
   { href: "/anbieter/medikamente", label: "Medikamente", icon: Pill },
   { href: "/anbieter/wundversorgung", label: "Wundversorgung", icon: Activity },
   { href: "/anbieter/zertifikate", label: "Kompetenz-Portfolio", icon: Award },
   { href: "/anbieter/zahlungen", label: "Zahlungen", icon: CreditCard },
+  { href: "/anbieter/finanzen", label: "Finanz-Dashboard", icon: BarChart3 },
   { href: "/anbieter/galerie", label: "Galerie", icon: Images },
   { href: "/anbieter/dokumente", label: "Dokumente", icon: FolderOpen },
   { href: "/anbieter/statistiken", label: "Statistiken", icon: BarChart3 },
@@ -283,10 +288,11 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
             >
               <X className="h-5 w-5" />
             </button>
-            <SidebarContent />
-          </aside>
-        </div>
-      )}
-    </>
-  );
-}
+
+              <SidebarContent />
+            </aside>
+          </div>
+        )}
+      </>
+    );
+  }

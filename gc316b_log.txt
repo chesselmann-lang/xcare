@@ -1,0 +1,1 @@
+git: 'Files\Git\bin\git.exe  status --short  ' is not a git command. See 'git --help'.

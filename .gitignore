@@ -41,3 +41,15 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# temp build/fix scripts
+extract_*.js
+analyze_errors.js
+*_types*.tgz
+_types_temp/
+_rdom_temp/
+fix_types*.log
+get_types*.log
+install_types*.log
+ts_errors.log
+*.bat

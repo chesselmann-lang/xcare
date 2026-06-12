@@ -1,0 +1,59 @@
+=== FILES IN b87e62d === 
+commit b87e62d4910265af41ba31ab446273e38aa27a47
+Author: Christian Hesselmann <christian@whatsdigital.de>
+Date:   Thu May 28 02:14:35 2026 +0200
+
+    feat: F41-F45 Notfallplan, Pflegetagebuch, Medikamenten-Manager, Sturzpr├ñvention, Ern├ñhrung
+
+src/app/(dashboard)/familie/ernaehrung/page.tsx
+src/app/(dashboard)/familie/sturzpraevention/page.tsx
+src/app/(dashboard)/familie/tagebuch/page.tsx
+src/app/api/ernaehrung/fluessigkeit/route.ts
+src/app/api/ernaehrung/mahlzeiten/route.ts
+src/app/api/ernaehrung/route.ts
+src/app/api/medikamente/einnahmen/route.ts
+src/app/api/sturzpraevention/route.ts
+src/app/api/tagebuch/route.ts
+src/components/ernaehrung/ErnaehrungClient.tsx
+src/components/notfall/NotfallplanClient.tsx
+src/components/sturzpraevention/SturzpraeventionClient.tsx
+src/components/tagebuch/TagebuchClient.tsx
+src/lib/ernaehrung/plan.ts
+src/lib/medikamente/manager.ts
+src/lib/notfall/karte.ts
+src/lib/sturzpraevention/assessment.ts
+src/lib/tagebuch/eintraege.ts
+supabase/migrations/20260528000035_notfallplan.sql
+supabase/migrations/20260528000036_pflegetagebuch.sql
+supabase/migrations/20260528000037_medikamente.sql
+supabase/migrations/20260528000038_sturzpraevention.sql
+supabase/migrations/20260528000039_ernaehrung.sql
+=== CHECK FILES ON DISK === 
+DISK:ERNAEHRUNG_LIB=YES 
+DISK:ERNAEHRUNG_COMP=YES 
+DISK:STURZ_LIB=YES 
+=== TAG CHECK === 
+v1.0.0
+v2.0.0
+v2.1.0
+v2.2.0
+v2.3.0
+v2.4.0
+v2.5.0
+v3.0.0
+v3.1.0
+v3.10.0
+v3.11.0
+v3.12.0
+v3.13.0
+v3.14.0
+v3.15.0
+v3.2.0
+v3.3.0
+v3.4.0
+v3.5.0
+v3.6.0
+v3.7.0
+v3.8.0
+v3.9.0
+DONE 
