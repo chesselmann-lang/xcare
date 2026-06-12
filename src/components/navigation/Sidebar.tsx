@@ -94,6 +94,8 @@ const ANBIETER_NAV = [
   { href: "/anbieter/dienstplan-ki", label: "Dienstplan KI", icon: Brain },
   { href: "/anbieter/bewohner", label: "Bewohner", icon: Users },
   { href: "/anbieter/tourenplanung", label: "Tourenplanung", icon: Route },
+  { href: "/anbieter/leistungsnachweise", label: "Leistungsnachweise", icon: FileText },
+  { href: "/anbieter/kapazitaet", label: "Kapazitätsplanung", icon: BarChart3 },
   { href: "/anbieter/medikamente", label: "Medikamente", icon: Pill },
   { href: "/anbieter/wundversorgung", label: "Wundversorgung", icon: Activity },
   { href: "/anbieter/zertifikate", label: "Kompetenz-Portfolio", icon: Award },
@@ -296,8 +298,8 @@ export function Sidebar({ profile, offeneAnfragenCount = 0, entityId, profileId,
             </button>
             <SidebarContent />
           </aside>
-          </div>
-        )}
+        </div>
+      )}
     </>
   );
 }

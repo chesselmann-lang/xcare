@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   User, Plus, Search, Filter, Phone, Home, Heart,
   ChevronDown, ChevronUp, Edit2, Trash2, X, Check,
-  AlertTriangle, Activity
+  AlertTriangle, Activity, ClipboardList
 } from "lucide-react";
 
 type Bewohner = {
@@ -447,6 +448,15 @@ export function BewohnerClient({ initialBewohner }: Props) {
                       <p>{b.notfallkontakt_name}{b.notfallkontakt_telefon ? ` · ${b.notfallkontakt_telefon}` : ""}</p>
                     </div>
                   )}
+                  <div className="col-span-2 sm:col-span-4 pt-2 border-t border-[--border] flex justify-end">
+                    <Link
+                      href={`/anbieter/bewohner/${b.id}/pflegeakte`}
+                      className="inline-flex items-center gap-2 rounded-lg bg-[--primary]/10 text-[--primary] hover:bg-[--primary]/20 px-4 py-2 text-sm font-medium transition-colors"
+                    >
+                      <ClipboardList className="w-4 h-4" />
+                      Pflegeakte öffnen
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
