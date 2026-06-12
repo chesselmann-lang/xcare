@@ -1,8 +1,13 @@
 "use client";
-import { useState } from "react";
-import { format, parseISO } from "date-fns";
+
+import { useState, useTransition } from "react";
+import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
-import { Pin, Plus, StickyNote, CheckSquare, Bell, AlertTriangle } from "lucide-react";
+import {
+  Pin, PinOff, Plus, StickyNote, CheckSquare, Bell, AlertTriangle,
+  Trash2, CheckCircle2, Circle, X, Loader2
+} from "lucide-react";
+import { toast } from "sonner";
 
 interface PinnwandEintrag {
   id: string;
@@ -22,104 +27,159 @@ interface Props {
   familieProfileId?: string;
 }
 
-const TYP_CONFIG = {
-  notiz: { label: "Notiz", icon: StickyNote, color: "bg-yellow-50 border-yellow-200", badge: "bg-yellow-100 text-yellow-700", iconColor: "text-yellow-500" },
-  aufgabe: { label: "Aufgabe", icon: CheckSquare, color: "bg-blue-50 border-blue-200", badge: "bg-blue-100 text-blue-700", iconColor: "text-blue-500" },
-  update: { label: "Update", icon: Bell, color: "bg-green-50 border-green-200", badge: "bg-green-100 text-green-700", iconColor: "text-green-500" },
-  wichtig: { label: "Wichtig", icon: AlertTriangle, color: "bg-red-50 border-red-200", badge: "bg-red-100 text-red-700", iconColor: "text-red-500" },
+const TYP_CONFIG: Record<PinnwandEintrag["typ"], {
+  label: string;
+  icon: React.ElementType;
+  color: string;
+  badge: string;
+  iconColor: string;
+}> = {
+  notiz:   { label: "Notiz",    icon: StickyNote,    color: "bg-yellow-50 border-yellow-200",  badge: "bg-yellow-100 text-yellow-700",  iconColor: "text-yellow-600" },
+  aufgabe: { label: "Aufgabe",  icon: CheckSquare,   color: "bg-blue-50 border-blue-200",      badge: "bg-blue-100 text-blue-700",      iconColor: "text-blue-600"   },
+  update:  { label: "Update",   icon: Bell,          color: "bg-green-50 border-green-200",    badge: "bg-green-100 text-green-700",    iconColor: "text-green-600"  },
+  wichtig: { label: "Wichtig",  icon: AlertTriangle, color: "bg-red-50 border-red-200",        badge: "bg-red-100 text-red-700",        iconColor: "text-red-600"    },
 };
 
 export default function PinnwandClient({ eintraege: initial, isAnbieter, familieProfileId }: Props) {
-  const [eintraege, setEintraege] = useState(initial);
+  const [eintraege, setEintraege] = useState<PinnwandEintrag[]>(initial);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"alle" | PinnwandEintrag["typ"]>("alle");
-  const [form, setForm] = useState({
-    typ: "notiz" as PinnwandEintrag["typ"],
-    inhalt: "",
-    pinned: false,
+  const [filter, setFilter] = useState<"alle" | PinnwandEintrag["typ"] | "offen">("alle");
+  const [form, setForm] = useState<{ typ: PinnwandEintrag["typ"]; inhalt: string; pinned: boolean }>({
+    typ: "notiz", inhalt: "", pinned: false,
   });
+  const [, startTransition] = useTransition();
 
   async function handleCreate() {
     if (!form.inhalt.trim()) return;
     setSaving(true);
-    setMsg(null);
     try {
-      const body = {
-        ...form,
-        ...(isAnbieter && familieProfileId ? { familie_profile_id: familieProfileId } : {}),
-      };
+      const body: Record<string, unknown> = { ...form };
+      if (isAnbieter && familieProfileId) body.familie_profile_id = familieProfileId;
       const res = await fetch("/api/pinnwand", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(await res.text());
-      const entry = await res.json();
-      setEintraege((prev) => [entry, ...prev]);
+      const entry: PinnwandEintrag = await res.json();
+      setEintraege((prev) => [{ ...entry, erstellt_von_rolle: isAnbieter ? "anbieter" : "familie" }, ...prev]);
       setForm({ typ: "notiz", inhalt: "", pinned: false });
       setShowForm(false);
-      setMsg("✓ Erstellt");
+      toast.success("Eintrag erstellt");
     } catch {
-      setMsg("Fehler beim Speichern");
+      toast.error("Fehler beim Speichern");
     } finally {
       setSaving(false);
     }
   }
 
-  const pinned = eintraege.filter((e) => e.pinned);
-  const unpinned = eintraege.filter((e) => !e.pinned);
+  async function handleTogglePin(id: string, currentPinned: boolean) {
+    startTransition(() => {
+      setEintraege((prev) =>
+        prev.map((e) => e.id === id ? { ...e, pinned: !currentPinned } : e)
+      );
+    });
+    const res = await fetch(`/api/pinnwand/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pinned: !currentPinned }),
+    });
+    if (!res.ok) {
+      setEintraege((prev) =>
+        prev.map((e) => e.id === id ? { ...e, pinned: currentPinned } : e)
+      );
+      toast.error("Fehler beim Aktualisieren");
+    }
+  }
 
-  const filterEntries = (list: PinnwandEintrag[]) =>
-    filter === "alle" ? list : list.filter((e) => e.typ === filter);
+  async function handleToggleDone(id: string, currentDone: boolean) {
+    startTransition(() => {
+      setEintraege((prev) =>
+        prev.map((e) => e.id === id ? { ...e, erledigt: !currentDone } : e)
+      );
+    });
+    const res = await fetch(`/api/pinnwand/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ erledigt: !currentDone }),
+    });
+    if (!res.ok) {
+      setEintraege((prev) =>
+        prev.map((e) => e.id === id ? { ...e, erledigt: currentDone } : e)
+      );
+      toast.error("Fehler beim Aktualisieren");
+    } else {
+      toast.success(!currentDone ? "Als erledigt markiert" : "Als offen markiert");
+    }
+  }
 
-  const displayedPinned = filterEntries(pinned);
-  const displayedUnpinned = filterEntries(unpinned);
+  async function handleDelete(id: string) {
+    startTransition(() => {
+      setEintraege((prev) => prev.filter((e) => e.id !== id));
+    });
+    const res = await fetch(`/api/pinnwand/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      toast.error("Fehler beim Löschen");
+    } else {
+      toast.success("Eintrag gelöscht");
+    }
+  }
+
+  const applyFilter = (list: PinnwandEintrag[]) => {
+    if (filter === "alle") return list;
+    if (filter === "offen") return list.filter((e) => e.typ === "aufgabe" && !e.erledigt);
+    return list.filter((e) => e.typ === filter);
+  };
+
+  const pinned = applyFilter(eintraege.filter((e) => e.pinned));
+  const unpinned = applyFilter(eintraege.filter((e) => !e.pinned));
+  const empty = pinned.length === 0 && unpinned.length === 0;
+  const offeneAufgaben = eintraege.filter((e) => e.typ === "aufgabe" && !e.erledigt).length;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header bar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex gap-2 flex-wrap">
-          {(["alle", "notiz", "aufgabe", "update", "wichtig"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setFilter(t)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize ${
-                filter === t
-                  ? "bg-gray-800 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              {t === "alle" ? "Alle" : TYP_CONFIG[t].label}
-            </button>
-          ))}
+          {(["alle", "notiz", "aufgabe", "update", "wichtig", "offen"] as const).map((t) => {
+            const label =
+              t === "alle" ? "Alle" :
+              t === "offen" ? `Offen (${offeneAufgaben})` :
+              TYP_CONFIG[t as PinnwandEintrag["typ"]].label;
+            return (
+              <button
+                key={t}
+                onClick={() => setFilter(t)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  filter === t
+                    ? "bg-[--primary] text-white"
+                    : "bg-[--muted] text-[--muted-foreground] hover:bg-[--border]"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="flex items-center gap-2 px-4 py-2 bg-[--primary] text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          <Plus size={16} /> Neuer Eintrag
+          {showForm ? <X size={15} /> : <Plus size={15} />}
+          {showForm ? "Abbrechen" : "Neuer Eintrag"}
         </button>
       </div>
 
-      {msg && (
-        <div className={`text-sm px-4 py-2 rounded-lg ${msg.startsWith("✓") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
-          {msg}
-        </div>
-      )}
-
-      {/* New Entry Form */}
+      {/* Create Form */}
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-          <h3 className="font-semibold text-gray-800 mb-4">Neuer Pinnwand-Eintrag</h3>
+        <div className="bg-[--card] border border-[--border] rounded-2xl p-5 shadow-sm">
+          <h3 className="font-semibold text-[--foreground] mb-4">Neuer Pinnwand-Eintrag</h3>
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-2 block">Typ</label>
+              <p className="text-xs font-medium text-[--muted-foreground] mb-2">Typ</p>
               <div className="flex flex-wrap gap-2">
-                {(Object.keys(TYP_CONFIG) as PinnwandEintrag["typ"][]).map((t) => {
-                  const cfg = TYP_CONFIG[t];
+                {(Object.entries(TYP_CONFIG) as [PinnwandEintrag["typ"], typeof TYP_CONFIG["notiz"]][]).map(([t, cfg]) => {
                   const Icon = cfg.icon;
                   return (
                     <button
@@ -129,7 +189,7 @@ export default function PinnwandClient({ eintraege: initial, isAnbieter, familie
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                         form.typ === t
                           ? `${cfg.badge} border-current`
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                          : "border-[--border] text-[--muted-foreground] hover:border-[--primary]/40"
                       }`}
                     >
                       <Icon size={12} />
@@ -141,32 +201,44 @@ export default function PinnwandClient({ eintraege: initial, isAnbieter, familie
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-600">Inhalt</label>
+              <label className="text-xs font-medium text-[--muted-foreground]">Inhalt</label>
               <textarea
                 rows={3}
                 value={form.inhalt}
                 onChange={(e) => setForm((f) => ({ ...f, inhalt: e.target.value }))}
-                placeholder="Notiz, Aufgabe oder Information..."
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={form.typ === "aufgabe" ? "Aufgabe beschreiben…" : "Notiz oder Information eingeben…"}
+                className="mt-1 w-full border border-[--border] rounded-xl px-3 py-2 text-sm bg-[--background] text-[--foreground] focus:outline-none focus:ring-2 focus:ring-[--primary]/40 resize-none"
+                maxLength={2000}
               />
+              <p className="text-xs text-[--muted-foreground] mt-1 text-right">{form.inhalt.length}/2000</p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <input type="checkbox" id="pinned" checked={form.pinned}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={form.pinned}
                 onChange={(e) => setForm((f) => ({ ...f, pinned: e.target.checked }))}
-                className="rounded" />
-              <label htmlFor="pinned" className="text-sm text-gray-700 flex items-center gap-1">
-                <Pin size={12} className="text-gray-500" /> Oben anheften
-              </label>
-            </div>
+                className="rounded accent-[--primary]"
+              />
+              <span className="text-sm text-[--foreground] flex items-center gap-1">
+                <Pin size={13} className="text-[--muted-foreground]" />
+                Oben anheften
+              </span>
+            </label>
 
-            <div className="flex gap-2">
-              <button onClick={handleCreate} disabled={saving || !form.inhalt.trim()}
-                className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                {saving ? "…" : "Erstellen"}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleCreate}
+                disabled={saving || !form.inhalt.trim()}
+                className="flex items-center gap-2 px-5 py-2 bg-[--primary] text-white rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                {saving && <Loader2 size={14} className="animate-spin" />}
+                Erstellen
               </button>
-              <button onClick={() => setShowForm(false)}
-                className="px-5 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
+              <button
+                onClick={() => setShowForm(false)}
+                className="px-5 py-2 bg-[--muted] text-[--muted-foreground] rounded-xl text-sm hover:bg-[--border] transition-colors"
+              >
                 Abbrechen
               </button>
             </div>
@@ -174,67 +246,160 @@ export default function PinnwandClient({ eintraege: initial, isAnbieter, familie
         </div>
       )}
 
-      {/* Pinned entries */}
-      {displayedPinned.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-            <Pin size={12} /> Angeheftet
+      {/* Pinned section */}
+      {pinned.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 text-xs font-semibold text-[--muted-foreground] uppercase tracking-wider mb-3">
+            <Pin size={12} className="text-amber-500" />
+            Angeheftet
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {displayedPinned.map((e) => <PinnwandCard key={e.id} eintrag={e} />)}
+            {pinned.map((e) => (
+              <PinnwandCard
+                key={e.id}
+                eintrag={e}
+                onTogglePin={handleTogglePin}
+                onToggleDone={handleToggleDone}
+                onDelete={handleDelete}
+              />
+            ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Regular entries */}
-      {displayedUnpinned.length > 0 && (
-        <div>
-          {displayedPinned.length > 0 && (
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Weitere Einträge</div>
+      {/* Regular section */}
+      {unpinned.length > 0 && (
+        <section>
+          {pinned.length > 0 && (
+            <div className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wider mb-3">
+              Weitere Einträge
+            </div>
           )}
           <div className="space-y-3">
-            {displayedUnpinned.map((e) => <PinnwandCard key={e.id} eintrag={e} />)}
+            {unpinned.map((e) => (
+              <PinnwandCard
+                key={e.id}
+                eintrag={e}
+                onTogglePin={handleTogglePin}
+                onToggleDone={handleToggleDone}
+                onDelete={handleDelete}
+              />
+            ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {displayedPinned.length === 0 && displayedUnpinned.length === 0 && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center text-gray-500">
-          Keine Einträge vorhanden
+      {/* Empty state */}
+      {empty && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-[--muted] flex items-center justify-center mb-4">
+            <StickyNote size={28} className="text-[--muted-foreground]" />
+          </div>
+          <p className="text-[--foreground] font-medium">Noch keine Einträge</p>
+          <p className="text-sm text-[--muted-foreground] mt-1">
+            Erstellen Sie Notizen, Aufgaben oder Updates für das Care-Team.
+          </p>
+          <button
+            onClick={() => setShowForm(true)}
+            className="mt-4 flex items-center gap-2 px-4 py-2 bg-[--primary] text-white rounded-xl text-sm font-medium hover:opacity-90"
+          >
+            <Plus size={15} /> Ersten Eintrag erstellen
+          </button>
         </div>
       )}
     </div>
   );
 }
 
-function PinnwandCard({ eintrag: e }: { eintrag: PinnwandEintrag }) {
+function PinnwandCard({
+  eintrag: e,
+  onTogglePin,
+  onToggleDone,
+  onDelete,
+}: {
+  eintrag: PinnwandEintrag;
+  onTogglePin: (id: string, pinned: boolean) => void;
+  onToggleDone: (id: string, done: boolean) => void;
+  onDelete: (id: string) => void;
+}) {
   const cfg = TYP_CONFIG[e.typ];
   const Icon = cfg.icon;
+  const done = !!e.erledigt;
+
   return (
-    <div className={`rounded-xl border p-4 ${cfg.color}`}>
+    <div className={`rounded-2xl border p-4 transition-opacity ${cfg.color} ${done ? "opacity-60" : ""}`}>
       <div className="flex items-start justify-between gap-2">
-        <div className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full ${cfg.badge}`}>
+        <span className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full ${cfg.badge}`}>
           <Icon size={10} />
           {cfg.label}
+        </span>
+        <div className="flex items-center gap-1">
+          {e.typ === "aufgabe" && (
+            <button
+              onClick={() => onToggleDone(e.id, done)}
+              className="p-1 rounded-lg hover:bg-black/10 transition-colors"
+              title={done ? "Als offen markieren" : "Als erledigt markieren"}
+              aria-label={done ? "Als offen markieren" : "Als erledigt markieren"}
+            >
+              {done
+                ? <CheckCircle2 size={15} className="text-green-600" />
+                : <Circle size={15} className="text-gray-400" />
+              }
+            </button>
+          )}
+          <button
+            onClick={() => onTogglePin(e.id, !!e.pinned)}
+            className="p-1 rounded-lg hover:bg-black/10 transition-colors"
+            title={e.pinned ? "Anheftung entfernen" : "Anheften"}
+            aria-label={e.pinned ? "Anheftung entfernen" : "Anheften"}
+          >
+            {e.pinned
+              ? <PinOff size={13} className="text-amber-500" />
+              : <Pin size={13} className="text-gray-400" />
+            }
+          </button>
+          <button
+            onClick={() => onDelete(e.id)}
+            className="p-1 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors"
+            title="Löschen"
+            aria-label="Eintrag löschen"
+          >
+            <Trash2 size={13} />
+          </button>
         </div>
-        <div className="flex items-center gap-1.5">
-          {e.pinned && <Pin size={12} className="text-gray-400" />}
-          <span className={`text-xs px-2 py-0.5 rounded-full ${
+      </div>
+
+      <p className={`mt-3 text-sm whitespace-pre-wrap text-gray-800 ${done ? "line-through text-gray-400" : ""}`}>
+        {e.inhalt}
+      </p>
+
+      <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+        <div className="flex items-center gap-2">
+          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
             e.erstellt_von_rolle === "anbieter"
               ? "bg-purple-100 text-purple-600"
               : "bg-gray-100 text-gray-500"
           }`}>
             {e.erstellt_von_rolle === "anbieter" ? "Anbieter" : "Familie"}
           </span>
+          {e.profiles && (
+            <span>{e.profiles.vorname} {e.profiles.nachname}</span>
+          )}
         </div>
+        <time
+          dateTime={e.created_at}
+          title={format(parseISO(e.created_at), "dd.MM.yyyy HH:mm", { locale: de })}
+          className="tabular-nums"
+        >
+          {formatDistanceToNow(parseISO(e.created_at), { addSuffix: true, locale: de })}
+        </time>
       </div>
-      <p className="mt-3 text-sm text-gray-800 whitespace-pre-wrap">{e.inhalt}</p>
-      <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
-        <span>
-          {e.profiles ? `${e.profiles.vorname} ${e.profiles.nachname}` : ""}
-        </span>
-        <span>{format(parseISO(e.created_at), "dd.MM.yyyy HH:mm", { locale: de })}</span>
-      </div>
+
+      {done && e.erledigt_am && (
+        <p className="mt-1 text-[10px] text-green-600">
+          Erledigt {format(parseISO(e.erledigt_am), "dd.MM.yy HH:mm", { locale: de })}
+        </p>
+      )}
     </div>
   );
 }

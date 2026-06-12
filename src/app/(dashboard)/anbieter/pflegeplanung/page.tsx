@@ -1,14 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import PinnwandClient from "@/components/pinnwand/PinnwandClient";
+import PflegeplanungClient from "@/components/pflegeplanung/PflegeplanungClient";
 import { FamilienSelector } from "@/components/pinnwand/FamilienSelector";
 
-export const metadata = { title: "Familien-Pinnwand | xcare" };
+export const metadata = { title: "Pflegeplanung 2.0 | xcare" };
 
-export default async function AnbieterPinnwandPage({
+export default async function PflegeplanungPage({
   searchParams,
 }: {
-  searchParams: Promise<{ familie?: string }>;
+  searchParams: Promise<{ familie?: string; status?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -28,9 +28,9 @@ export default async function AnbieterPinnwandPage({
     .eq("profile_id", profile.id)
     .single();
 
-  const { familie } = await searchParams;
-  const familieProfileId = familie;
+  const { familie, status } = await searchParams;
 
+  // Load families scoped to this anbieter's anfragen
   const { data: anfragenData } = anbieter
     ? await supabase
         .from("anfragen")
@@ -51,45 +51,51 @@ export default async function AnbieterPinnwandPage({
       )
     : [];
 
-  let eintraege = null;
-  if (familieProfileId) {
-    const { data } = await supabase
-      .from("familie_pinnwand")
-      .select("id, typ, inhalt, erledigt, erledigt_am, pinned, erstellt_von_rolle, created_at")
-      .eq("familie_profile_id", familieProfileId)
-      .order("pinned", { ascending: false })
+  // Load pflegeziele for selected family
+  let ziele = null;
+  if (familie && anbieter) {
+    const query = supabase
+      .from("pflegeziele")
+      .select(`
+        id, titel, beschreibung, bereich, prioritaet, status, zieldatum, erreicht_am, created_at, updated_at,
+        familie_profile_id,
+        pflegeziel_massnahmen(id, beschreibung, haeufigkeit, verantwortlich, erledigt, erledigt_am, sort_order),
+        pflegeziel_evaluationen(id, datum, ergebnis, notiz, created_at)
+      `)
+      .eq("anbieter_id", anbieter.id)
+      .eq("familie_profile_id", familie)
       .order("created_at", { ascending: false })
       .limit(100);
-    eintraege = data;
+
+    const { data } = status ? await query.eq("status", status) : await query;
+    ziele = data;
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[--foreground]">Familien-Pinnwand</h1>
+        <h1 className="text-2xl font-bold text-[--foreground]">Pflegeplanung 2.0</h1>
         <p className="text-sm text-[--muted-foreground] mt-1">
-          Nachrichten, Aufgaben und Notizen mit Ihren Familien teilen
+          Pflegeziele, Maßnahmen & Evaluation für Ihre Klienten
         </p>
       </div>
 
       {uniqueFamilien.length > 0 ? (
-        <FamilienSelector familien={uniqueFamilien} selectedId={familieProfileId} />
+        <FamilienSelector familien={uniqueFamilien} selectedId={familie} />
       ) : (
-        <p className="text-sm text-[--muted-foreground]">
-          Noch keine Familien mit Anfragen gefunden.
-        </p>
+        <p className="text-sm text-[--muted-foreground]">Noch keine Familien mit Anfragen gefunden.</p>
       )}
 
-      {familieProfileId ? (
-        <PinnwandClient
-          eintraege={eintraege ?? []}
-          isAnbieter={true}
-          familieProfileId={familieProfileId}
+      {familie ? (
+        <PflegeplanungClient
+          ziele={ziele ?? []}
+          familieProfileId={familie}
+          initialStatus={status}
         />
       ) : (
         <div className="bg-[--muted] border border-[--border] rounded-2xl p-10 text-center">
           <p className="text-sm text-[--muted-foreground]">
-            Bitte wählen Sie eine Familie aus, um deren Pinnwand anzuzeigen.
+            Bitte wählen Sie eine Familie aus, um die Pflegeplanung anzuzeigen.
           </p>
         </div>
       )}

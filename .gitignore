@@ -46,6 +46,7 @@ next-env.d.ts
 extract_*.js
 analyze_errors.js
 *_types*.tgz
+*.tgz
 _types_temp/
 _rdom_temp/
 fix_types*.log
@@ -53,3 +54,30 @@ get_types*.log
 install_types*.log
 ts_errors.log
 *.bat
+
+# session debug / CI log artifacts (root level only)
+/*_log.txt
+/chk*.txt
+/dircheck.txt
+/commit*.txt
+/docker_start_log.txt
+/git*.txt
+/*.bak
+
+# scratch / dev helper scripts
+*.bat
+*.tmp
+*_log.txt
+fix_types*.log
+install_types*.log
+get_types*.log
+push_out.tmp
+dircheck.txt
+analyze_errors.js
+extract_reactdom.js
+extract_types.js
+chk*.bat
+gc*.bat
+gcfix.bat
+docker_start.bat
+do_commit.bat
