@@ -7,7 +7,7 @@ import {
   Building2, Package, MessageSquare, LogOut, User,
   Menu, X, Settings, Users, CreditCard, FolderOpen, BarChart3, Inbox, Star, Bookmark, BookmarkCheck,
   GitCompareArrows, SlidersHorizontal, Bell, Images, Home, Lock, Activity, Bot, ClipboardList, Wallet, Euro,
-  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt, Calculator, Brain, PiggyBank, Clock, Target, ShieldCheck, Route
+  AlertTriangle, Pill, Award, RefreshCcw, PinIcon, Stethoscope, Briefcase, Upload, FileSearch, Building, Receipt, Calculator, Brain, PiggyBank, Clock, Target, ShieldCheck, Route, MessageSquareWarning
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -95,6 +95,7 @@ const ANBIETER_NAV = [
   { href: "/anbieter/qualitaetsbericht", label: "MDK-Qualitätsbericht", icon: FileSearch },
   { href: "/anbieter/dienstplan-ki", label: "Dienstplan KI", icon: Brain },
   { href: "/anbieter/bewohner", label: "Bewohner", icon: Users },
+  { href: "/anbieter/beschwerden", label: "Beschwerdemanagement", icon: MessageSquareWarning },
   { href: "/anbieter/tourenplanung", label: "Tourenplanung", icon: Route },
   { href: "/anbieter/leistungsnachweise", label: "Leistungsnachweise", icon: FileText },
   { href: "/anbieter/kapazitaet", label: "Kapazitätsplanung", icon: BarChart3 },
