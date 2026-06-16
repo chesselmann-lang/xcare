@@ -92,6 +92,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ beschwerde: data });
   } catch (err) {
     logger.error("PATCH /api/beschwerden/[id]", { error: err });
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error"  }, { status: 500 });
   }
 }
