@@ -91,8 +91,8 @@ export async function GET(
     const stats = { gesamt, durchschnittAufnahme, letztesGewicht, mnaScore };
 
     return NextResponse.json({ protokoll: rows, ziele: ziele ?? null, stats });
-  } catch (err) {
-    logger.error("GET /api/bewohner/[id]/ernaehrung", { error: err });
+  } catch (err: unknown) {
+    logger.error("GET /api/bewohner/[id]/ernaehrung", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -186,8 +186,8 @@ export async function POST(
 
       return NextResponse.json(data as any, { status: 201 });
     }
-  } catch (err) {
-    logger.error("POST /api/bewohner/[id]/ernaehrung", { error: err });
+  } catch (err: unknown) {
+    logger.error("POST /api/bewohner/[id]/ernaehrung", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

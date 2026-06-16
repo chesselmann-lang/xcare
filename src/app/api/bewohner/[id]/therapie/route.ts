@@ -40,8 +40,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
     };
 
     return NextResponse.json({ therapien, stats });
-  } catch (err) {
-    logger.error("GET /api/bewohner/[id]/therapie", { error: err });
+  } catch (err: unknown) {
+    logger.error("GET /api/bewohner/[id]/therapie", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -81,8 +81,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     if (error) throw error;
     return NextResponse.json({ therapie: raw as any }, { status: 201 });
-  } catch (err) {
-    logger.error("POST /api/bewohner/[id]/therapie", { error: err });
+  } catch (err: unknown) {
+    logger.error("POST /api/bewohner/[id]/therapie", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

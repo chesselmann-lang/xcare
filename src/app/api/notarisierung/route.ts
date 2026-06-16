@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { notarisiereDocument, hashDocument } from "@/lib/blockchain/notarisierung";
+import { basename } from "path";
 
 // POST: Notarisiert ein Dokument (Datei oder Text)
 export async function POST(request: NextRequest) {
@@ -28,13 +29,13 @@ export async function POST(request: NextRequest) {
     }
 
     content = await file.arrayBuffer();
-    fileName = file.name;
+    fileName = basename(file.name).replace(/[^a-zA-Z0-9._-]/g, "_");
     if (typ) dokumentTyp = typ;
   } else if (contentType.includes("application/json")) {
     const body = await request.json();
     content = body.text ?? JSON.stringify(body);
     if (body.dokumentTyp) dokumentTyp = body.dokumentTyp;
-    if (body.fileName) fileName = body.fileName;
+    if (body.fileName) fileName = basename(String(body.fileName)).replace(/[^a-zA-Z0-9._-]/g, "_");
   } else {
     content = await request.text();
   }

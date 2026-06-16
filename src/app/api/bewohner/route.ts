@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
 
     return NextResponse.json(data);
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error("GET /api/bewohner error", { error: String(err) });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     if (error) throw error;
 
     return NextResponse.json(data, { status: 201 });
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error("POST /api/bewohner error", { error: String(err) });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }

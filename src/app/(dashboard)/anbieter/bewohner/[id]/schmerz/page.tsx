@@ -1,6 +1,19 @@
 import { notFound, redirect } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
-import SchmerzClient from "@/components/schmerz/SchmerzClient";
+
+const SchmerzClient = dynamic(() => import("@/components/schmerz/SchmerzClient"), {
+  ssr: false,
+  loading: () => (
+    <div className="animate-pulse space-y-4 p-6">
+      <div className="h-8 bg-gray-200 rounded w-1/3" />
+      <div className="grid grid-cols-3 gap-4">
+        {[0, 1, 2].map((i) => <div key={i} className="h-24 bg-gray-200 rounded" />)}
+      </div>
+      <div className="h-64 bg-gray-200 rounded" />
+    </div>
+  ),
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

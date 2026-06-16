@@ -64,7 +64,7 @@ export async function GET(
     if (!data) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
 
     return NextResponse.json(data);
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error("GET /api/bewohner/[id] error", { error: String(err) });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
@@ -96,7 +96,7 @@ export async function PATCH(
     if (error) throw error;
 
     return NextResponse.json(data);
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error("PATCH /api/bewohner/[id] error", { error: String(err) });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
@@ -117,7 +117,7 @@ export async function DELETE(
     if (error) throw error;
 
     return NextResponse.json({ erfolg: true });
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error("DELETE /api/bewohner/[id] error", { error: String(err) });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }

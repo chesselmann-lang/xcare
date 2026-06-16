@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useState, useTransition, useMemo } from "react";
 import {
   AlertCircle,
   CheckCircle,
@@ -111,7 +111,7 @@ function rrStatus(sys: number, dia: number): string {
 
 // ─── SVG Gewichtskurve ───────────────────────────────────────────────────────
 
-function GewichtKurve({
+const GewichtKurve = React.memo(function GewichtKurve({
   eintraege,
   zielgewicht,
 }: {
@@ -223,11 +223,11 @@ function GewichtKurve({
       </svg>
     </div>
   );
-}
+});
 
 // ─── StatCard ────────────────────────────────────────────────────────────────
 
-function StatCard({
+const StatCard = React.memo(function StatCard({
   label,
   value,
   sub,
@@ -250,11 +250,11 @@ function StatCard({
       {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
   );
-}
+});
 
 // ─── VitalCard ───────────────────────────────────────────────────────────────
 
-function VitalCard({
+const VitalCard = React.memo(function VitalCard({
   vital,
   onDelete,
 }: {
@@ -373,11 +373,11 @@ function VitalCard({
       )}
     </div>
   );
-}
+});
 
 // ─── GewichtCard ─────────────────────────────────────────────────────────────
 
-function GewichtCard({
+const GewichtCard = React.memo(function GewichtCard({
   eintrag,
   onDelete,
 }: {
@@ -420,7 +420,7 @@ function GewichtCard({
       </div>
     </div>
   );
-}
+});
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
@@ -440,7 +440,6 @@ export default function GewichtClient({
   const [vitalEintraege, setVitalEintraege] =
     useState<VitalEintrag[]>(initialVitalEintraege);
   const [normwerte, setNormwerte] = useState<Normwerte | null>(initialNormwerte);
-  const [stats, setStats] = useState<Stats>(initialStats);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -499,11 +498,7 @@ export default function GewichtClient({
         `/api/bewohner/${bewohnerId}/gewicht?tabelle=gewicht&eintrag_id=${id}`,
         { method: "DELETE" }
       );
-      setGewichtEintraege((prev) => {
-        const neu = prev.filter((e) => e.id !== id);
-        recalcStats(neu, vitalEintraege);
-        return neu;
-      });
+      setGewichtEintraege((prev) => prev.filter((e) => e.id !== id));
     });
   };
 
@@ -513,29 +508,25 @@ export default function GewichtClient({
         `/api/bewohner/${bewohnerId}/gewicht?tabelle=vital&eintrag_id=${id}`,
         { method: "DELETE" }
       );
-      setVitalEintraege((prev) => {
-        const neu = prev.filter((e) => e.id !== id);
-        recalcStats(gewichtEintraege, neu);
-        return neu;
-      });
+      setVitalEintraege((prev) => prev.filter((e) => e.id !== id));
     });
   };
 
-  const recalcStats = (gw: GewichtEintrag[], vt: VitalEintrag[]) => {
-    const gewichte = gw.map((e) => e.gewicht_kg);
+  const stats = useMemo<Stats>(() => {
+    const gewichte = gewichtEintraege.map((e) => e.gewicht_kg);
     const aktuell = gewichte.length > 0 ? gewichte[gewichte.length - 1] : null;
     const erstes = gewichte.length > 0 ? gewichte[0] : null;
-    setStats({
+    return {
       aktuellesGewicht: aktuell,
       gewichtDelta:
         aktuell !== null && erstes !== null
           ? Math.round((aktuell - erstes) * 10) / 10
           : null,
       anzahlMessungen: gewichte.length,
-      letzteMessung: gw.length > 0 ? gw[gw.length - 1].datum : null,
-      letzteVital: vt.length > 0 ? vt[0] : null,
-    });
-  };
+      letzteMessung: gewichtEintraege.length > 0 ? gewichtEintraege[gewichtEintraege.length - 1].datum : null,
+      letzteVital: vitalEintraege.length > 0 ? vitalEintraege[0] : null,
+    };
+  }, [gewichtEintraege, vitalEintraege]);
 
   const handleSubmitGewicht = () => {
     setError(null);
@@ -560,11 +551,9 @@ export default function GewichtClient({
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? "Fehler"); return; }
       const neuer = json.eintrag as GewichtEintrag;
-      setGewichtEintraege((prev) => {
-        const neu = [...prev, neuer].sort((a, b) => a.datum.localeCompare(b.datum));
-        recalcStats(neu, vitalEintraege);
-        return neu;
-      });
+      setGewichtEintraege((prev) =>
+        [...prev, neuer].sort((a, b) => a.datum.localeCompare(b.datum))
+      );
       setGwForm({ ...defaultGw });
       setShowGewichtForm(false);
       setSuccess("Gewicht gespeichert");
@@ -602,11 +591,7 @@ export default function GewichtClient({
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? "Fehler"); return; }
       const neuer = json.eintrag as VitalEintrag;
-      setVitalEintraege((prev) => {
-        const neu = [neuer, ...prev];
-        recalcStats(gewichtEintraege, neu);
-        return neu;
-      });
+      setVitalEintraege((prev) => [neuer, ...prev]);
       setVitalForm({ ...defaultVital });
       setShowVitalForm(false);
       setSuccess("Vitalwerte gespeichert");

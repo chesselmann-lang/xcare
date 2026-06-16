@@ -16,7 +16,8 @@
     "audit": "npm audit --audit-level=moderate",
     "audit:fix": "npm audit fix",
     "db:generate": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
-    "analyze": "ANALYZE=true next build"
+    "analyze": "ANALYZE=true next build",
+    "prepare": "husky"
   },
   "overrides": {
     "path-to-regexp": "^8.0.0",
@@ -83,6 +84,14 @@
     "eslint-config-next": "^15.3.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^2.0.0"
+    "vitest": "^2.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix"
+    ],
+    "*.{json,md}": []
   }
 }

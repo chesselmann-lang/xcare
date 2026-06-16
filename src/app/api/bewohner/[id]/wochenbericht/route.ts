@@ -133,8 +133,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         tagesupdates: tagesupdates ?? [],
       },
     });
-  } catch (err) {
-    logger.error("GET /api/bewohner/[id]/wochenbericht", { error: err });
+  } catch (err: unknown) {
+    logger.error("GET /api/bewohner/[id]/wochenbericht", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -183,8 +183,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     if (error) throw error;
     return NextResponse.json({ bericht: data }, { status: 201 });
-  } catch (err) {
-    logger.error("POST /api/bewohner/[id]/wochenbericht", { error: err });
+  } catch (err: unknown) {
+    logger.error("POST /api/bewohner/[id]/wochenbericht", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

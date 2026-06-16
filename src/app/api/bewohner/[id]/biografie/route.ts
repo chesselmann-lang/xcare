@@ -34,8 +34,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     if (error) throw error;
     return NextResponse.json({ biografie });
-  } catch (err) {
-    logger.error("GET /api/bewohner/[id]/biografie", { error: err });
+  } catch (err: unknown) {
+    logger.error("GET /api/bewohner/[id]/biografie", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -69,8 +69,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     if (error) throw error;
     return NextResponse.json({ biografie: data });
-  } catch (err) {
-    logger.error("PUT /api/bewohner/[id]/biografie", { error: err });
+  } catch (err: unknown) {
+    logger.error("PUT /api/bewohner/[id]/biografie", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

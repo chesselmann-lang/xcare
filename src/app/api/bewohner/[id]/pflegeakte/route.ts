@@ -79,7 +79,7 @@ export async function GET(
         genehmigterBetrag,
       },
     });
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error("GET /api/bewohner/[id]/pflegeakte error", { error: String(err) });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }

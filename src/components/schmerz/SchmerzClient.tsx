@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import React, { useState, useTransition, useMemo } from "react";
 import {
   AlertCircle,
   CheckCircle,
@@ -110,7 +110,7 @@ const SCHMERZART_LABELS: Record<string, string> = {
 
 // ─── NRS Scale Visual ────────────────────────────────────────────────────────
 
-function NrsScale({
+const NrsScale = React.memo(function NrsScale({
   value,
   onChange,
   readonly,
@@ -146,11 +146,11 @@ function NrsScale({
       </div>
     </div>
   );
-}
+});
 
 // ─── SVG Verlaufsgraph ───────────────────────────────────────────────────────
 
-function SchmerzVerlauf({
+const SchmerzVerlauf = React.memo(function SchmerzVerlauf({
   eintraege,
   zielwert,
 }: {
@@ -283,11 +283,11 @@ function SchmerzVerlauf({
       </svg>
     </div>
   );
-}
+});
 
 // ─── StatCard ────────────────────────────────────────────────────────────────
 
-function StatCard({
+const StatCard = React.memo(function StatCard({
   label,
   value,
   sub,
@@ -305,11 +305,11 @@ function StatCard({
       {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
   );
-}
+});
 
 // ─── EintragCard ────────────────────────────────────────────────────────────
 
-function EintragCard({
+const EintragCard = React.memo(function EintragCard({
   eintrag,
   onDelete,
 }: {
@@ -412,7 +412,7 @@ function EintragCard({
       )}
     </div>
   );
-}
+});
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 

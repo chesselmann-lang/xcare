@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import Anthropic from "@anthropic-ai/sdk";
+import { basename } from "path";
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
@@ -115,7 +116,8 @@ export async function POST(request: NextRequest) {
 
     // Upload to Supabase Storage (service role for reliability)
     const adminClient = await createAdminClient();
-    const storagePath = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const safeFilename = basename(file.name).replace(/[^a-zA-Z0-9._-]/g, "_");
+    const storagePath = `${user.id}/${Date.now()}_${safeFilename}`;
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
 
@@ -136,7 +138,7 @@ export async function POST(request: NextRequest) {
       .from("dokument_analysen")
       .insert({
         user_id: user.id,
-        dateiname: file.name,
+        dateiname: safeFilename,
         storage_path: storagePath,
         dateityp: file.type,
         status: "ausstehend",

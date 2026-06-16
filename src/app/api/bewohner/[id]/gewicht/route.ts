@@ -1,28 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+
+const MEDICAL_RATE_LIMIT = { limit: 60, window: 60 };
+
+async function resolveAnbieter(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .single();
+  const { data: anbieter } = await (supabase as any)
+    .from("anbieter")
+    .select("id")
+    .eq("profile_id", prof?.id ?? "")
+    .single();
+  return anbieter as { id: string } | null;
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rl = await rateLimit(request, MEDICAL_RATE_LIMIT);
+  if (!rl.success) return rateLimitResponse(rl.resetAt);
+
   const { id: bewohnerId } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: _prof } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-  const { data: anbieter } = await (supabase as any)
-    .from("anbieter")
-    .select("id")
-    .eq("profile_id", _prof?.id ?? "")
-    .single();
+  const anbieter = await resolveAnbieter(supabase, user.id);
   if (!anbieter) return NextResponse.json({ error: "Kein Anbieter" }, { status: 403 });
 
   const url = new URL(request.url);
@@ -30,19 +40,32 @@ export async function GET(
     url.searchParams.get("since") ??
     new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
+  // Cursor pagination
+  const cursor = url.searchParams.get("cursor");
+  const pageSize = Math.min(Number(url.searchParams.get("limit") ?? "100"), 200);
+
+  let gewichtQuery = (supabase as any)
+    .from("gewichts_eintraege")
+    .select("id,datum,uhrzeit,gewicht_kg,bmi,zustand,notizen,created_at")
+    .eq("bewohner_id", bewohnerId)
+    .eq("anbieter_id", anbieter.id)
+    .gte("datum", since)
+    .order("datum", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(pageSize + 1);
+
+  if (cursor) gewichtQuery = gewichtQuery.gt("datum", cursor);
+
+  // Export: ?export=csv
+  const isExport = url.searchParams.get("export") === "csv";
+
   const [gewichtRes, vitalRes, normwerteRes] = await Promise.all([
-    (supabase as any)
-      .from("gewichts_eintraege")
-      .select("*")
-      .eq("bewohner_id", bewohnerId)
-      .eq("anbieter_id", (anbieter as any).id)
-      .gte("datum", since)
-      .order("datum", { ascending: true }),
+    gewichtQuery,
     (supabase as any)
       .from("vitalwerte_eintraege")
-      .select("*")
+      .select("id,datum,uhrzeit,blutdruck_systolisch,blutdruck_diastolisch,herzfrequenz,temperatur,sauerstoffsaettigung,notizen")
       .eq("bewohner_id", bewohnerId)
-      .eq("anbieter_id", (anbieter as any).id)
+      .eq("anbieter_id", anbieter.id)
       .gte("datum", since)
       .order("datum", { ascending: false }),
     (supabase as any)
@@ -52,12 +75,38 @@ export async function GET(
       .maybeSingle(),
   ]);
 
-  const gewichtEintraege = (gewichtRes.data ?? []) as any[];
-  const vitalEintraege = (vitalRes.data ?? []) as any[];
+  const rawEintraege = (gewichtRes.data ?? []) as any[];
+  const hasNextPage = rawEintraege.length > pageSize;
+  const eintraege = hasNextPage ? rawEintraege.slice(0, pageSize) : rawEintraege;
+  const nextCursor = hasNextPage ? eintraege[eintraege.length - 1]?.datum : null;
+
+  const vitalwerte = (vitalRes.data ?? []) as any[];
   const normwerte = normwerteRes.data ?? null;
 
-  // Stats
-  const gewichte = gewichtEintraege.map((e: any) => e.gewicht_kg as number);
+  // CSV export
+  if (isExport) {
+    const rows = [
+      ["Datum", "Uhrzeit", "Gewicht (kg)", "BMI", "Zustand", "Notizen"],
+      ...eintraege.map((e: any) => [
+        e.datum,
+        e.uhrzeit ?? "",
+        e.gewicht_kg,
+        e.bmi ?? "",
+        e.zustand ?? "",
+        (e.notizen ?? "").replace(/\n/g, " "),
+      ]),
+    ];
+    const csv = rows.map((r) => r.join(";")).join("\n");
+    return new Response(csv, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="gewichtsverlauf-${bewohnerId}-${new Date().toISOString().split("T")[0]}.csv"`,
+        "Cache-Control": "private, no-store",
+      },
+    });
+  }
+
+  const gewichte = eintraege.map((e: any) => e.gewicht_kg as number);
   const aktuellesGewicht = gewichte.length > 0 ? gewichte[gewichte.length - 1] : null;
   const erstesGewicht = gewichte.length > 0 ? gewichte[0] : null;
   const gewichtDelta =
@@ -65,46 +114,47 @@ export async function GET(
       ? Math.round((aktuellesGewicht - erstesGewicht) * 10) / 10
       : null;
 
-  const letzteVital = vitalEintraege.length > 0 ? vitalEintraege[0] : null;
-
   const stats = {
     aktuellesGewicht,
     gewichtDelta,
     anzahlMessungen: gewichte.length,
-    letzteMessung:
-      gewichtEintraege.length > 0 ? gewichtEintraege[gewichtEintraege.length - 1].datum : null,
-    letzteVital,
+    letzteMessung: eintraege.length > 0 ? (eintraege[eintraege.length - 1] as any).datum : null,
+    letzteVital: vitalwerte.length > 0 ? vitalwerte[0] : null,
   };
 
-  return NextResponse.json({ gewichtEintraege, vitalEintraege, normwerte, stats });
+  const headers = new Headers({ "Cache-Control": "private, no-store" });
+  headers.set("X-RateLimit-Remaining", String(rl.remaining));
+
+  return NextResponse.json(
+    { eintraege, vitalwerte, normwerte, stats, nextCursor, hasNextPage },
+    { headers }
+  );
 }
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rl = await rateLimit(request, { limit: 30, window: 60 });
+  if (!rl.success) return rateLimitResponse(rl.resetAt);
+
   const { id: bewohnerId } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: _prof } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-  const { data: anbieter } = await (supabase as any)
-    .from("anbieter")
-    .select("id")
-    .eq("profile_id", _prof?.id ?? "")
-    .single();
+  const anbieter = await resolveAnbieter(supabase, user.id);
   if (!anbieter) return NextResponse.json({ error: "Kein Anbieter" }, { status: 403 });
 
-  const body = await request.json();
-  const anbieterId = (anbieter as any).id;
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Ungültiges JSON" }, { status: 400 });
+  }
+
+  const anbieterId = anbieter.id;
 
   if (body.type === "vital") {
     const { type: _t, ...vitalData } = body;
@@ -113,90 +163,41 @@ export async function POST(
       .insert({ ...vitalData, bewohner_id: bewohnerId, anbieter_id: anbieterId, erfasst_von: user.id })
       .select()
       .single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ eintrag: data }, { status: 201 });
+    if (error) {
+      logger.error("vital insert error", { bewohnerId: bewohnerId, error: error.message });
+      return NextResponse.json({ error: "Fehler beim Speichern" }, { status: 500 });
+    }
+    return NextResponse.json({ vital: data }, { status: 201 });
   }
 
   if (body.type === "normwerte") {
     const { type: _t, ...normData } = body;
-    // upsert
     const { data, error } = await (supabase as any)
       .from("bewohner_normwerte")
-      .upsert(
-        { ...normData, bewohner_id: bewohnerId, anbieter_id: anbieterId, aktualisiert_von: user.id, aktualisiert_am: new Date().toISOString() },
-        { onConflict: "bewohner_id" }
-      )
+      .upsert({ ...normData, bewohner_id: bewohnerId, anbieter_id: anbieterId }, { onConflict: "bewohner_id" })
       .select()
       .single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      logger.error("normwerte upsert error", { bewohnerId: bewohnerId, error: error.message });
+      return NextResponse.json({ error: "Fehler beim Speichern" }, { status: 500 });
+    }
     return NextResponse.json({ normwerte: data }, { status: 200 });
   }
 
-  // Default: gewicht
+  // Default: gewichts_eintraege
   if (!body.gewicht_kg) {
-    return NextResponse.json({ error: "Gewicht ist erforderlich" }, { status: 400 });
+    return NextResponse.json({ error: "gewicht_kg ist erforderlich" }, { status: 400 });
   }
 
-  const { type: _t, bmi: _bmi, ...gewichtData } = body;
-  // BMI berechnen wenn Größe bekannt (aus normwerten)
-  let berechneterBmi: number | null = null;
-  if (body.groesse_cm) {
-    const h = (body.groesse_cm as number) / 100;
-    berechneterBmi = Math.round((body.gewicht_kg / (h * h)) * 10) / 10;
-  }
-
+  const { type: _t, ...gewichtData } = body;
   const { data, error } = await (supabase as any)
     .from("gewichts_eintraege")
-    .insert({
-      ...gewichtData,
-      bewohner_id: bewohnerId,
-      anbieter_id: anbieterId,
-      bmi: berechneterBmi,
-      erfasst_von: user.id,
-    })
+    .insert({ ...gewichtData, bewohner_id: bewohnerId, anbieter_id: anbieterId, erfasst_von: user.id })
     .select()
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    logger.error("gewicht insert error", { bewohnerId: bewohnerId, error: error.message });
+    return NextResponse.json({ error: "Fehler beim Speichern" }, { status: 500 });
+  }
   return NextResponse.json({ eintrag: data }, { status: 201 });
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: bewohnerId } = await params;
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: _prof } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-  const { data: anbieter } = await (supabase as any)
-    .from("anbieter")
-    .select("id")
-    .eq("profile_id", _prof?.id ?? "")
-    .single();
-  if (!anbieter) return NextResponse.json({ error: "Kein Anbieter" }, { status: 403 });
-
-  const url = new URL(request.url);
-  const table = url.searchParams.get("tabelle") ?? "gewicht";
-  const eintragId = url.searchParams.get("eintrag_id");
-  if (!eintragId) return NextResponse.json({ error: "eintrag_id fehlt" }, { status: 400 });
-
-  const tableName = table === "vital" ? "vitalwerte_eintraege" : "gewichts_eintraege";
-  const { error } = await (supabase as any)
-    .from(tableName)
-    .delete()
-    .eq("id", eintragId)
-    .eq("bewohner_id", bewohnerId)
-    .eq("anbieter_id", (anbieter as any).id);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
 }
