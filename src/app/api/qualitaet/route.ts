@@ -7,7 +7,12 @@ export async function GET() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { data: anbieter } = await (supabase as any).from("anbieter").select("id").eq("owner_id", user.id).single();
+    const { data: _prof } = await supabase.from("profiles").select("id").eq("user_id", user.id).single();
+    const { data: anbieter } = await (supabase as any)
+        .from("anbieter")
+        .select("id")
+        .eq("profile_id", _prof?.id ?? "")
+        .single();
     if (!anbieter) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const anbieterId = (anbieter as any).id;

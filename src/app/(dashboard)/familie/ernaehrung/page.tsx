@@ -16,7 +16,7 @@ export default function ErnaehrungPage() {
         </p>
       </div>
       <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center text-gray-500">
-        <p>Bitte wählen Sie einen Bewohner aus dem Bewohner-Verzeichnis aus.</p>
+        <p>Bitte wählen Sie einen Bewohner aus dem Bewohner-Bereich der Pflegeeinrichtung.</p>
       </div>
     </div>
   );

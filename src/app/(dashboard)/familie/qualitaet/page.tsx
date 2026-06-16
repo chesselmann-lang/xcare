@@ -30,5 +30,5 @@ export default async function QualitaetPage() {
     .order('name')
     .limit(20);
 
-  return <QualitaetsVergleichClient initialHeime={heime ?? []} />;
+  return <QualitaetsVergleichClient initialHeime={heime} />;
 }

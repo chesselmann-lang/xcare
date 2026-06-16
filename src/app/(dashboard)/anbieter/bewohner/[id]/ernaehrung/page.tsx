@@ -18,7 +18,12 @@ export default async function ErnaehrungPage({ params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: anbieter } = await (supabase as any).from("anbieter").select("id").eq("owner_id", user.id).single();
+  const { data: _prof } = await supabase.from("profiles").select("id").eq("user_id", user.id).single();
+  const { data: anbieter } = await (supabase as any)
+      .from("anbieter")
+      .select("id")
+      .eq("profile_id", _prof?.id ?? "")
+      .single();
   if (!anbieter) redirect("/anbieter/onboarding");
 
   const { data: bewohner } = await (supabase as any)

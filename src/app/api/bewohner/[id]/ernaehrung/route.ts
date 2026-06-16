@@ -15,11 +15,12 @@ export async function GET(
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const { data: _prof } = await supabase.from("profiles").select("id").eq("user_id", user.id).single();
     const { data: anbieter } = await (supabase as any)
-      .from("anbieter")
-      .select("id")
-      .eq("owner_id", user.id)
-      .single();
+        .from("anbieter")
+        .select("id")
+        .eq("profile_id", _prof?.id ?? "")
+        .single();
     if (!anbieter) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { data: bewohner } = await (supabase as any)
@@ -109,11 +110,12 @@ export async function POST(
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const { data: _prof } = await supabase.from("profiles").select("id").eq("user_id", user.id).single();
     const { data: anbieter } = await (supabase as any)
-      .from("anbieter")
-      .select("id")
-      .eq("owner_id", user.id)
-      .single();
+        .from("anbieter")
+        .select("id")
+        .eq("profile_id", _prof?.id ?? "")
+        .single();
     if (!anbieter) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { data: bewohner } = await (supabase as any)

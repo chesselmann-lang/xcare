@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 
 async function getAnbieter(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const { data } = await (supabase as any).from("anbieter").select("id").eq("owner_id", userId).single();
+  const { data: prof } = await (supabase as any).from("profiles").select("id").eq("user_id", userId).single();
+  const { data } = await (supabase as any).from("anbieter").select("id").eq("profile_id", prof?.id ?? "").single();
   return data?.id ?? null;
 }
 

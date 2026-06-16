@@ -17,7 +17,6 @@ export default function DekubitusPage() {
       </div>
       <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center text-gray-500">
         <p>Diese Funktion steht im Bewohner-Kontext der Pflegeeinrichtung zur Verfügung.</p>
-        <p className="mt-2 text-sm">Bitte wählen Sie einen Bewohner aus dem Bewohner-Verzeichnis aus.</p>
       </div>
     </div>
   );

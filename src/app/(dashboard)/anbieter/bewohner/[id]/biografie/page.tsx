@@ -12,10 +12,11 @@ export default async function BiografiePage({ params }: { params: Promise<{ id: 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { data: _prof } = await supabase.from("profiles").select("id").eq("user_id", user.id).single();
   const { data: anbieterRaw } = await supabase
     .from("anbieter")
     .select("id")
-    .eq("owner_id", user.id)
+    .eq("profile_id", _prof?.id ?? "")
     .single();
   const anbieter = anbieterRaw as any;
   if (!anbieter) notFound();
