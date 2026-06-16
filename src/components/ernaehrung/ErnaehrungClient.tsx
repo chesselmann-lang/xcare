@@ -1,224 +1,597 @@
-'use client';
-// components/ernaehrung/ErnaehrungClient.tsx — F45 Ernährungsplan & Flüssigkeitsbilanz
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  Ernaehrungsprofil, Fluessigkeitsbilanz, MahlzeitProtokoll,
-  KOSTFORMEN, IDDSI_LEVEL, TAGESZEITEN_MAHLZEIT, PORTIONEN, MNA_ITEMS,
-  berechneMnaScore, mnaRisiko, leeresErnaehrungsprofil, leeresFluessigkeitsbilanz,
-  berechneProzentBedarf, GetraenkEintrag,
-} from '@/lib/ernaehrung/plan';
+import { useState } from "react";
 
-type Tab = 'fluessigkeit' | 'mahlzeiten' | 'profil' | 'mna';
+interface Protokoll {
+  id: string;
+  datum: string;
+  mahlzeit: string;
+  angeboten: boolean;
+  aufgenommen_prozent: number | null;
+  kostform: string | null;
+  appetit: string | null;
+  zusatznahrung: boolean;
+  zusatznahrung_typ: string | null;
+  gewicht_kg: number | null;
+  besonderheiten: string | null;
+  erstellt_am: string;
+}
 
-const heute = () => new Date().toISOString().split('T')[0];
+interface Fluessigkeit {
+  id: string;
+  datum: string;
+  uhrzeit: string;
+  menge_ml: number;
+  bilanz_typ: string;
+  art: string;
+  besonderheiten: string | null;
+}
 
-export default function ErnaehrungClient() {
-  const [tab, setTab] = useState<Tab>('fluessigkeit');
-  const [profil, setProfil] = useState<Ernaehrungsprofil>(leeresErnaehrungsprofil());
-  const [bilanz, setBilanz] = useState<Fluessigkeitsbilanz>(leeresFluessigkeitsbilanz(heute()));
-  const [mahlzeiten, setMahlzeiten] = useState<MahlzeitProtokoll[]>([]);
-  const [datum, setDatum] = useState(heute());
-  const [loading, setLoading] = useState(true);
+interface Ziele {
+  kostform: string | null;
+  kalorien_ziel: number;
+  fluessigkeit_ziel_ml: number;
+  allergie_unvertraeglichkeit: string | null;
+  besondere_ernaehrung: string | null;
+  mna_score: number | null;
+}
+
+interface Stats {
+  gesamt: number;
+  durchschnittAufnahme: number;
+  letztesGewicht: number | null;
+  mnaScore: number | null;
+}
+
+interface FlStats {
+  einfuhrHeute: number;
+  ausfuhrHeute: number;
+  bilanzHeute: number;
+}
+
+interface Props {
+  bewohnerId: string;
+  bewohnerName: string;
+  initialProtokoll: Protokoll[];
+  initialZiele: Ziele | null;
+  initialStats: Stats;
+  initialFluessigkeit: Fluessigkeit[];
+  initialFlStats: FlStats;
+}
+
+const MAHLZEIT_LABELS: Record<string, string> = {
+  fruehstueck: "Frühstück 🌅",
+  zwischenmahlzeit_vm: "ZM Vormittag ☕",
+  mittagessen: "Mittagessen 🍽️",
+  zwischenmahlzeit_nm: "ZM Nachmittag 🍎",
+  abendessen: "Abendessen 🌙",
+  spaetmahlzeit: "Spätmahlzeit 🌛",
+};
+
+const APPETIT_COLORS: Record<string, string> = {
+  gut: "text-green-600",
+  maessig: "text-yellow-600",
+  schlecht: "text-red-600",
+  verweigert: "text-red-800",
+};
+
+function today(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+function nowTime(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+export default function ErnaehrungClient({
+  bewohnerId,
+  bewohnerName,
+  initialProtokoll,
+  initialZiele,
+  initialStats,
+  initialFluessigkeit,
+  initialFlStats,
+}: Props) {
+  const [protokoll, setProtokoll] = useState<Protokoll[]>(initialProtokoll);
+  const [ziele, setZiele] = useState<Ziele | null>(initialZiele);
+  const [stats, setStats] = useState<Stats>(initialStats);
+  const [fluessigkeit, setFluessigkeit] = useState<Fluessigkeit[]>(initialFluessigkeit);
+  const [flStats, setFlStats] = useState<FlStats>(initialFlStats);
+  const [activeTab, setActiveTab] = useState<"ernaehrung" | "fluessigkeit" | "ziele">("ernaehrung");
+  const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [neueMahlzeit, setNeueMahlzeit] = useState<Partial<MahlzeitProtokoll>>({ mahlzeit_datum: datum, tageszeit: 'mittagessen', portion: 'ganz' });
-  const [getraenkForm, setGetraenkForm] = useState({ art: 'Wasser', menge_ml: 200, zeit: new Date().toTimeString().slice(0, 5) });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const [pRes, bRes, mRes] = await Promise.all([
-      fetch('/api/ernaehrung'),
-      fetch(`/api/ernaehrung/fluessigkeit?datum=${datum}`),
-      fetch(`/api/ernaehrung/mahlzeiten?datum=${datum}`),
-    ]);
-    const [pData, bData, mData] = await Promise.all([pRes.json(), bRes.json(), mRes.json()]);
-    if (pData) setProfil(pData);
-    setBilanz(bData ?? leeresFluessigkeitsbilanz(datum));
-    setMahlzeiten(mData ?? []);
-    setLoading(false);
-  }, [datum]);
+  // Mahlzeit form state
+  const [mDatum, setMDatum] = useState(today());
+  const [mMahlzeit, setMMahlzeit] = useState("");
+  const [mAufgenommen, setMAufgenommen] = useState(75);
+  const [mAngeboten, setMAngeboten] = useState(true);
+  const [mKostform, setMKostform] = useState("normal");
+  const [mAppetit, setMAppetit] = useState("gut");
+  const [mZusatznahrung, setMZusatznahrung] = useState(false);
+  const [mZusatznahrungTyp, setMZusatznahrungTyp] = useState("");
+  const [mGewicht, setMGewicht] = useState<string>("");
+  const [mBesonderheiten, setMBesonderheiten] = useState("");
 
-  useEffect(() => { load(); }, [load]);
+  // Fluessigkeit form state
+  const [fBilanzTyp, setFBilanzTyp] = useState<"einfuhr" | "ausfuhr">("einfuhr");
+  const [fMenge, setFMenge] = useState<string>("");
+  const [fArt, setFArt] = useState("");
+  const [fDatum, setFDatum] = useState(today());
+  const [fUhrzeit, setFUhrzeit] = useState(nowTime());
+  const [fBesonderheiten, setFBesonderheiten] = useState("");
 
-  const saveProfil = async () => {
+  // Ziele form state
+  const [zKostform, setZKostform] = useState(ziele?.kostform ?? "normal");
+  const [zKalorien, setZKalorien] = useState<string>(String(ziele?.kalorien_ziel ?? 2000));
+  const [zFluessigkeit, setZFluessigkeit] = useState<string>(String(ziele?.fluessigkeit_ziel_ml ?? 1500));
+  const [zAllergie, setZAllergie] = useState(ziele?.allergie_unvertraeglichkeit ?? "");
+  const [zBesondere, setZBesondere] = useState(ziele?.besondere_ernaehrung ?? "");
+  const [zMna, setZMna] = useState<string>(ziele?.mna_score != null ? String(ziele.mna_score) : "");
+
+  function resetMahlzeitForm() {
+    setMDatum(today());
+    setMMahlzeit("");
+    setMAufgenommen(75);
+    setMAngeboten(true);
+    setMKostform("normal");
+    setMAppetit("gut");
+    setMZusatznahrung(false);
+    setMZusatznahrungTyp("");
+    setMGewicht("");
+    setMBesonderheiten("");
+  }
+
+  function resetFlForm() {
+    setFBilanzTyp("einfuhr");
+    setFMenge("");
+    setFArt("");
+    setFDatum(today());
+    setFUhrzeit(nowTime());
+    setFBesonderheiten("");
+  }
+
+  function openForm() {
+    if (activeTab === "ernaehrung") resetMahlzeitForm();
+    if (activeTab === "fluessigkeit") resetFlForm();
+    if (activeTab === "ziele") {
+      setZKostform(ziele?.kostform ?? "normal");
+      setZKalorien(String(ziele?.kalorien_ziel ?? 2000));
+      setZFluessigkeit(String(ziele?.fluessigkeit_ziel_ml ?? 1500));
+      setZAllergie(ziele?.allergie_unvertraeglichkeit ?? "");
+      setZBesondere(ziele?.besondere_ernaehrung ?? "");
+      setZMna(ziele?.mna_score != null ? String(ziele.mna_score) : "");
+    }
+    setShowForm(true);
+  }
+
+  async function refreshErnaehrung() {
+    const res = await fetch(`/api/bewohner/${bewohnerId}/ernaehrung`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.protokoll) setProtokoll(data.protokoll);
+      if (data.stats) setStats(data.stats);
+      if (data.ziele !== undefined) setZiele(data.ziele);
+    }
+  }
+
+  async function refreshFluessigkeit() {
+    const res = await fetch(`/api/bewohner/${bewohnerId}/fluessigkeit`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.eintraege) setFluessigkeit(data.eintraege);
+      if (data.stats) setFlStats(data.stats);
+    }
+  }
+
+  async function saveMahlzeit() {
+    if (!mMahlzeit) return;
     setSaving(true);
-    const res = await fetch('/api/ernaehrung', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profil) });
-    const data = await res.json();
-    if (data.id) { setProfil(data); setMsg('✅ Profil gespeichert'); }
-    else setMsg('❌ Fehler: ' + data.error);
-    setSaving(false);
-    setTimeout(() => setMsg(''), 3000);
-  };
+    try {
+      const body = {
+        datum: mDatum,
+        mahlzeit: mMahlzeit,
+        angeboten: mAngeboten,
+        aufgenommen_prozent: mAufgenommen,
+        kostform: mKostform,
+        appetit: mAppetit,
+        zusatznahrung: mZusatznahrung,
+        zusatznahrung_typ: mZusatznahrung ? mZusatznahrungTyp : null,
+        gewicht_kg: mGewicht !== "" ? parseFloat(mGewicht) : null,
+        besonderheiten: mBesonderheiten || null,
+      };
+      const res = await fetch(`/api/bewohner/${bewohnerId}/ernaehrung`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        await refreshErnaehrung();
+        setShowForm(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
 
-  const saveBilanz = async (updated: Fluessigkeitsbilanz) => {
-    const res = await fetch('/api/ernaehrung/fluessigkeit', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) });
-    const data = await res.json();
-    if (data.id) setBilanz(data);
-  };
+  async function saveFluessigkeit() {
+    if (!fMenge || !fArt) return;
+    setSaving(true);
+    try {
+      const body = {
+        bilanz_typ: fBilanzTyp,
+        menge_ml: parseInt(fMenge, 10),
+        art: fArt,
+        datum: fDatum,
+        uhrzeit: fUhrzeit,
+        besonderheiten: fBesonderheiten || null,
+      };
+      const res = await fetch(`/api/bewohner/${bewohnerId}/fluessigkeit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        await refreshFluessigkeit();
+        setShowForm(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
 
-  const addGetraenk = async () => {
-    const neuerEintrag: GetraenkEintrag = { ...getraenkForm };
-    const updated: Fluessigkeitsbilanz = {
-      ...bilanz,
-      bilanz_datum: datum,
-      trinkmenge_ml: bilanz.trinkmenge_ml + getraenkForm.menge_ml,
-      einzel_getraenke: [...bilanz.einzel_getraenke, neuerEintrag],
-    };
-    setBilanz(updated);
-    await saveBilanz(updated);
-  };
+  async function saveZiele() {
+    setSaving(true);
+    try {
+      const body = {
+        update_ziele: true,
+        kostform: zKostform,
+        kalorien_ziel: parseInt(zKalorien, 10),
+        fluessigkeit_ziel_ml: parseInt(zFluessigkeit, 10),
+        allergie_unvertraeglichkeit: zAllergie || null,
+        besondere_ernaehrung: zBesondere || null,
+        mna_score: zMna !== "" ? parseFloat(zMna) : null,
+      };
+      const res = await fetch(`/api/bewohner/${bewohnerId}/ernaehrung`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        await refreshErnaehrung();
+        setShowForm(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
 
-  const updateBilanzFeld = (feld: keyof Fluessigkeitsbilanz, wert: number) => {
-    const updated = { ...bilanz, bilanz_datum: datum, [feld]: wert };
-    setBilanz(updated as Fluessigkeitsbilanz);
-    saveBilanz(updated as Fluessigkeitsbilanz);
-  };
+  function aufnahmeColor(pct: number | null): string {
+    if (pct === null) return "bg-gray-300";
+    if (pct >= 75) return "bg-green-500";
+    if (pct >= 50) return "bg-yellow-400";
+    return "bg-red-500";
+  }
 
-  const addMahlzeit = async () => {
-    const res = await fetch('/api/ernaehrung/mahlzeiten', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...neueMahlzeit, mahlzeit_datum: datum }) });
-    const data = await res.json();
-    if (data.id) { setMahlzeiten(prev => [...prev, data]); setNeueMahlzeit({ mahlzeit_datum: datum, tageszeit: 'mittagessen', portion: 'ganz' }); }
-  };
-
-  const deleteMahlzeit = async (id: string) => {
-    await fetch(`/api/ernaehrung/mahlzeiten?id=${id}`, { method: 'DELETE' });
-    setMahlzeiten(prev => prev.filter(m => m.id !== id));
-  };
-
-  const mnaScore = berechneMnaScore(profil);
-  const mnaResult = mnaRisiko(mnaScore);
-  const flProzent = berechneProzentBedarf(bilanz.trinkmenge_ml + bilanz.nahrung_ml + bilanz.infusion_ml, profil.flüssigkeitsbedarf_ml);
-  const bilanzCalc = (bilanz.trinkmenge_ml + bilanz.nahrung_ml + bilanz.infusion_ml) - (bilanz.urin_ml + bilanz.sonstiges_ml);
-
-  const TABS = [
-    { key: 'fluessigkeit' as Tab, label: '💧 Flüssigkeit' },
-    { key: 'mahlzeiten' as Tab, label: '🍽️ Mahlzeiten' },
-    { key: 'profil' as Tab, label: '⚙️ Profil' },
-    { key: 'mna' as Tab, label: '📊 MNA' },
-  ];
-
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+  const fluessigkeitZiel = ziele?.fluessigkeit_ziel_ml ?? 1500;
+  const einfuhrPct = Math.min(100, Math.round((flStats.einfuhrHeute / fluessigkeitZiel) * 100));
 
   return (
     <div className="space-y-6">
-      {/* Datum-Auswahl */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-gray-600">Datum:</label>
-        <input type="date" value={datum} onChange={e => setDatum(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm" />
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">
+            Ernährung &amp; Flüssigkeit
+          </h2>
+          <p className="text-sm text-gray-500">{bewohnerName}</p>
+        </div>
+        <button
+          onClick={openForm}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <span>+</span>
+          {activeTab === "ernaehrung" && "Mahlzeit erfassen"}
+          {activeTab === "fluessigkeit" && "Einfuhr/Ausfuhr erfassen"}
+          {activeTab === "ziele" && "Ziele bearbeiten"}
+        </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
-        {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tab === t.key ? 'bg-white text-blue-700 shadow' : 'text-gray-600 hover:bg-gray-200'}`}>
-            {t.label}
-          </button>
-        ))}
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex gap-6" aria-label="Tabs">
+          {(["ernaehrung", "fluessigkeit", "ziele"] as const).map((tab) => {
+            const labels = {
+              ernaehrung: "Ernährungsprotokoll",
+              fluessigkeit: "Flüssigkeitsbilanz",
+              ziele: "Ernährungsziele",
+            };
+            return (
+              <button
+                key={tab}
+                onClick={() => { setActiveTab(tab); setShowForm(false); }}
+                className={`whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors ${
+                  activeTab === tab
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                }`}
+              >
+                {labels[tab]}
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* ── Flüssigkeitsbilanz ── */}
-      {tab === 'fluessigkeit' && (
-        <div className="space-y-4">
-          {/* Tagesübersicht */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-800">Tagesbilanz</h3>
-              <span className={`text-sm font-medium px-3 py-1 rounded-full ${bilanzCalc >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {bilanzCalc >= 0 ? '+' : ''}{bilanzCalc} ml
-              </span>
+      {/* ── ERNÄHRUNGSPROTOKOLL TAB ── */}
+      {activeTab === "ernaehrung" && (
+        <div className="space-y-6">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Einträge gesamt</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{stats.gesamt}</p>
             </div>
-            {/* Fortschrittsbalken */}
-            <div className="mb-4">
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Flüssigkeitsaufnahme</span>
-                <span>{bilanz.trinkmenge_ml + bilanz.nahrung_ml + bilanz.infusion_ml} / {profil.flüssigkeitsbedarf_ml} ml ({flProzent}%)</span>
-              </div>
-              <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full transition-all ${flProzent >= 100 ? 'bg-green-500' : flProzent >= 70 ? 'bg-blue-500' : 'bg-yellow-500'}`} style={{ width: `${Math.min(100, flProzent)}%` }} />
-              </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Ø Aufnahme</p>
+              <p className={`mt-1 text-2xl font-bold ${
+                stats.durchschnittAufnahme >= 75
+                  ? "text-green-600"
+                  : stats.durchschnittAufnahme >= 50
+                  ? "text-yellow-600"
+                  : "text-red-600"
+              }`}>
+                {stats.durchschnittAufnahme}%
+              </p>
             </div>
-            {/* Einnahme / Ausfuhr Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Einnahme</p>
-                {[
-                  { label: 'Trinken', feld: 'trinkmenge_ml' as keyof Fluessigkeitsbilanz, icon: '💧' },
-                  { label: 'Aus Nahrung', feld: 'nahrung_ml' as keyof Fluessigkeitsbilanz, icon: '🥗' },
-                  { label: 'Infusion', feld: 'infusion_ml' as keyof Fluessigkeitsbilanz, icon: '💉' },
-                ].map(({ label, feld, icon }) => (
-                  <div key={feld} className="flex items-center gap-2">
-                    <span className="text-lg">{icon}</span>
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500">{label}</p>
-                      <input type="number" min={0} step={50} value={bilanz[feld] as number}
-                        onChange={e => updateBilanzFeld(feld, parseInt(e.target.value) || 0)}
-                        className="w-full border rounded-lg px-2 py-1 text-sm" />
-                    </div>
-                    <span className="text-xs text-gray-400">ml</span>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-red-600 uppercase tracking-wide">Ausfuhr</p>
-                {[
-                  { label: 'Urin', feld: 'urin_ml' as keyof Fluessigkeitsbilanz, icon: '🚿' },
-                  { label: 'Sonstiges', feld: 'sonstiges_ml' as keyof Fluessigkeitsbilanz, icon: '💦' },
-                ].map(({ label, feld, icon }) => (
-                  <div key={feld} className="flex items-center gap-2">
-                    <span className="text-lg">{icon}</span>
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500">{label}</p>
-                      <input type="number" min={0} step={50} value={bilanz[feld] as number}
-                        onChange={e => updateBilanzFeld(feld, parseInt(e.target.value) || 0)}
-                        className="w-full border rounded-lg px-2 py-1 text-sm" />
-                    </div>
-                    <span className="text-xs text-gray-400">ml</span>
-                  </div>
-                ))}
-              </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Letztes Gewicht</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {stats.letztesGewicht != null ? `${stats.letztesGewicht} kg` : "—"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">MNA-Score</p>
+              <p className={`mt-1 text-2xl font-bold ${
+                stats.mnaScore === null
+                  ? "text-gray-400"
+                  : stats.mnaScore >= 12
+                  ? "text-green-600"
+                  : stats.mnaScore >= 8
+                  ? "text-yellow-600"
+                  : "text-red-600"
+              }`}>
+                {stats.mnaScore != null ? `${stats.mnaScore}/30` : "—"}
+              </p>
             </div>
           </div>
 
-          {/* Schnell-Erfassung Getränke */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Getränk hinzufügen</h3>
-            <div className="flex gap-2 flex-wrap">
-              <input value={getraenkForm.zeit} onChange={e => setGetraenkForm(p => ({ ...p, zeit: e.target.value }))} type="time" className="border rounded-lg px-2 py-1.5 text-sm" />
-              <input value={getraenkForm.art} onChange={e => setGetraenkForm(p => ({ ...p, art: e.target.value }))} placeholder="Art (z.B. Wasser)" className="border rounded-lg px-2 py-1.5 text-sm flex-1 min-w-24" />
-              <div className="flex items-center gap-1">
-                <input type="number" min={0} step={50} value={getraenkForm.menge_ml} onChange={e => setGetraenkForm(p => ({ ...p, menge_ml: parseInt(e.target.value) || 0 }))} className="border rounded-lg px-2 py-1.5 text-sm w-20" />
-                <span className="text-sm text-gray-500">ml</span>
-              </div>
-              <button onClick={addGetraenk} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700">+ Hinzufügen</button>
+          {/* Protokoll List */}
+          {protokoll.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+              <p className="text-gray-500">Noch keine Mahlzeiten erfasst.</p>
             </div>
-            {/* Schnell-Buttons */}
-            <div className="flex flex-wrap gap-2 mt-3">
-              {[['Wasser', 200], ['Wasser', 300], ['Kaffee', 150], ['Tee', 200], ['Saft', 200], ['Suppe', 250]].map(([art, ml]) => (
-                <button key={`${art}-${ml}`}
-                  onClick={() => { setGetraenkForm(p => ({ ...p, art: art as string, menge_ml: ml as number })); }}
-                  className="text-xs bg-gray-100 hover:bg-blue-50 text-gray-700 px-3 py-1 rounded-full border">
-                  {art} ({ml}ml)
-                </button>
-              ))}
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Datum</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Mahlzeit</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Aufnahme</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Appetit</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Gewicht</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {protokoll.map((p) => (
+                    <tr key={p.id} className="hover:bg-gray-50">
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                        {new Date(p.datum).toLocaleDateString("de-DE")}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {MAHLZEIT_LABELS[p.mahlzeit] ?? p.mahlzeit}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-200">
+                            <div
+                              className={`h-2 rounded-full ${aufnahmeColor(p.aufgenommen_prozent)}`}
+                              style={{ width: `${p.aufgenommen_prozent ?? 0}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-600">
+                            {p.aufgenommen_prozent != null ? `${p.aufgenommen_prozent}%` : "—"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {p.appetit ? (
+                          <span className={`font-medium ${APPETIT_COLORS[p.appetit] ?? "text-gray-700"}`}>
+                            {p.appetit.charAt(0).toUpperCase() + p.appetit.slice(1)}
+                          </span>
+                        ) : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {p.gewicht_kg != null ? `${p.gewicht_kg} kg` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
+          )}
 
-          {/* Getränke-Liste des Tages */}
-          {bilanz.einzel_getraenke.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <h3 className="font-semibold text-gray-800 mb-3">Heutige Getränke</h3>
-              <div className="space-y-2">
-                {bilanz.einzel_getraenke.map((g, i) => (
-                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
-                    <span className="text-sm text-gray-600">{g.zeit} — {g.art}</span>
-                    <span className="text-sm font-medium text-blue-600">{g.menge_ml} ml</span>
+          {/* Mahlzeit Modal */}
+          {showForm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div className="w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh]">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Mahlzeit erfassen</h3>
+                  <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Datum */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Datum</label>
+                    <input
+                      type="date"
+                      value={mDatum}
+                      onChange={(e) => setMDatum(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
                   </div>
-                ))}
-                <div className="flex justify-between pt-2 font-semibold">
-                  <span className="text-sm">Gesamt</span>
-                  <span className="text-sm text-blue-600">{bilanz.einzel_getraenke.reduce((s, g) => s + g.menge_ml, 0)} ml</span>
+
+                  {/* Mahlzeit Selector */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Mahlzeit</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(MAHLZEIT_LABELS).map(([key, label]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setMMahlzeit(key)}
+                          className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                            mMahlzeit === key
+                              ? "border-blue-500 bg-blue-50 text-blue-700 font-medium"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Aufgenommen Slider */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Aufnahme: <span className="font-bold text-blue-600">{mAufgenommen}%</span>
+                    </label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={mAufgenommen}
+                      onChange={(e) => setMAufgenommen(parseInt(e.target.value, 10))}
+                      className="w-full accent-blue-600"
+                    />
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                    </div>
+                  </div>
+
+                  {/* Angeboten Toggle */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setMAngeboten(!mAngeboten)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mAngeboten ? "bg-blue-600" : "bg-gray-200"}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${mAngeboten ? "translate-x-6" : "translate-x-1"}`} />
+                    </button>
+                    <span className="text-sm text-gray-700">Mahlzeit angeboten</span>
+                  </div>
+
+                  {/* Kostform */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kostform</label>
+                    <select
+                      value={mKostform}
+                      onChange={(e) => setMKostform(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="weich">Weich</option>
+                      <option value="passiert">Passiert</option>
+                      <option value="fluessig">Flüssig</option>
+                      <option value="sonde">Sonde</option>
+                      <option value="tpn">TPN (parenterale Ernährung)</option>
+                    </select>
+                  </div>
+
+                  {/* Appetit */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Appetit</label>
+                    <select
+                      value={mAppetit}
+                      onChange={(e) => setMAppetit(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="gut">Gut</option>
+                      <option value="maessig">Mäßig</option>
+                      <option value="schlecht">Schlecht</option>
+                      <option value="verweigert">Verweigert</option>
+                    </select>
+                  </div>
+
+                  {/* Zusatznahrung */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={mZusatznahrung}
+                        onChange={(e) => setMZusatznahrung(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">Zusatznahrung</span>
+                    </label>
+                    {mZusatznahrung && (
+                      <input
+                        type="text"
+                        placeholder="Art der Zusatznahrung (z.B. Fresubin)"
+                        value={mZusatznahrungTyp}
+                        onChange={(e) => setMZusatznahrungTyp(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    )}
+                  </div>
+
+                  {/* Gewicht */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gewicht (kg, optional)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="20"
+                      max="300"
+                      placeholder="z.B. 72.5"
+                      value={mGewicht}
+                      onChange={(e) => setMGewicht(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Besonderheiten */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Besonderheiten (optional)</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Sonstige Beobachtungen..."
+                      value={mBesonderheiten}
+                      onChange={(e) => setMBesonderheiten(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex gap-3">
+                  <button
+                    onClick={() => setShowForm(false)}
+                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={saveMahlzeit}
+                    disabled={saving || !mMahlzeit}
+                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {saving ? "Speichern..." : "Speichern"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -226,177 +599,369 @@ export default function ErnaehrungClient() {
         </div>
       )}
 
-      {/* ── Mahlzeiten-Protokoll ── */}
-      {tab === 'mahlzeiten' && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Neue Mahlzeit</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Tageszeit</label>
-                <select value={neueMahlzeit.tageszeit} onChange={e => setNeueMahlzeit(p => ({ ...p, tageszeit: e.target.value }))} className="w-full border rounded-lg px-2 py-2 text-sm">
-                  {TAGESZEITEN_MAHLZEIT.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Portion</label>
-                <select value={neueMahlzeit.portion} onChange={e => setNeueMahlzeit(p => ({ ...p, portion: e.target.value }))} className="w-full border rounded-lg px-2 py-2 text-sm">
-                  {PORTIONEN.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                </select>
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs text-gray-500 mb-1 block">Nahrungsmittel / Gericht</label>
-                <input value={neueMahlzeit.nahrungsmittel ?? ''} onChange={e => setNeueMahlzeit(p => ({ ...p, nahrungsmittel: e.target.value }))} placeholder="z.B. Vollkornbrot mit Käse" className="w-full border rounded-lg px-2 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">kcal (Schätzung)</label>
-                <input type="number" min={0} value={neueMahlzeit.kcal_schaetzung ?? ''} onChange={e => setNeueMahlzeit(p => ({ ...p, kcal_schaetzung: parseInt(e.target.value) || undefined }))} placeholder="optional" className="w-full border rounded-lg px-2 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Notizen</label>
-                <input value={neueMahlzeit.notizen ?? ''} onChange={e => setNeueMahlzeit(p => ({ ...p, notizen: e.target.value }))} placeholder="optional" className="w-full border rounded-lg px-2 py-2 text-sm" />
-              </div>
+      {/* ── FLÜSSIGKEITSBILANZ TAB ── */}
+      {activeTab === "fluessigkeit" && (
+        <div className="space-y-6">
+          {/* Stat Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wide text-blue-600">Einfuhr heute</p>
+              <p className="mt-1 text-2xl font-bold text-blue-800">{flStats.einfuhrHeute} ml</p>
             </div>
-            <button onClick={addMahlzeit} className="mt-4 w-full bg-green-600 text-white py-2 rounded-xl text-sm font-medium hover:bg-green-700">
-              ➕ Mahlzeit eintragen
-            </button>
+            <div className="rounded-xl border border-orange-100 bg-orange-50 p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wide text-orange-600">Ausfuhr heute</p>
+              <p className="mt-1 text-2xl font-bold text-orange-800">{flStats.ausfuhrHeute} ml</p>
+            </div>
+            <div className={`rounded-xl border p-4 shadow-sm ${
+              flStats.bilanzHeute >= 0
+                ? "border-green-100 bg-green-50"
+                : "border-red-100 bg-red-50"
+            }`}>
+              <p className={`text-xs font-medium uppercase tracking-wide ${flStats.bilanzHeute >= 0 ? "text-green-600" : "text-red-600"}`}>
+                Bilanz heute
+              </p>
+              <p className={`mt-1 text-2xl font-bold ${flStats.bilanzHeute >= 0 ? "text-green-800" : "text-red-800"}`}>
+                {flStats.bilanzHeute >= 0 ? "+" : ""}{flStats.bilanzHeute} ml
+              </p>
+            </div>
           </div>
 
-          {/* Tagesübersicht Mahlzeiten */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Tagesprotokoll</h3>
-            {mahlzeiten.length === 0 ? (
-              <p className="text-gray-400 text-sm text-center py-4">Noch keine Mahlzeiten eingetragen</p>
-            ) : (
-              <div className="space-y-3">
-                {TAGESZEITEN_MAHLZEIT.map(tz => {
-                  const eintraege = mahlzeiten.filter(m => m.tageszeit === tz.value);
-                  if (!eintraege.length) return null;
-                  return (
-                    <div key={tz.value}>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{tz.icon} {tz.label}</p>
-                      {eintraege.map(m => {
-                        const portionObj = PORTIONEN.find(p => p.value === m.portion);
-                        return (
-                          <div key={m.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 mb-1">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${portionObj?.prozent === 100 ? 'bg-green-100 text-green-700' : portionObj?.prozent === 0 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                {portionObj?.label}
-                              </span>
-                              <span className="text-sm text-gray-700">{m.nahrungsmittel || '–'}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {m.kcal_schaetzung && <span className="text-xs text-gray-500">{m.kcal_schaetzung} kcal</span>}
-                              <button onClick={() => deleteMahlzeit(m.id!)} className="text-red-400 hover:text-red-600 text-xs">✕</button>
-                            </div>
-                          </div>
-                        );
-                      })}
+          {/* Progress Bar */}
+          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="font-medium text-gray-700">Trinkmenge heute</span>
+              <span className="text-gray-500">{flStats.einfuhrHeute} / {fluessigkeitZiel} ml ({einfuhrPct}%)</span>
+            </div>
+            <div className="h-4 w-full overflow-hidden rounded-full bg-gray-200">
+              <div
+                className={`h-4 rounded-full transition-all ${einfuhrPct >= 100 ? "bg-green-500" : einfuhrPct >= 60 ? "bg-blue-500" : "bg-yellow-400"}`}
+                style={{ width: `${Math.min(einfuhrPct, 100)}%` }}
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-400">Ziel: {fluessigkeitZiel} ml / Tag</p>
+          </div>
+
+          {/* Fluid List */}
+          {fluessigkeit.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+              <p className="text-gray-500">Noch keine Einträge für heute.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {fluessigkeit.map((f) => (
+                <div key={f.id} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      f.bilanz_typ === "einfuhr"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-orange-100 text-orange-700"
+                    }`}>
+                      {f.bilanz_typ === "einfuhr" ? "Einfuhr" : "Ausfuhr"}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{f.art}</p>
+                      {f.besonderheiten && (
+                        <p className="text-xs text-gray-500">{f.besonderheiten}</p>
+                      )}
                     </div>
-                  );
-                })}
-                <div className="border-t pt-2 flex justify-between text-sm font-medium">
-                  <span>Gesamt kcal</span>
-                  <span>{mahlzeiten.reduce((s, m) => s + (m.kcal_schaetzung ?? 0), 0)} kcal</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-900">{f.menge_ml} ml</p>
+                    <p className="text-xs text-gray-400">{f.uhrzeit} Uhr</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Fluid Modal */}
+          {showForm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Einfuhr / Ausfuhr erfassen</h3>
+                  <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Bilanz Typ Toggle */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Typ</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFBilanzTyp("einfuhr")}
+                        className={`rounded-lg border py-3 text-sm font-medium transition-colors ${
+                          fBilanzTyp === "einfuhr"
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        💧 Einfuhr
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFBilanzTyp("ausfuhr")}
+                        className={`rounded-lg border py-3 text-sm font-medium transition-colors ${
+                          fBilanzTyp === "ausfuhr"
+                            ? "border-orange-500 bg-orange-50 text-orange-700"
+                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        🔴 Ausfuhr
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Menge */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Menge (ml)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="10"
+                      placeholder="z.B. 200"
+                      value={fMenge}
+                      onChange={(e) => setFMenge(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Art */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Art</label>
+                    <input
+                      type="text"
+                      placeholder={fBilanzTyp === "einfuhr" ? "z.B. Wasser, Kaffee, Tee" : "z.B. Urin, Erbrochenes"}
+                      value={fArt}
+                      onChange={(e) => setFArt(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Datum + Uhrzeit */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Datum</label>
+                      <input
+                        type="date"
+                        value={fDatum}
+                        onChange={(e) => setFDatum(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Uhrzeit</label>
+                      <input
+                        type="time"
+                        value={fUhrzeit}
+                        onChange={(e) => setFUhrzeit(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Besonderheiten */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Besonderheiten (optional)</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Sonstige Beobachtungen..."
+                      value={fBesonderheiten}
+                      onChange={(e) => setFBesonderheiten(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex gap-3">
+                  <button
+                    onClick={() => setShowForm(false)}
+                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={saveFluessigkeit}
+                    disabled={saving || !fMenge || !fArt}
+                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {saving ? "Speichern..." : "Speichern"}
+                  </button>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Ernährungsprofil ── */}
-      {tab === 'profil' && (
-        <div className="bg-white rounded-2xl shadow-sm p-6 space-y-5">
-          <h3 className="font-semibold text-gray-800">Ernährungsprofil</h3>
-          {msg && <div className="bg-blue-50 text-blue-700 rounded-lg px-3 py-2 text-sm">{msg}</div>}
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Kostform</label>
-              <select value={profil.kostform} onChange={e => setProfil(p => ({ ...p, kostform: e.target.value }))} className="w-full border rounded-lg px-2 py-2 text-sm">
-                {KOSTFORMEN.map(k => <option key={k.value} value={k.value}>{k.icon} {k.label}</option>)}
-              </select>
+      {/* ── ERNÄHRUNGSZIELE TAB ── */}
+      {activeTab === "ziele" && (
+        <div className="space-y-6">
+          {ziele === null ? (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+              <p className="text-gray-500 font-medium">Keine Ernährungsziele erfasst</p>
+              <p className="text-sm text-gray-400 mt-1">Klicke auf &quot;Ziele bearbeiten&quot;, um Ziele anzulegen.</p>
             </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Dysphagie-Level (IDDSI)</label>
-              <select value={profil.dysphagie_level} onChange={e => setProfil(p => ({ ...p, dysphagie_level: parseInt(e.target.value) }))} className="w-full border rounded-lg px-2 py-2 text-sm">
-                {IDDSI_LEVEL.map(l => <option key={l.level} value={l.level}>Level {l.level}: {l.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Flüssigkeitsbedarf (ml/Tag)</label>
-              <input type="number" min={500} step={100} value={profil.flüssigkeitsbedarf_ml} onChange={e => setProfil(p => ({ ...p, flüssigkeitsbedarf_ml: parseInt(e.target.value) || 1500 }))} className="w-full border rounded-lg px-2 py-2 text-sm" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Kalorienziel (kcal/Tag)</label>
-              <input type="number" min={0} step={50} value={profil.kalorienziel_kcal ?? ''} onChange={e => setProfil(p => ({ ...p, kalorienziel_kcal: parseInt(e.target.value) || undefined }))} placeholder="optional" className="w-full border rounded-lg px-2 py-2 text-sm" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Proteinziel (g/Tag)</label>
-              <input type="number" min={0} step={5} value={profil.proteinziel_g ?? ''} onChange={e => setProfil(p => ({ ...p, proteinziel_g: parseFloat(e.target.value) || undefined }))} placeholder="optional" className="w-full border rounded-lg px-2 py-2 text-sm" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Letztes MNA-Datum</label>
-              <input type="date" value={profil.letztes_mna_datum ?? ''} onChange={e => setProfil(p => ({ ...p, letztes_mna_datum: e.target.value }))} className="w-full border rounded-lg px-2 py-2 text-sm" />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Nahrungsmittelallergien</label>
-            <input value={profil.nahrungsmittelallergien.join(', ')} onChange={e => setProfil(p => ({ ...p, nahrungsmittelallergien: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))} placeholder="z.B. Nüsse, Gluten, Laktose" className="w-full border rounded-lg px-2 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Unverträglichkeiten</label>
-            <input value={profil.unvertraeglichkeiten.join(', ')} onChange={e => setProfil(p => ({ ...p, unvertraeglichkeiten: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))} placeholder="z.B. Fruktose, Sorbit" className="w-full border rounded-lg px-2 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Ernährungsberater</label>
-            <input value={profil.ernaehrungsberater ?? ''} onChange={e => setProfil(p => ({ ...p, ernaehrungsberater: e.target.value }))} className="w-full border rounded-lg px-2 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Besonderheiten</label>
-            <textarea value={profil.besonderheiten ?? ''} onChange={e => setProfil(p => ({ ...p, besonderheiten: e.target.value }))} rows={3} className="w-full border rounded-lg px-2 py-2 text-sm" />
-          </div>
-          <button onClick={saveProfil} disabled={saving} className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50">
-            {saving ? 'Speichere…' : '💾 Profil speichern'}
-          </button>
-        </div>
-      )}
-
-      {/* ── MNA-Screening ── */}
-      {tab === 'mna' && (
-        <div className="space-y-4">
-          <div className={`rounded-2xl p-5 text-center ${mnaResult.farbe === 'green' ? 'bg-green-50 border border-green-200' : mnaResult.farbe === 'yellow' ? 'bg-yellow-50 border border-yellow-200' : 'bg-red-50 border border-red-200'}`}>
-            <div className="text-3xl font-bold">{mnaScore} / 14</div>
-            <div className={`text-lg font-semibold mt-1 ${mnaResult.farbe === 'green' ? 'text-green-700' : mnaResult.farbe === 'yellow' ? 'text-yellow-700' : 'text-red-700'}`}>{mnaResult.stufe}</div>
-            <div className="text-sm text-gray-600 mt-1">{mnaResult.beschr}</div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-5">
-            <h3 className="font-semibold text-gray-800">MNA-Screening (Mini Nutritional Assessment)</h3>
-            {msg && <div className="bg-blue-50 text-blue-700 rounded-lg px-3 py-2 text-sm">{msg}</div>}
-            {MNA_ITEMS.map(item => (
-              <div key={item.key}>
-                <p className="text-sm font-medium text-gray-700 mb-2">{item.frage}</p>
-                <div className="space-y-1">
-                  {item.optionen.map(opt => (
-                    <label key={opt.wert} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-gray-50 ${profil[item.key as keyof Ernaehrungsprofil] === opt.wert ? 'bg-blue-50 ring-1 ring-blue-200' : ''}`}>
-                      <input type="radio" name={item.key}
-                        checked={profil[item.key as keyof Ernaehrungsprofil] === opt.wert}
-                        onChange={() => setProfil(p => ({ ...p, [item.key]: opt.wert }))}
-                        className="text-blue-600" />
-                      <span className="text-sm text-gray-700">{opt.label}</span>
-                      <span className="ml-auto text-xs font-medium text-gray-400">{opt.wert} Pkt.</span>
-                    </label>
-                  ))}
+          ) : (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Kostform</p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900 capitalize">{ziele.kostform ?? "Normal"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Kalorienziel</p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900">{ziele.kalorien_ziel} kcal/Tag</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Flüssigkeitsziel</p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900">{ziele.fluessigkeit_ziel_ml} ml/Tag</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">MNA-Score</p>
+                  <p className={`mt-1 text-sm font-semibold ${
+                    ziele.mna_score === null
+                      ? "text-gray-400"
+                      : ziele.mna_score >= 12
+                      ? "text-green-600"
+                      : ziele.mna_score >= 8
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                  }`}>
+                    {ziele.mna_score != null ? `${ziele.mna_score}/30` : "—"}
+                  </p>
                 </div>
               </div>
-            ))}
-            <button onClick={saveProfil} disabled={saving} className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50">
-              {saving ? 'Speichere…' : '💾 MNA speichern'}
-            </button>
-          </div>
+              {ziele.allergie_unvertraeglichkeit && (
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Allergie / Unverträglichkeit</p>
+                  <p className="mt-1 text-sm text-gray-900">{ziele.allergie_unvertraeglichkeit}</p>
+                </div>
+              )}
+              {ziele.besondere_ernaehrung && (
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Besondere Ernährungshinweise</p>
+                  <p className="mt-1 text-sm text-gray-900">{ziele.besondere_ernaehrung}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Ziele Modal */}
+          {showForm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div className="w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh]">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Ernährungsziele bearbeiten</h3>
+                  <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Kostform */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kostform</label>
+                    <select
+                      value={zKostform}
+                      onChange={(e) => setZKostform(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="weich">Weich</option>
+                      <option value="passiert">Passiert</option>
+                      <option value="fluessig">Flüssig</option>
+                      <option value="sonde">Sonde</option>
+                      <option value="tpn">TPN (parenterale Ernährung)</option>
+                    </select>
+                  </div>
+
+                  {/* Kalorienziel */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kalorienziel (kcal/Tag)</label>
+                    <input
+                      type="number"
+                      min="500"
+                      max="5000"
+                      step="50"
+                      value={zKalorien}
+                      onChange={(e) => setZKalorien(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Flüssigkeitsziel */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Flüssigkeitsziel (ml/Tag)</label>
+                    <input
+                      type="number"
+                      min="500"
+                      max="5000"
+                      step="50"
+                      value={zFluessigkeit}
+                      onChange={(e) => setZFluessigkeit(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Allergie */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Allergie / Unverträglichkeit</label>
+                    <textarea
+                      rows={2}
+                      placeholder="z.B. Laktoseintoleranz, Glutenunverträglichkeit..."
+                      value={zAllergie}
+                      onChange={(e) => setZAllergie(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Besondere Ernährung */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Besondere Ernährungshinweise</label>
+                    <textarea
+                      rows={2}
+                      placeholder="z.B. Schluckstörung, Verdickungsmittel nötig..."
+                      value={zBesondere}
+                      onChange={(e) => setZBesondere(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* MNA-Score */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">MNA-Score (0–30, optional)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="30"
+                      step="0.5"
+                      placeholder="z.B. 22"
+                      value={zMna}
+                      onChange={(e) => setZMna(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-400">≥12 Normal · 8–11 Risiko · &lt;8 Mangelernährt</p>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex gap-3">
+                  <button
+                    onClick={() => setShowForm(false)}
+                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={saveZiele}
+                    disabled={saving}
+                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {saving ? "Speichern..." : "Speichern"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

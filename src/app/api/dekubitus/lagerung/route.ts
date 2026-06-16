@@ -6,7 +6,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('lagerungsplan')
     .select('*')
     .eq('user_id', user.id)
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { id: _id, user_id: _u, ...fields } = body
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('lagerungsplan')
     .insert({ ...fields, user_id: user.id })
     .select()
@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest) {
   const body = await req.json()
   const { id, user_id: _u, erstellt_am: _e, aktualisiert_am: _a, ...fields } = body
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('lagerungsplan')
     .update(fields)
     .eq('id', id)

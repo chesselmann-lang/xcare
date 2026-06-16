@@ -1,10 +1,10 @@
-import { Metadata } from 'next'
-import DekubitusClient from '@/components/dekubitus/DekubitusClient'
+// app/(dashboard)/familie/dekubitus/page.tsx
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Dekubitusprophylaxe | xCare',
-  description: 'Braden-Skala Assessment, Lagerungsplan erstellen und Lagerungen dokumentieren'
-}
+  title: 'Dekubitusprophylaxe | xcare',
+  description: 'Braden-Skala Assessment und Lagerungsplan',
+};
 
 export default function DekubitusPage() {
   return (
@@ -12,10 +12,13 @@ export default function DekubitusPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">🛡️ Dekubitusprophylaxe</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Braden-Skala zur Risikoeinschätzung, Lagerungsplan erstellen und Umlagerungen protokollieren
+          Braden-Skala zur Risikoeinschätzung und Lagerungsprotokoll
         </p>
       </div>
-      <DekubitusClient />
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center text-gray-500">
+        <p>Diese Funktion steht im Bewohner-Kontext der Pflegeeinrichtung zur Verfügung.</p>
+        <p className="mt-2 text-sm">Bitte wählen Sie einen Bewohner aus dem Bewohner-Verzeichnis aus.</p>
+      </div>
     </div>
-  )
+  );
 }

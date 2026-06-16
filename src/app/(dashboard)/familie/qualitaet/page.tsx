@@ -13,9 +13,9 @@ export default async function QualitaetPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
+  const { data: profile } = await (supabase as any)
     .from('profiles').select('role').eq('id', user.id).single();
-  if (profile?.role === 'anbieter') redirect('/anbieter/dashboard');
+  if ((profile as any)?.role === 'anbieter') redirect('/anbieter/dashboard');
 
   const { data: heime } = await supabase
     .from('pflegeheime')

@@ -1,633 +1,892 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useCallback } from 'react'
-import {
-  BradenAssessment, Lagerungsplan, Lagerungsdokumentation,
-  BRADEN_KATEGORIEN, DRUCKENTLASTUNGS_HILFSMITTEL, STANDARD_POSITIONEN,
-  leeresBradenAssessment, leererLagerungsplan, generiereTagesplan,
-  berechneGesamtscore, bradenRisiko
-} from '@/lib/dekubitus/prophylaxe'
+import { useState } from "react";
 
-type Tab = 'braden' | 'lagerung' | 'protokoll' | 'verlauf'
+interface Risiko {
+  id: string;
+  datum: string;
+  sensorische_wahrnehmung: number;
+  feuchtigkeit: number;
+  aktivitaet: number;
+  mobilitaet: number;
+  ernaehrung: number;
+  reibung_scherkraefte: number;
+  braden_score: number;
+  risikostufe: string;
+  vorhandene_laesionen: string | null;
+  hautbefund: string | null;
+  massnahmen: string | null;
+  naechste_einschaetzung: string | null;
+  erstellt_am: string;
+}
 
-export default function DekubitusClient() {
-  const [tab, setTab] = useState<Tab>('braden')
-  const [assessments, setAssessments] = useState<BradenAssessment[]>([])
-  const [plaene, setPlaene] = useState<Lagerungsplan[]>([])
-  const [dokumentationen, setDokumentationen] = useState<Lagerungsdokumentation[]>([])
-  const [aktuellerPlan, setAktuellerPlan] = useState<Lagerungsplan | null>(null)
-  const [braden, setBraden] = useState<BradenAssessment>(leeresBradenAssessment())
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState('')
-  const [neuerEintrag, setNeuerEintrag] = useState<Partial<Lagerungsdokumentation>>({
-    durchgefuehrt_am: new Date().toISOString().slice(0,16),
-    position: '',
-    durchgefuehrt_von: '',
-    hautbefund: '',
-    besonderheiten: ''
-  })
+interface Lagerungsplan {
+  id: string;
+  intervall_min: number;
+  positionen: string[];
+  hilfsmittel: string | null;
+  besonderheiten: string | null;
+  aktiv: boolean;
+}
 
-  const load = useCallback(async () => {
-    setLoading(true)
+interface Lagerungseintrag {
+  id: string;
+  datum: string;
+  uhrzeit: string;
+  position: string;
+  hautinspektion: string | null;
+  besonderheiten: string | null;
+  naechste_lagerung: string | null;
+  erstellt_am: string;
+}
+
+interface Stats {
+  anzahlEinschaetzungen: number;
+  letzterBradenScore: number | null;
+  aktuelleRisikostufe: string | null;
+  naechsteEinschaetzung: string | null;
+}
+
+interface LagerungStats {
+  heuteAnzahl: number;
+  letztePosition: string | null;
+  letzteHautinspektion: string | null;
+}
+
+interface Props {
+  bewohnerId: string;
+  bewohnerName: string;
+  initialRisiken: Risiko[];
+  initialLagerungsplan: Lagerungsplan | null;
+  initialStats: Stats;
+  initialLagerung: Lagerungseintrag[];
+  initialLagerungStats: LagerungStats;
+}
+
+const RISIKOSTUFE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  kein_risiko: { label: "Kein Risiko", color: "text-green-700", bg: "bg-green-50 border-green-200" },
+  maessig: { label: "Mäßiges Risiko", color: "text-yellow-700", bg: "bg-yellow-50 border-yellow-200" },
+  hoch: { label: "Hohes Risiko", color: "text-orange-700", bg: "bg-orange-50 border-orange-200" },
+  sehr_hoch: { label: "Sehr hohes Risiko", color: "text-red-700", bg: "bg-red-50 border-red-200" },
+};
+
+const BRADEN_SUBSCALEN = [
+  { key: "sensorische_wahrnehmung", label: "Sensorische Wahrnehmung", min: 1, max: 4 },
+  { key: "feuchtigkeit", label: "Feuchtigkeit", min: 1, max: 4 },
+  { key: "aktivitaet", label: "Aktivität", min: 1, max: 4 },
+  { key: "mobilitaet", label: "Mobilität", min: 1, max: 4 },
+  { key: "ernaehrung", label: "Ernährung", min: 1, max: 4 },
+  { key: "reibung_scherkraefte", label: "Reibung & Scherkräfte", min: 1, max: 3 },
+] as const;
+
+const POSITIONEN = [
+  "Rückenlage",
+  "Rechts 30°",
+  "Links 30°",
+  "Halbseitenlage rechts",
+  "Halbseitenlage links",
+  "Oberkörperhochlage",
+  "Bauchlage",
+];
+
+const HAUTINSPEKTION_OPTIONS = [
+  { value: "unauffaellig", label: "Unauffällig" },
+  { value: "roetung", label: "Rötung" },
+  { value: "offene_stelle", label: "Offene Stelle" },
+  { value: "blasenbildung", label: "Blasenbildung" },
+];
+
+function hautinspektionBadge(value: string | null): string {
+  switch (value) {
+    case "unauffaellig":
+      return "bg-green-100 text-green-700";
+    case "roetung":
+      return "bg-yellow-100 text-yellow-700";
+    case "offene_stelle":
+      return "bg-red-100 text-red-700";
+    case "blasenbildung":
+      return "bg-orange-100 text-orange-700";
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
+}
+
+function hautinspektionLabel(value: string | null): string {
+  return HAUTINSPEKTION_OPTIONS.find((o) => o.value === value)?.label ?? value ?? "–";
+}
+
+function bradenScoreColor(score: number): string {
+  if (score <= 9) return "text-red-600";
+  if (score <= 12) return "text-orange-600";
+  if (score <= 14) return "text-yellow-600";
+  return "text-green-600";
+}
+
+function bradenScoreBg(score: number): string {
+  if (score <= 9) return "bg-red-50 border-red-300";
+  if (score <= 12) return "bg-orange-50 border-orange-300";
+  if (score <= 14) return "bg-yellow-50 border-yellow-300";
+  return "bg-green-50 border-green-300";
+}
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function nowTimeStr(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return "–";
+  return new Date(dateStr).toLocaleDateString("de-DE");
+}
+
+function formatDateTime(dateStr: string): string {
+  if (!dateStr) return "–";
+  return new Date(dateStr).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
+}
+
+export default function DekubitusClient({
+  bewohnerId,
+  bewohnerName,
+  initialRisiken,
+  initialLagerungsplan,
+  initialStats,
+  initialLagerung,
+  initialLagerungStats,
+}: Props) {
+  const [risiken, setRisiken] = useState<Risiko[]>(initialRisiken);
+  const [stats, setStats] = useState<Stats>(initialStats);
+  const [lagerungsplan, setLagerungsplan] = useState<Lagerungsplan | null>(initialLagerungsplan);
+  const [lagerung, setLagerung] = useState<Lagerungseintrag[]>(initialLagerung);
+  const [lagerungStats, setLagerungStats] = useState<LagerungStats>(initialLagerungStats);
+  const [activeTab, setActiveTab] = useState<"einschaetzung" | "lagerungsplan" | "protokoll">("einschaetzung");
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Braden form state
+  const [bradenForm, setBradenForm] = useState({
+    datum: todayStr(),
+    sensorische_wahrnehmung: 0,
+    feuchtigkeit: 0,
+    aktivitaet: 0,
+    mobilitaet: 0,
+    ernaehrung: 0,
+    reibung_scherkraefte: 0,
+    vorhandene_laesionen: "",
+    hautbefund: "",
+    massnahmen: "",
+    naechste_einschaetzung: "",
+  });
+
+  // Lagerungsplan form state
+  const [planForm, setPlanForm] = useState({
+    intervall_min: lagerungsplan?.intervall_min ?? 120,
+    positionen: lagerungsplan?.positionen ?? ([] as string[]),
+    hilfsmittel: lagerungsplan?.hilfsmittel ?? "",
+    besonderheiten: lagerungsplan?.besonderheiten ?? "",
+  });
+
+  // Lagerung form state
+  const [lagerungForm, setLagerungForm] = useState({
+    datum: todayStr(),
+    uhrzeit: nowTimeStr(),
+    position: "",
+    positionFreitext: "",
+    hautinspektion: "unauffaellig",
+    besonderheiten: "",
+    naechste_lagerung: "",
+  });
+
+  const bradenScore =
+    (bradenForm.sensorische_wahrnehmung || 0) +
+    (bradenForm.feuchtigkeit || 0) +
+    (bradenForm.aktivitaet || 0) +
+    (bradenForm.mobilitaet || 0) +
+    (bradenForm.ernaehrung || 0) +
+    (bradenForm.reibung_scherkraefte || 0);
+
+  const sortedRisiken = [...risiken].sort(
+    (a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime()
+  );
+
+  function openForm() {
+    if (activeTab === "einschaetzung") {
+      setBradenForm({
+        datum: todayStr(),
+        sensorische_wahrnehmung: 0,
+        feuchtigkeit: 0,
+        aktivitaet: 0,
+        mobilitaet: 0,
+        ernaehrung: 0,
+        reibung_scherkraefte: 0,
+        vorhandene_laesionen: "",
+        hautbefund: "",
+        massnahmen: "",
+        naechste_einschaetzung: "",
+      });
+    } else if (activeTab === "lagerungsplan") {
+      setPlanForm({
+        intervall_min: lagerungsplan?.intervall_min ?? 120,
+        positionen: lagerungsplan?.positionen ?? [],
+        hilfsmittel: lagerungsplan?.hilfsmittel ?? "",
+        besonderheiten: lagerungsplan?.besonderheiten ?? "",
+      });
+    } else {
+      setLagerungForm({
+        datum: todayStr(),
+        uhrzeit: nowTimeStr(),
+        position: "",
+        positionFreitext: "",
+        hautinspektion: "unauffaellig",
+        besonderheiten: "",
+        naechste_lagerung: "",
+      });
+    }
+    setShowForm(true);
+  }
+
+  async function saveBraden() {
+    setSaving(true);
     try {
-      const [rB, rP, rD] = await Promise.all([
-        fetch('/api/dekubitus/braden'),
-        fetch('/api/dekubitus/lagerung'),
-        fetch('/api/dekubitus/dokumentation?limit=20')
-      ])
-      if (rB.ok) { const d = await rB.json(); setAssessments(d.assessments ?? []) }
-      if (rP.ok) { const d = await rP.json(); setPlaene(d.plaene ?? []); setAktuellerPlan(d.plaene?.[0] ?? null) }
-      if (rD.ok) { const d = await rD.json(); setDokumentationen(d.dokumentationen ?? []) }
-    } finally { setLoading(false) }
-  }, [])
+      const res = await fetch(`/api/bewohner/${bewohnerId}/dekubitus`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bradenForm),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.risiko) setRisiken((prev) => [data.risiko, ...prev]);
+        if (data.stats) setStats(data.stats);
+        setShowForm(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
 
-  useEffect(() => { load() }, [load])
-
-  const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 3000) }
-
-  const livescore = berechneGesamtscore(braden)
-  const liverisiko = bradenRisiko(livescore)
-
-  const saveBraden = async () => {
-    setSaving(true)
+  async function savePlan() {
+    setSaving(true);
     try {
-      const r = await fetch('/api/dekubitus/braden', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(braden)
-      })
-      if (r.ok) {
-        flash('✅ Braden-Assessment gespeichert')
-        const d = await r.json()
-        setAssessments(prev => [d.assessment, ...prev])
-        setBraden(leeresBradenAssessment())
-      } else { flash('❌ Fehler beim Speichern') }
-    } finally { setSaving(false) }
+      const res = await fetch(`/api/bewohner/${bewohnerId}/dekubitus`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ update_lagerungsplan: true, ...planForm }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.lagerungsplan) setLagerungsplan(data.lagerungsplan);
+        setShowForm(false);
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const savePlan = async () => {
-    if (!aktuellerPlan) return
-    setSaving(true)
+  async function saveLagerung() {
+    setSaving(true);
     try {
-      const method = aktuellerPlan.id ? 'PUT' : 'POST'
-      const r = await fetch('/api/dekubitus/lagerung', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(aktuellerPlan)
-      })
-      if (r.ok) {
-        flash('✅ Lagerungsplan gespeichert')
-        load()
-      } else { flash('❌ Fehler') }
-    } finally { setSaving(false) }
+      const position = lagerungForm.position || lagerungForm.positionFreitext;
+      const res = await fetch(`/api/bewohner/${bewohnerId}/lagerung`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          datum: lagerungForm.datum,
+          uhrzeit: lagerungForm.uhrzeit,
+          position,
+          hautinspektion: lagerungForm.hautinspektion,
+          besonderheiten: lagerungForm.besonderheiten || null,
+          naechste_lagerung: lagerungForm.naechste_lagerung || null,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.eintrag) setLagerung((prev) => [data.eintrag, ...prev]);
+        if (data.stats) setLagerungStats(data.stats);
+        setShowForm(false);
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const saveDokumentation = async () => {
-    if (!neuerEintrag.position) return
-    setSaving(true)
-    try {
-      const r = await fetch('/api/dekubitus/dokumentation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...neuerEintrag, plan_id: aktuellerPlan?.id })
-      })
-      if (r.ok) {
-        flash('✅ Lagerung dokumentiert')
-        const d = await r.json()
-        setDokumentationen(prev => [d.dokumentation, ...prev])
-        setNeuerEintrag({ durchgefuehrt_am: new Date().toISOString().slice(0,16), position: '', durchgefuehrt_von: neuerEintrag.durchgefuehrt_von })
-      } else { flash('❌ Fehler') }
-    } finally { setSaving(false) }
+  function togglePlanPosition(pos: string) {
+    setPlanForm((prev) => ({
+      ...prev,
+      positionen: prev.positionen.includes(pos)
+        ? prev.positionen.filter((p) => p !== pos)
+        : [...prev.positionen, pos],
+    }));
   }
 
-  const updatePlanIntervall = (min: number) => {
-    if (!aktuellerPlan) return
-    const tagesplan = generiereTagesplan(min, aktuellerPlan.positionen)
-    setAktuellerPlan(p => p ? { ...p, intervall_minuten: min, tagesplan } : p)
-  }
-
-  // Risikofarbe für score-badges
-  const scoreKlasse = (s: number) => {
-    const r = bradenRisiko(s)
-    return r.stufe
-  }
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'braden', label: '🩺 Braden-Skala' },
-    { id: 'lagerung', label: '🗓️ Lagerungsplan' },
-    { id: 'protokoll', label: '📝 Protokoll' },
-    { id: 'verlauf', label: '📈 Verlauf' },
-  ]
+  const risikoCfg = stats.aktuelleRisikostufe ? RISIKOSTUFE_CONFIG[stats.aktuelleRisikostufe] : null;
 
   return (
-    <div className="space-y-4">
-      {msg && (
-        <div className={`px-4 py-2 rounded text-sm font-medium ${msg.startsWith('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-          {msg}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Dekubitus-Management</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{bewohnerName}</p>
         </div>
-      )}
-
-      {/* Tab Bar */}
-      <div className="flex gap-2 border-b border-gray-200">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-2 text-sm font-medium rounded-t transition-colors ${
-              tab === t.id
-                ? 'bg-white border border-b-white border-gray-200 text-teal-600 -mb-px'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+        <button
+          onClick={openForm}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+        >
+          <span className="text-lg leading-none">+</span>
+          {activeTab === "einschaetzung"
+            ? "Neue Einschätzung"
+            : activeTab === "lagerungsplan"
+            ? lagerungsplan
+              ? "Plan bearbeiten"
+              : "Plan anlegen"
+            : "Lagerung erfassen"}
+        </button>
       </div>
 
-      {/* ── Braden-Skala ──────────────────────────────────────────────────── */}
-      {tab === 'braden' && (
-        <div className="space-y-4">
-          {/* Live-Score Card */}
-          <div
-            className="rounded-xl p-5 text-white flex items-center justify-between"
-            style={{ backgroundColor: liverisiko.farbe }}
-          >
-            <div>
-              <p className="text-sm font-medium opacity-90">Braden-Score (live)</p>
-              <p className="text-4xl font-bold mt-1">{livescore} <span className="text-xl font-normal">/ 23</span></p>
-              <p className="text-lg font-semibold mt-1">{liverisiko.label}</p>
-              <p className="text-sm opacity-80 mt-0.5">
-                Empfohlenes Lagerungsintervall: alle {liverisiko.intervall} Minuten
-              </p>
+      {/* Risk banner */}
+      {risikoCfg && stats.letzterBradenScore !== null && (
+        <div className={`rounded-lg border p-4 ${risikoCfg.bg}`}>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <span className={`text-sm font-semibold ${risikoCfg.color}`}>
+                {risikoCfg.label}
+              </span>
+              <span className={`text-sm ${risikoCfg.color}`}>
+                Braden-Score: <strong>{stats.letzterBradenScore}</strong>
+              </span>
             </div>
-            <div className="text-5xl opacity-30">🛡️</div>
+            {stats.naechsteEinschaetzung && (
+              <span className="text-sm text-gray-600">
+                Nächste Einschätzung: {formatDate(stats.naechsteEinschaetzung)}
+              </span>
+            )}
           </div>
-
-          {/* Kategorien */}
-          <div className="space-y-3">
-            {BRADEN_KATEGORIEN.map(kat => {
-              const aktuell = braden[kat.key] as number
-              return (
-                <div key={kat.key} className="bg-white rounded-lg border border-gray-200 p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">{kat.icon}</span>
-                    <span className="font-semibold text-gray-800">{kat.label}</span>
-                    <span className="ml-auto text-sm font-bold text-teal-600">{aktuell}/{kat.max}</span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {kat.stufen.map(s => (
-                      <button
-                        key={s.wert}
-                        onClick={() => setBraden(p => ({ ...p, [kat.key]: s.wert }))}
-                        className={`p-2 rounded-lg border text-left transition-all ${
-                          aktuell === s.wert
-                            ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-300'
-                            : 'border-gray-200 hover:border-teal-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1 mb-0.5">
-                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white ${aktuell === s.wert ? 'bg-teal-500' : 'bg-gray-300'}`}>
-                            {s.wert}
-                          </span>
-                        </div>
-                        <p className="text-xs font-semibold text-gray-700">{s.label}</p>
-                        <p className="text-xs text-gray-500 mt-0.5 leading-tight">{s.beschreibung}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Maßnahmen */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
-            <h4 className="font-semibold text-gray-800">Prophylaxe-Maßnahmen</h4>
-
-            {/* Hilfsmittel */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Druckentlastungs-Hilfsmittel</label>
-              <div className="flex flex-wrap gap-2">
-                {DRUCKENTLASTUNGS_HILFSMITTEL.map(h => {
-                  const selected = braden.druckentlastung_hilfsmittel?.includes(h)
-                  return (
-                    <button
-                      key={h}
-                      onClick={() => setBraden(p => ({
-                        ...p,
-                        druckentlastung_hilfsmittel: selected
-                          ? (p.druckentlastung_hilfsmittel ?? []).filter(x => x !== h)
-                          : [...(p.druckentlastung_hilfsmittel ?? []), h]
-                      }))}
-                      className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                        selected ? 'bg-teal-100 border-teal-400 text-teal-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      {selected ? '✓ ' : ''}{h}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lagerungsintervall</label>
-                <select
-                  value={braden.lagerungsintervall_min ?? 120}
-                  onChange={e => setBraden(p => ({ ...p, lagerungsintervall_min: parseInt(e.target.value) }))}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value={60}>Stündlich (60 min)</option>
-                  <option value={90}>Alle 1,5 Std. (90 min)</option>
-                  <option value={120}>Alle 2 Std. (120 min)</option>
-                  <option value={180}>Alle 3 Std. (180 min)</option>
-                  <option value={240}>Alle 4 Std. (240 min)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hautpflege-Mittel</label>
-                <input
-                  type="text"
-                  value={braden.hautpflege_mittel ?? ''}
-                  onChange={e => setBraden(p => ({ ...p, hautpflege_mittel: e.target.value }))}
-                  placeholder="z.B. Azulon Salbe, Bepanthen"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Beurteilende Person</label>
-                <input
-                  type="text"
-                  value={braden.beurteilende_person ?? ''}
-                  onChange={e => setBraden(p => ({ ...p, beurteilende_person: e.target.value }))}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Datum</label>
-                <input
-                  type="date"
-                  value={braden.assessment_datum}
-                  onChange={e => setBraden(p => ({ ...p, assessment_datum: e.target.value }))}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Maßnahmen (Freitext)</label>
-                <textarea
-                  rows={2}
-                  value={braden.massnahmen_freitext ?? ''}
-                  onChange={e => setBraden(p => ({ ...p, massnahmen_freitext: e.target.value }))}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 resize-none"
-                />
-              </div>
-            </div>
-
-            {/* Empfehlungen */}
-            <div className="bg-teal-50 rounded-lg p-3">
-              <p className="text-sm font-semibold text-teal-800 mb-2">Empfohlene Maßnahmen für Risiko «{liverisiko.label}»:</p>
-              <ul className="space-y-1">
-                {liverisiko.massnahmen.map((m, i) => (
-                  <li key={i} className="text-sm text-teal-700 flex items-start gap-2">
-                    <span className="text-teal-500 mt-0.5">•</span> {m}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <button
-            onClick={saveBraden}
-            disabled={saving}
-            className="px-5 py-2 bg-teal-600 text-white rounded font-medium text-sm hover:bg-teal-700 disabled:opacity-50 transition-colors"
-          >
-            {saving ? 'Speichern…' : '💾 Assessment speichern'}
-          </button>
         </div>
       )}
 
-      {/* ── Lagerungsplan ──────────────────────────────────────────────────── */}
-      {tab === 'lagerung' && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
-            <h3 className="font-semibold text-gray-800">🗓️ Lagerungsplan erstellen / bearbeiten</h3>
+      {/* Tab navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex gap-6">
+          {(
+            [
+              { key: "einschaetzung", label: "Risikoeinschätzungen" },
+              { key: "lagerungsplan", label: "Lagerungsplan" },
+              { key: "protokoll", label: "Lagerungsprotokoll" },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => { setActiveTab(tab.key); setShowForm(false); }}
+              className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
+                activeTab === tab.key
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
-            {!aktuellerPlan && (
-              <button
-                onClick={() => setAktuellerPlan(leererLagerungsplan())}
-                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-teal-400 hover:text-teal-600 text-sm transition-colors"
-              >
-                + Neuen Lagerungsplan erstellen
-              </button>
-            )}
-
-            {aktuellerPlan && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bezeichnung</label>
-                    <input
-                      type="text"
-                      value={aktuellerPlan.bezeichnung}
-                      onChange={e => setAktuellerPlan(p => p ? { ...p, bezeichnung: e.target.value } : p)}
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Intervall</label>
-                    <select
-                      value={aktuellerPlan.intervall_minuten}
-                      onChange={e => updatePlanIntervall(parseInt(e.target.value))}
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500"
+      {/* ─── TAB: Risikoeinschätzungen ─── */}
+      {activeTab === "einschaetzung" && (
+        <div className="space-y-6">
+          {/* Stats cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Einschätzungen gesamt</p>
+              <p className="mt-1 text-3xl font-bold text-gray-900">{stats.anzahlEinschaetzungen}</p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Letzter Braden-Score</p>
+              {stats.letzterBradenScore !== null ? (
+                <div className="mt-1 flex items-baseline gap-2">
+                  <p className={`text-3xl font-bold ${bradenScoreColor(stats.letzterBradenScore)}`}>
+                    {stats.letzterBradenScore}
+                  </p>
+                  {stats.aktuelleRisikostufe && RISIKOSTUFE_CONFIG[stats.aktuelleRisikostufe] && (
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs font-medium border ${
+                        RISIKOSTUFE_CONFIG[stats.aktuelleRisikostufe].bg
+                      } ${RISIKOSTUFE_CONFIG[stats.aktuelleRisikostufe].color}`}
                     >
-                      <option value={60}>Stündlich (60 min)</option>
-                      <option value={90}>Alle 1,5 Std. (90 min)</option>
-                      <option value={120}>Alle 2 Std. (120 min)</option>
-                      <option value={180}>Alle 3 Std. (180 min)</option>
-                      <option value={240}>Alle 4 Std. (240 min)</option>
-                    </select>
-                  </div>
+                      {RISIKOSTUFE_CONFIG[stats.aktuelleRisikostufe].label}
+                    </span>
+                  )}
                 </div>
-
-                {/* Positionen auswählen */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Lagerungspositionen (Reihenfolge)</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {STANDARD_POSITIONEN.map(pos => {
-                      const aktiv = aktuellerPlan.positionen.some(p => p.id === pos.id)
-                      return (
-                        <button
-                          key={pos.id}
-                          onClick={() => {
-                            const newPos = aktiv
-                              ? aktuellerPlan.positionen.filter(p => p.id !== pos.id)
-                              : [...aktuellerPlan.positionen, pos]
-                            const tagesplan = generiereTagesplan(aktuellerPlan.intervall_minuten, newPos)
-                            setAktuellerPlan(p => p ? { ...p, positionen: newPos, tagesplan } : p)
-                          }}
-                          className={`p-3 rounded-lg border text-center transition-colors ${
-                            aktiv ? 'border-teal-400 bg-teal-50' : 'border-gray-200 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="text-2xl">{pos.emoji}</div>
-                          <div className="text-xs font-medium text-gray-700 mt-1">{pos.name}</div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Tagesplan-Vorschau */}
-                {Object.keys(aktuellerPlan.tagesplan).length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tagesplan-Vorschau (24h)</label>
-                    <div className="grid grid-cols-4 md:grid-cols-6 gap-1 max-h-48 overflow-y-auto">
-                      {Object.entries(aktuellerPlan.tagesplan).map(([zeit, pos]) => {
-                        const posInfo = STANDARD_POSITIONEN.find(p => p.name === pos)
-                        return (
-                          <div key={zeit} className="bg-gray-50 border border-gray-200 rounded p-1.5 text-center">
-                            <div className="text-xs font-mono text-gray-500">{zeit}</div>
-                            <div className="text-base">{posInfo?.emoji ?? '🛌'}</div>
-                            <div className="text-xs text-gray-600 leading-tight">{pos}</div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notizen</label>
-                  <textarea
-                    rows={2}
-                    value={aktuellerPlan.notizen ?? ''}
-                    onChange={e => setAktuellerPlan(p => p ? { ...p, notizen: e.target.value } : p)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 resize-none"
-                  />
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={savePlan}
-                    disabled={saving}
-                    className="px-5 py-2 bg-teal-600 text-white rounded font-medium text-sm hover:bg-teal-700 disabled:opacity-50 transition-colors"
-                  >
-                    {saving ? 'Speichern…' : '💾 Plan speichern'}
-                  </button>
-                  <button
-                    onClick={() => setAktuellerPlan(leererLagerungsplan())}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50"
-                  >
-                    Neu
-                  </button>
-                </div>
-              </>
-            )}
+              ) : (
+                <p className="mt-1 text-3xl font-bold text-gray-400">–</p>
+              )}
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Nächste Einschätzung</p>
+              <p className="mt-1 text-xl font-semibold text-gray-900">
+                {stats.naechsteEinschaetzung ? formatDate(stats.naechsteEinschaetzung) : "–"}
+              </p>
+            </div>
           </div>
 
-          {/* Gespeicherte Pläne */}
-          {plaene.length > 0 && (
-            <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-              <div className="px-4 py-3">
-                <p className="text-sm font-semibold text-gray-700">Gespeicherte Pläne</p>
-              </div>
-              {plaene.map(p => (
-                <div key={p.id} className="px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <span className="text-sm font-medium text-gray-800">{p.bezeichnung}</span>
-                    <span className="ml-3 text-xs text-gray-400">alle {p.intervall_minuten} Min — {p.positionen.length} Positionen</span>
+          {/* List */}
+          {sortedRisiken.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+              <p className="text-gray-500">Noch keine Risikoeinschätzungen erfasst.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {sortedRisiken.map((r) => {
+                const cfg = RISIKOSTUFE_CONFIG[r.risikostufe];
+                return (
+                  <div key={r.id} className="rounded-lg border border-gray-200 bg-white p-4">
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg border-2 font-bold text-xl ${bradenScoreBg(r.braden_score)} ${bradenScoreColor(r.braden_score)}`}
+                        >
+                          {r.braden_score}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{formatDate(r.datum)}</p>
+                          {cfg && (
+                            <span
+                              className={`mt-1 inline-block rounded px-2 py-0.5 text-xs font-medium border ${cfg.bg} ${cfg.color}`}
+                            >
+                              {cfg.label}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {r.massnahmen && (
+                        <p className="text-sm text-gray-600 max-w-sm line-clamp-2">{r.massnahmen}</p>
+                      )}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setAktuellerPlan(p)}
-                    className="text-xs px-3 py-1 bg-teal-50 text-teal-700 rounded hover:bg-teal-100"
-                  >
-                    Laden
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* ── Protokoll ──────────────────────────────────────────────────────── */}
-      {tab === 'protokoll' && (
+      {/* ─── TAB: Lagerungsplan ─── */}
+      {activeTab === "lagerungsplan" && (
         <div className="space-y-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
-            <h3 className="font-semibold text-gray-800">📝 Lagerung dokumentieren</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {lagerungsplan ? (
+            <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-500">Umlagerungsintervall:</span>
+                <span className="font-semibold text-gray-900">{lagerungsplan.intervall_min} Minuten</span>
+              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Zeitpunkt *</label>
+                <p className="text-sm font-medium text-gray-500 mb-2">Positionen:</p>
+                <div className="flex flex-wrap gap-2">
+                  {lagerungsplan.positionen.map((pos) => (
+                    <span
+                      key={pos}
+                      className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700"
+                    >
+                      {pos}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {lagerungsplan.hilfsmittel && (
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Hilfsmittel:</p>
+                  <p className="text-sm text-gray-900 mt-1">{lagerungsplan.hilfsmittel}</p>
+                </div>
+              )}
+              {lagerungsplan.besonderheiten && (
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Besonderheiten:</p>
+                  <p className="text-sm text-gray-900 mt-1">{lagerungsplan.besonderheiten}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+              <p className="text-gray-500">Kein Lagerungsplan erfasst.</p>
+              <p className="text-sm text-gray-400 mt-1">Legen Sie einen Lagerungsplan über den Button oben an.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── TAB: Lagerungsprotokoll ─── */}
+      {activeTab === "protokoll" && (
+        <div className="space-y-6">
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Lagerungen heute</p>
+              <p className="mt-1 text-3xl font-bold text-gray-900">{lagerungStats.heuteAnzahl}</p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Letzte Position</p>
+              <p className="mt-1 text-lg font-semibold text-gray-900">{lagerungStats.letztePosition ?? "–"}</p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Letzte Hautinspektion</p>
+              {lagerungStats.letzteHautinspektion ? (
+                <span
+                  className={`mt-2 inline-block rounded px-2 py-1 text-sm font-medium ${hautinspektionBadge(lagerungStats.letzteHautinspektion)}`}
+                >
+                  {hautinspektionLabel(lagerungStats.letzteHautinspektion)}
+                </span>
+              ) : (
+                <p className="mt-1 text-lg font-semibold text-gray-400">–</p>
+              )}
+            </div>
+          </div>
+
+          {/* List */}
+          {lagerung.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+              <p className="text-gray-500">Noch keine Lagerungseinträge vorhanden.</p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Datum</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Uhrzeit</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Position</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Hautinspektion</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Nächste Lagerung</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {lagerung.map((e) => (
+                    <tr key={e.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-900">{formatDate(e.datum)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{e.uhrzeit}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{e.position}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${hautinspektionBadge(e.hautinspektion)}`}>
+                          {hautinspektionLabel(e.hautinspektion)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {e.naechste_lagerung ? formatDateTime(e.naechste_lagerung) : "–"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── MODAL: Braden Einschätzung ─── */}
+      {showForm && activeTab === "einschaetzung" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Neue Braden-Einschätzung</h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <div className="px-6 py-5 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Datum</label>
                 <input
-                  type="datetime-local"
-                  value={neuerEintrag.durchgefuehrt_am ?? ''}
-                  onChange={e => setNeuerEintrag(p => ({ ...p, durchgefuehrt_am: e.target.value }))}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500"
+                  type="date"
+                  value={bradenForm.datum}
+                  onChange={(e) => setBradenForm((f) => ({ ...f, datum: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Live score */}
+              <div className={`rounded-lg border-2 p-4 text-center ${bradenScore > 0 ? bradenScoreBg(bradenScore) : "bg-gray-50 border-gray-200"}`}>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Braden-Score (Summe)</p>
+                <p className={`text-5xl font-bold mt-1 ${bradenScore > 0 ? bradenScoreColor(bradenScore) : "text-gray-400"}`}>
+                  {bradenScore > 0 ? bradenScore : "–"}
+                </p>
+                {bradenScore > 0 && (
+                  <p className="text-sm mt-1 text-gray-600">
+                    {bradenScore <= 9 ? "Sehr hohes Risiko" : bradenScore <= 12 ? "Hohes Risiko" : bradenScore <= 14 ? "Mäßiges Risiko" : "Kein Risiko"}
+                  </p>
+                )}
+              </div>
+
+              {/* Subscales */}
+              {BRADEN_SUBSCALEN.map((s) => (
+                <div key={s.key}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {s.label}{" "}
+                    <span className="text-gray-400 font-normal">({s.min}–{s.max})</span>
+                  </label>
+                  <div className="flex gap-2">
+                    {Array.from({ length: s.max - s.min + 1 }, (_, i) => i + s.min).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setBradenForm((f) => ({ ...f, [s.key]: v }))}
+                        className={`flex-1 rounded-lg border-2 py-2 text-sm font-semibold transition-colors ${
+                          (bradenForm as Record<string, number>)[s.key] === v
+                            ? "border-blue-600 bg-blue-600 text-white"
+                            : "border-gray-300 bg-white text-gray-700 hover:border-blue-400"
+                        }`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vorhandene Läsionen</label>
+                <textarea
+                  rows={2}
+                  value={bradenForm.vorhandene_laesionen}
+                  onChange={(e) => setBradenForm((f) => ({ ...f, vorhandene_laesionen: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Beschreibung vorhandener Läsionen …"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Position *</label>
-                <div className="grid grid-cols-4 gap-1">
-                  {STANDARD_POSITIONEN.map(pos => (
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hautbefund</label>
+                <textarea
+                  rows={2}
+                  value={bradenForm.hautbefund}
+                  onChange={(e) => setBradenForm((f) => ({ ...f, hautbefund: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Allgemeiner Hautbefund …"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Maßnahmen</label>
+                <textarea
+                  rows={3}
+                  value={bradenForm.massnahmen}
+                  onChange={(e) => setBradenForm((f) => ({ ...f, massnahmen: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Geplante Maßnahmen …"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nächste Einschätzung</label>
+                <input
+                  type="date"
+                  value={bradenForm.naechste_einschaetzung}
+                  onChange={(e) => setBradenForm((f) => ({ ...f, naechste_einschaetzung: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => setShowForm(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={saveBraden}
+                disabled={saving || bradenScore === 0}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? "Speichern …" : "Einschätzung speichern"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: Lagerungsplan ─── */}
+      {showForm && activeTab === "lagerungsplan" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {lagerungsplan ? "Lagerungsplan bearbeiten" : "Lagerungsplan anlegen"}
+              </h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <div className="px-6 py-5 space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Umlagerungsintervall (Minuten)
+                </label>
+                <input
+                  type="number"
+                  min={30}
+                  step={30}
+                  value={planForm.intervall_min}
+                  onChange={(e) => setPlanForm((f) => ({ ...f, intervall_min: Number(e.target.value) }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Positionen</label>
+                <div className="flex flex-wrap gap-2">
+                  {POSITIONEN.map((pos) => (
                     <button
-                      key={pos.id}
-                      onClick={() => setNeuerEintrag(p => ({ ...p, position: pos.name }))}
-                      className={`p-2 rounded-lg border text-center transition-colors ${
-                        neuerEintrag.position === pos.name ? 'border-teal-400 bg-teal-50' : 'border-gray-200 hover:bg-gray-50'
+                      key={pos}
+                      type="button"
+                      onClick={() => togglePlanPosition(pos)}
+                      className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                        planForm.positionen.includes(pos)
+                          ? "border-blue-600 bg-blue-600 text-white"
+                          : "border-gray-300 bg-white text-gray-700 hover:border-blue-400"
                       }`}
                     >
-                      <div className="text-lg">{pos.emoji}</div>
-                      <div className="text-xs text-gray-600">{pos.name}</div>
+                      {pos}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Durchgeführt von</label>
-                <input
-                  type="text"
-                  value={neuerEintrag.durchgefuehrt_von ?? ''}
-                  onChange={e => setNeuerEintrag(p => ({ ...p, durchgefuehrt_von: e.target.value }))}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500"
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hilfsmittel</label>
+                <textarea
+                  rows={2}
+                  value={planForm.hilfsmittel}
+                  onChange={(e) => setPlanForm((f) => ({ ...f, hilfsmittel: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Verwendete Hilfsmittel (z.B. Lagerungskissen) …"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hautbefund</label>
-                <input
-                  type="text"
-                  value={neuerEintrag.hautbefund ?? ''}
-                  onChange={e => setNeuerEintrag(p => ({ ...p, hautbefund: e.target.value }))}
-                  placeholder="unauffällig / Rötung Sakrum / …"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Besonderheiten</label>
                 <textarea
                   rows={2}
-                  value={neuerEintrag.besonderheiten ?? ''}
-                  onChange={e => setNeuerEintrag(p => ({ ...p, besonderheiten: e.target.value }))}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 resize-none"
+                  value={planForm.besonderheiten}
+                  onChange={(e) => setPlanForm((f) => ({ ...f, besonderheiten: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Besonderheiten oder Einschränkungen …"
                 />
               </div>
             </div>
-            <button
-              onClick={saveDokumentation}
-              disabled={saving || !neuerEintrag.position}
-              className="px-5 py-2 bg-teal-600 text-white rounded font-medium text-sm hover:bg-teal-700 disabled:opacity-50 transition-colors"
-            >
-              {saving ? 'Speichern…' : '✅ Lagerung dokumentieren'}
-            </button>
-          </div>
-
-          {/* Letzte Einträge */}
-          <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-            <div className="px-4 py-3">
-              <p className="text-sm font-semibold text-gray-700">Letzte Lagerungen</p>
+            <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => setShowForm(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={savePlan}
+                disabled={saving}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? "Speichern …" : "Plan speichern"}
+              </button>
             </div>
-            {dokumentationen.length === 0 && (
-              <p className="text-gray-400 text-sm p-4">Noch keine Lagerungen dokumentiert.</p>
-            )}
-            {dokumentationen.slice(0, 10).map(d => {
-              const pos = STANDARD_POSITIONEN.find(p => p.name === d.position)
-              return (
-                <div key={d.id} className="px-4 py-3 flex items-start gap-3">
-                  <span className="text-xl">{pos?.emoji ?? '🛌'}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-800">{d.position}</span>
-                      <span className="text-xs text-gray-400">
-                        {new Date(d.durchgefuehrt_am).toLocaleString('de-DE', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}
-                      </span>
-                      {d.durchgefuehrt_von && <span className="text-xs text-gray-400">— {d.durchgefuehrt_von}</span>}
-                    </div>
-                    {d.hautbefund && <p className="text-xs text-gray-500 mt-0.5">Haut: {d.hautbefund}</p>}
-                    {d.besonderheiten && <p className="text-xs text-gray-500 mt-0.5 italic">{d.besonderheiten}</p>}
-                  </div>
-                </div>
-              )
-            })}
           </div>
         </div>
       )}
 
-      {/* ── Verlauf ────────────────────────────────────────────────────────── */}
-      {tab === 'verlauf' && (
-        <div className="space-y-4">
-          {loading && <p className="text-gray-400 text-sm">Laden…</p>}
-          {!loading && assessments.length === 0 && (
-            <div className="text-center py-12 text-gray-400">
-              <p className="text-4xl mb-2">📈</p>
-              <p>Noch keine Assessments vorhanden</p>
+      {/* ─── MODAL: Lagerung erfassen ─── */}
+      {showForm && activeTab === "protokoll" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Lagerung erfassen</h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
-          )}
-
-          {/* Score-Verlauf Chart */}
-          {assessments.length > 0 && (
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">📊 Braden-Score-Verlauf</h4>
-              <div className="flex items-end gap-2 h-24">
-                {[...assessments].reverse().slice(-12).map((a, i) => {
-                  const score = a.gesamtscore ?? berechneGesamtscore(a)
-                  const risiko = bradenRisiko(score)
-                  const h = Math.round((score / 23) * 100)
-                  return (
-                    <div key={a.id ?? i} className="flex flex-col items-center flex-1" title={`Score ${score} — ${new Date(a.assessment_datum).toLocaleDateString('de-DE')}`}>
-                      <span className="text-xs font-bold mb-1" style={{ color: risiko.farbe }}>{score}</span>
-                      <div className="w-full rounded-t transition-all" style={{ height: `${h}%`, backgroundColor: risiko.farbe }} />
-                      <span className="text-xs text-gray-400 mt-1">
-                        {new Date(a.assessment_datum).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit' })}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-              <div className="flex gap-3 mt-3 text-xs">
-                {[{l:'≥19 Kein Risiko', c:'#22c55e'},{l:'15-18 Gering', c:'#84cc16'},{l:'13-14 Mittel', c:'#f59e0b'},{l:'10-12 Hoch', c:'#ef4444'},{l:'≤9 Sehr hoch', c:'#7c3aed'}].map(x => (
-                  <span key={x.l} className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: x.c }} />{x.l}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Assessment-Liste */}
-          <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-            {assessments.map(a => {
-              const score = a.gesamtscore ?? berechneGesamtscore(a)
-              const risiko = bradenRisiko(score)
-              return (
-                <div key={a.id} className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-sm text-gray-800">
-                      {new Date(a.assessment_datum).toLocaleDateString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', year:'2-digit' })}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold" style={{ color: risiko.farbe }}>{score}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: risiko.farbe + '20', color: risiko.farbe }}>
-                        {risiko.label}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-6 gap-1 text-xs text-gray-500">
-                    <span>Sens: {a.sensorik}</span>
-                    <span>Feuch: {a.feuchtigkeit}</span>
-                    <span>Akt: {a.aktivitaet}</span>
-                    <span>Mob: {a.mobilitaet}</span>
-                    <span>Ern: {a.ernaehrung}</span>
-                    <span>Reib: {a.reibung_scherkraefte}</span>
-                  </div>
-                  {a.beurteilende_person && <p className="text-xs text-gray-400 mt-1">👤 {a.beurteilende_person}</p>}
-                  {a.massnahmen_freitext && <p className="text-xs text-gray-500 mt-1 italic">{a.massnahmen_freitext}</p>}
+            <div className="px-6 py-5 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Datum</label>
+                  <input
+                    type="date"
+                    value={lagerungForm.datum}
+                    onChange={(e) => setLagerungForm((f) => ({ ...f, datum: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
-              )
-            })}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Uhrzeit</label>
+                  <input
+                    type="time"
+                    value={lagerungForm.uhrzeit}
+                    onChange={(e) => setLagerungForm((f) => ({ ...f, uhrzeit: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Position</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {POSITIONEN.map((pos) => (
+                    <button
+                      key={pos}
+                      type="button"
+                      onClick={() => setLagerungForm((f) => ({ ...f, position: pos, positionFreitext: "" }))}
+                      className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                        lagerungForm.position === pos
+                          ? "border-blue-600 bg-blue-600 text-white"
+                          : "border-gray-300 bg-white text-gray-700 hover:border-blue-400"
+                      }`}
+                    >
+                      {pos}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={lagerungForm.positionFreitext}
+                  onChange={(e) => setLagerungForm((f) => ({ ...f, positionFreitext: e.target.value, position: "" }))}
+                  placeholder="Oder Freitext eingeben …"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hautinspektion</label>
+                <select
+                  value={lagerungForm.hautinspektion}
+                  onChange={(e) => setLagerungForm((f) => ({ ...f, hautinspektion: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {HAUTINSPEKTION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Besonderheiten</label>
+                <textarea
+                  rows={2}
+                  value={lagerungForm.besonderheiten}
+                  onChange={(e) => setLagerungForm((f) => ({ ...f, besonderheiten: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Auffälligkeiten, Beschwerden …"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nächste Lagerung</label>
+                <input
+                  type="datetime-local"
+                  value={lagerungForm.naechste_lagerung}
+                  onChange={(e) => setLagerungForm((f) => ({ ...f, naechste_lagerung: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => setShowForm(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={saveLagerung}
+                disabled={saving || (!lagerungForm.position && !lagerungForm.positionFreitext)}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? "Speichern …" : "Lagerung speichern"}
+              </button>
+            </div>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

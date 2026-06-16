@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const datum = searchParams.get('datum') ?? new Date().toISOString().split('T')[0];
   const tage = parseInt(searchParams.get('tage') ?? '1');
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('mahlzeiten_protokoll')
     .select('*')
     .eq('user_id', user.id)
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('mahlzeiten_protokoll')
     .insert({ ...body, user_id: user.id })
     .select()
@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest) {
 
   const body = await req.json();
   const { id, ...rest } = body;
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('mahlzeiten_protokoll')
     .update(rest)
     .eq('id', id)

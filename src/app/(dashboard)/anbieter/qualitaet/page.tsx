@@ -1,79 +1,99 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { QualitaetClient } from "@/components/qualitaet/QualitaetClient";
+import { createClient } from "@/lib/supabase/server";
+import QSDashboardClient from "@/components/qualitaet/QSDashboardClient";
 
-export const metadata = { title: "Qualitätsindikatoren | xcare" };
+export const metadata = { title: "Qualitätssicherungs-Dashboard" };
 
-export default async function QualitaetPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ periode?: string; kategorie?: string }>;
-}) {
+export default async function QualitaetPage() {
   const supabase = await createClient();
+
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, role")
-    .eq("user_id", user.id)
-    .single();
+  const { data: anbieter } = await (supabase as any).from("anbieter").select("id").eq("owner_id", user.id).single();
+  if (!anbieter) redirect("/anbieter/onboarding");
 
-  if (profile?.role !== "anbieter") redirect("/");
-
-  const { data: anbieter } = await supabase
-    .from("anbieter")
-    .select("id")
-    .eq("profile_id", profile.id)
-    .single();
-
-  if (!anbieter) redirect("/anbieter/dashboard");
-
-  const { periode, kategorie } = await searchParams;
-
-  // Default periode: current quarter
+  const anbieterId = (anbieter as any).id;
   const now = new Date();
-  const defaultPeriode = `${now.getFullYear()}-Q${Math.ceil((now.getMonth() + 1) / 3)}`;
-  const activePeriode = periode ?? defaultPeriode;
+  const heute = now.toISOString().split("T")[0];
+  const vor30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const vor90 = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-  let query = supabase
-    .from("qualitaetsindikatoren")
-    .select("*")
-    .eq("anbieter_id", anbieter.id)
-    .eq("periode", activePeriode)
-    .order("kategorie")
-    .order("indikator");
+  const [
+    bewohnerRes,
+    visitenRes,
+    therapieRes,
+    beschwerdenRes,
+    aktivitaetenRes,
+    dekubitusRes,
+    zieleRes,
+  ] = await Promise.all([
+    (supabase as any).from("bewohner").select("id, aktiv").eq("anbieter_id", anbieterId),
+    (supabase as any).from("pflegevisiten").select("id, status, datum").eq("anbieter_id", anbieterId).gte("datum", vor30),
+    (supabase as any).from("therapieplaene").select("id, status, erstellt_am").eq("anbieter_id", anbieterId).gte("erstellt_am", vor30 + "T00:00:00"),
+    (supabase as any).from("beschwerden").select("id, status, eingangsdatum").eq("anbieter_id", anbieterId).gte("eingangsdatum", vor90),
+    (supabase as any).from("aktivitaeten_teilnahmen").select("id, teilgenommen, datum").eq("anbieter_id", anbieterId).gte("datum", vor30),
+    (supabase as any).from("dekubitus_risiko").select("bewohner_id, risikostufe, datum").eq("anbieter_id", anbieterId).order("datum", { ascending: false }),
+    (supabase as any).from("qualitaets_ziele").select("*").eq("anbieter_id", anbieterId).eq("aktiv", true),
+  ]);
 
-  if (kategorie) query = query.eq("kategorie", kategorie as string);
+  const bewohner = (bewohnerRes.data || []) as any[];
+  const visiten = (visitenRes.data || []) as any[];
+  const therapie = (therapieRes.data || []) as any[];
+  const beschwerden = (beschwerdenRes.data || []) as any[];
+  const aktivitaeten = (aktivitaetenRes.data || []) as any[];
+  const allDekubitus = (dekubitusRes.data || []) as any[];
+  const ziele = (zieleRes.data || []) as any[];
 
-  const { data: indikatoren } = await query;
+  // Compute KPIs
+  const bewohnerGesamt = bewohner.length;
+  const bewohnerAktiv = bewohner.filter((b: any) => b.aktiv !== false).length;
 
-  // Also load all distinct periods for the period selector
-  const { data: perioden } = await supabase
-    .from("qualitaetsindikatoren")
-    .select("periode")
-    .eq("anbieter_id", anbieter.id)
-    .order("periode", { ascending: false });
+  const visitenGesamt = visiten.length;
+  const visitenDurchgefuehrt = visiten.filter((v: any) => v.status === "durchgefuehrt").length;
+  const visitenQuote = visitenGesamt > 0 ? Math.round((visitenDurchgefuehrt / visitenGesamt) * 100) : 0;
 
-  const uniquePerioden = Array.from(new Set((perioden ?? []).map((p) => p.periode)));
-  if (!uniquePerioden.includes(activePeriode)) {
-    uniquePerioden.unshift(activePeriode);
+  const therapieGesamt = therapie.length;
+  const therapieAktiv = therapie.filter((t: any) => t.status === "aktiv").length;
+
+  const beschwerdenGesamt = beschwerden.length;
+  const beschwerdenOffen = beschwerden.filter((b: any) => ["offen", "in_bearbeitung"].includes(b.status)).length;
+  const beschwerdenAbgeschlossen = beschwerden.filter((b: any) => b.status === "abgeschlossen").length;
+  const beschwerdenLoesungsQuote = beschwerdenGesamt > 0
+    ? Math.round((beschwerdenAbgeschlossen / beschwerdenGesamt) * 100)
+    : 100;
+
+  const aktivitaetenGesamt = aktivitaeten.length;
+  const aktivitaetenTeilgenommen = aktivitaeten.filter((a: any) => a.teilgenommen === true).length;
+  const aktivitaetenQuote = aktivitaetenGesamt > 0
+    ? Math.round((aktivitaetenTeilgenommen / aktivitaetenGesamt) * 100)
+    : 0;
+
+  // Dekubitus: latest per bewohner
+  const latestPerBewohner = new Map<string, any>();
+  for (const d of allDekubitus) {
+    if (!latestPerBewohner.has(d.bewohner_id)) latestPerBewohner.set(d.bewohner_id, d);
   }
+  const dekubitusVerteilung: { kein_risiko: number; maessig: number; hoch: number; sehr_hoch: number } = { kein_risiko: 0, maessig: 0, hoch: 0, sehr_hoch: 0 };
+  for (const d of latestPerBewohner.values()) {
+    if (d.risikostufe in dekubitusVerteilung) (dekubitusVerteilung as Record<string, number>)[d.risikostufe]++;
+  }
+  const hochrisikoBewohner = dekubitusVerteilung.hoch + dekubitusVerteilung.sehr_hoch;
+
+  const kpis = {
+    bewohnerGesamt, bewohnerAktiv,
+    visitenQuote, visitenGesamt,
+    therapieAktiv, therapieGesamt,
+    beschwerdenOffen, beschwerdenLoesungsQuote,
+    aktivitaetenQuote, aktivitaetenGesamt,
+    hochrisikoBewohner, dekubitusVerteilung,
+  };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[--foreground]">Qualitätsindikatoren-Dashboard</h1>
-        <p className="text-sm text-[--muted-foreground] mt-1">
-          Erfassen und verfolgen Sie Qualitätskennzahlen nach MDK-Rahmen und Qualitätsprüfungs-Richtlinien
-        </p>
-      </div>
-      <QualitaetClient
-        indikatoren={indikatoren ?? []}
-        perioden={uniquePerioden}
-        activePeriode={activePeriode}
-        activeKategorie={kategorie}
-      />
-    </div>
+    <QSDashboardClient
+      initialKPIs={kpis}
+      initialZiele={ziele}
+      zeitraum={{ von: vor30, bis: heute }}
+    />
   );
 }
