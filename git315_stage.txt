@@ -1,5 +1,0 @@
-?? commit315_out.txt
-?? do_commit.bat
-?? gc.bat
-?? gc315.bat
-?? git315_stage.txt

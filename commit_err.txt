@@ -1,9 +1,0 @@
-error: pathspec 'Anspruchskataster' did not match any file(s) known to git
-error: pathspec 'â€”' did not match any file(s) known to git
-error: pathspec 'SGB' did not match any file(s) known to git
-error: pathspec 'II/BEEG/WoGG/SGB' did not match any file(s) known to git
-error: pathspec 'V+VI' did not match any file(s) known to git
-error: pathspec '+' did not match any file(s) known to git
-error: pathspec 'Leistungen-Dashboard' did not match any file(s) known to git
-error: pathspec '+' did not match any file(s) known to git
-error: pathspec 'DB-Migration' did not match any file(s) known to git

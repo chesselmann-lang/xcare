@@ -56,23 +56,18 @@ ts_errors.log
 *.bat
 
 # session debug / CI log artifacts (root level only)
-/*_log.txt
-/chk*.txt
-/dircheck.txt
-/commit*.txt
-/docker_start_log.txt
-/git*.txt
+/*.txt
+/*.log
 /*.bak
+/*.tmp
+!README.txt
 
 # scratch / dev helper scripts
 *.bat
-*.tmp
-*_log.txt
 fix_types*.log
 install_types*.log
 get_types*.log
 push_out.tmp
-dircheck.txt
 analyze_errors.js
 extract_reactdom.js
 extract_types.js
