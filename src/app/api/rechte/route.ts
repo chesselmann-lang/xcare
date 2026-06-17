@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 // ── GET /api/rechte ──────────────────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     .order("gesetz");
 
   if (error) {
-    console.error("[GET /api/rechte]", error);
+    logger.error("[GET /api/rechte]", { error: error });
     return NextResponse.json(
       { error: "Fehler beim Laden der Rechte." },
       { status: 500 }
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    console.error("[POST /api/rechte]", error);
+    logger.error("[POST /api/rechte]", { error: error });
     return NextResponse.json(
       { error: "Fehler beim Speichern der Prüfung." },
       { status: 500 }

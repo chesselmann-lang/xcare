@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { analysiereTagesbuch } from '@/lib/pflegetagebuch/analyse'
+import { logger } from "@/lib/logger";
 
 // Simple in-memory cache: userId -> { result, ts }
 const analyseCache = new Map<string, { result: unknown; ts: number }>()
@@ -83,7 +84,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(result)
   } catch (err) {
-    console.error('[pflegetagebuch-v2/analyse GET]', err)
+    logger.error('[pflegetagebuch-v2/analyse GET]', { error: err })
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
 }

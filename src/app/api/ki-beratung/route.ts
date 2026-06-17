@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from "@/lib/logger";
 
 const NeueBeratungSchema = z.object({
   titel: z.string().min(1).max(200).optional(),
@@ -33,7 +34,7 @@ export async function GET() {
     .limit(20)
 
   if (error) {
-    console.error('[ki-beratung GET]', error)
+    logger.error('[ki-beratung GET]', { error: error })
     return NextResponse.json({ error: 'Datenbankfehler' }, { status: 500 })
   }
 
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) {
-    console.error('[ki-beratung POST]', error)
+    logger.error('[ki-beratung POST]', { error: error })
     return NextResponse.json({ error: 'Beratung konnte nicht erstellt werden' }, { status: 500 })
   }
 

@@ -1259,6 +1259,71 @@ const angebotsErinnerung = inngest.createFunction(
   }
 );
 
+// ─── Weiterbildung: Buchungsbestätigung ─────────────────────────────────────
+const weiterbildungBuchungsbestaetigung = inngest.createFunction(
+  { id: "weiterbildung-buchungsbestaetigung", name: "Weiterbildung — Buchungsbestätigung" },
+  { event: "weiterbildung/buchung.created" },
+  async ({ event, step }) => {
+    const { buchung_id, user_id } = event.data as { buchung_id: string; user_id: string };
+    const supabase = getServiceClient();
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    const buchung = await step.run("fetch-buchung", async () => {
+      const { data } = await supabase
+        .from("kurs_buchungen")
+        .select("id, termin_datum, status, kurse(titel, format, dauer_stunden, kategorie)")
+        .eq("id", buchung_id)
+        .single();
+      return data;
+    });
+
+    if (!buchung) {
+      logger.warn("weiterbildung-buchungsbestaetigung: buchung not found", { buchung_id });
+      return { skipped: true };
+    }
+
+    const userEmail = await step.run("fetch-user-email", async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("user_id", user_id)
+        .single();
+      return data?.email ?? null;
+    });
+
+    if (!userEmail) {
+      logger.warn("weiterbildung-buchungsbestaetigung: user email not found", { user_id });
+      return { skipped: true };
+    }
+
+    const kurs = (buchung as unknown as { kurse: { titel: string; format: string; dauer_stunden: number; kategorie: string } }).kurse;
+
+    await step.run("send-confirmation-email", async () => {
+      const body = `
+        <h2 style="color:#1A5276;margin-top:0;">Buchungsbestätigung</h2>
+        <p style="color:#333;line-height:1.6;">Ihre Anmeldung zur Weiterbildung wurde erfolgreich registriert.</p>
+        <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+          <tr><td style="padding:8px 0;color:#666;font-size:14px;">Kurs:</td><td style="padding:8px 0;color:#333;font-weight:600;">${kurs?.titel ?? "–"}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;font-size:14px;">Kategorie:</td><td style="padding:8px 0;color:#333;">${kurs?.kategorie ?? "–"}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;font-size:14px;">Format:</td><td style="padding:8px 0;color:#333;">${kurs?.format ?? "–"}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;font-size:14px;">Dauer:</td><td style="padding:8px 0;color:#333;">${kurs?.dauer_stunden ?? "–"} Stunden</td></tr>
+          ${buchung.termin_datum ? `<tr><td style="padding:8px 0;color:#666;font-size:14px;">Termin:</td><td style="padding:8px 0;color:#333;">${new Date(buchung.termin_datum).toLocaleDateString("de-DE")}</td></tr>` : ""}
+        </table>
+        <a href="${appUrl}/familie/weiterbildung" style="display:inline-block;background:#1A5276;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;margin:20px 0;">Meine Buchungen ansehen</a>
+      `;
+      await sendAndLog(resend, {
+        from: fromEmail,
+        to: userEmail,
+        subject: `xcare: Buchungsbestätigung — ${kurs?.titel ?? "Weiterbildung"}`,
+        html: baseTemplate("Buchungsbestätigung", body),
+      });
+    });
+
+    logger.info("weiterbildung-buchungsbestaetigung sent", { buchung_id, user_id });
+    return { sent: true };
+  }
+);
+
 // ─── Export (Inngest serve handler) ────────────────────────────────────────────
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -1280,5 +1345,6 @@ export const { GET, POST, PUT } = serve({
     remindAboVerlaengerung,
     angebotsErinnerung,
     deteriorationCheckFn,
+    weiterbildungBuchungsbestaetigung,
   ],
 });

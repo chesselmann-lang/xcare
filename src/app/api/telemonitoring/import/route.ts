@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 type GeraetTyp =
   | "blutdruckmessgeraet"
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
   const { error } = await supabase.from("telemonitoring_daten").insert(rows);
 
   if (error) {
-    console.error("Telemonitoring import error:", error);
+    logger.error("Telemonitoring import error:", { error: error });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

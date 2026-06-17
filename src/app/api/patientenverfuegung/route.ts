@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { logger } from "@/lib/logger";
 
 const CreatePVSchema = z.object({
   typ: z.enum(['patientenverfuegung', 'vorsorgevollmacht', 'betreuungsverfuegung']),
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
 
   if (versionError) {
     // Non-fatal — log but continue
-    console.error('pv_versionen insert error:', versionError.message)
+    logger.error('pv_versionen insert error:', { error: versionError.message })
   }
 
   return NextResponse.json({ verfuegung }, { status: 201 })

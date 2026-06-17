@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { logger } from "@/lib/logger";
 
 const EintragSchema = z.object({
   datum: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Datum muss im Format YYYY-MM-DD sein'),
@@ -115,7 +116,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ eintraege: data ?? [] })
   } catch (err) {
-    console.error('[pflegetagebuch-v2 GET]', err)
+    logger.error('[pflegetagebuch-v2 GET]', { error: err })
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
 }
@@ -176,7 +177,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ eintrag: inserted }, { status: 201 })
   } catch (err) {
-    console.error('[pflegetagebuch-v2 POST]', err)
+    logger.error('[pflegetagebuch-v2 POST]', { error: err })
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
 }
@@ -215,7 +216,7 @@ export async function PATCH(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ eintrag: data })
   } catch (err) {
-    console.error('[pflegetagebuch-v2 PATCH]', err)
+    logger.error('[pflegetagebuch-v2 PATCH]', { error: err })
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
 }

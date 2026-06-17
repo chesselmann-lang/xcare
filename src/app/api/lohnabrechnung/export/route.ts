@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 // GET /api/lohnabrechnung/export?monat=2026-06&format=datev|lodas|simple
 // Generiert DATEV LODAS-kompatiblen CSV-Export
@@ -112,7 +113,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("[lohnabrechnung export]", err);
+    logger.error("[lohnabrechnung export]", { error: err });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }

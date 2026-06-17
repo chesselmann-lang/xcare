@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { inngest } from "@/lib/inngest";
 
 const BuchungSchema = z.object({
   kurs_id: z.string().uuid(),
@@ -49,8 +50,11 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error;
 
-    // TODO: Inngest job sends booking confirmation email
-    // await inngest.send({ name: "weiterbildung/buchung.created", data: { buchung_id: data.id, user_id: user.id } })
+    // Fire booking confirmation email via Inngest (non-blocking)
+    await inngest.send({
+      name: "weiterbildung/buchung.created",
+      data: { buchung_id: data.id, user_id: user.id },
+    });
 
     return NextResponse.json(
       { id: data.id, message: "Erfolgreich angemeldet!" },

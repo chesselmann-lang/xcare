@@ -4,6 +4,7 @@
  * Empfohlen für DSGVO-konforme Setups in Deutschland.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 const SENTRY_HOST = "sentry.io";
 const SENTRY_PROJECT_IDS = [process.env.SENTRY_PROJECT_ID ?? ""];
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("[Sentry Tunnel] Error:", err);
+    logger.error("[Sentry Tunnel] Error:", { error: err });
     return NextResponse.json({ error: "Tunnel error" }, { status: 500 });
   }
 }

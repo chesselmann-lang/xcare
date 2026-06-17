@@ -17,6 +17,7 @@ import {
   getDokumentVorlage,
   type DokumentTyp,
 } from '@/lib/ki-beratung/system-prompt'
+import { logger } from "@/lib/logger";
 
 const ChatSchema = z.object({
   nachricht: z.string().min(1).max(5000),
@@ -493,7 +494,7 @@ export async function POST(
           dokument_generiert: dokumentGeneriert,
         })
       } catch (err) {
-        console.error('[ki-beratung chat]', err)
+        logger.error('[ki-beratung chat]', { error: err })
         send({ type: 'error', message: 'KI-Dienst vorübergehend nicht verfügbar.' })
       } finally {
         controller.enqueue(encoder.encode('data: [DONE]\n\n'))

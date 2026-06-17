@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 // GET /api/lohnabrechnung?monat=2026-06
 // Liefert alle Lohnperioden für einen Monat (oder berechnet sie on-the-fly aus Schichten)
@@ -125,7 +126,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ perioden, monat, periodeStart, periodeEnde, summe });
   } catch (err) {
-    console.error("[lohnabrechnung GET]", err);
+    logger.error("[lohnabrechnung GET]", { error: err });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }
@@ -177,7 +178,7 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ periode: data });
   } catch (err) {
-    console.error("[lohnabrechnung POST]", err);
+    logger.error("[lohnabrechnung POST]", { error: err });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }

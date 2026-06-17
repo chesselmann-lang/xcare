@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { notarisiereDocument, hashDocument } from "@/lib/blockchain/notarisierung";
 import { basename } from "path";
+import { logger } from "@/lib/logger";
 
 // POST: Notarisiert ein Dokument (Datei oder Text)
 export async function POST(request: NextRequest) {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
 
   // If table doesn't exist yet, still return the result
   if (error && !error.message.includes("does not exist")) {
-    console.error("Notarisierung DB error:", error);
+    logger.error("Notarisierung DB error:", { error: error });
   }
 
   return NextResponse.json({

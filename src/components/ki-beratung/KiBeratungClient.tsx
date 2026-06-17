@@ -741,7 +741,7 @@ export function KiBeratungClient({ initialBeratungen, initialFollowups }: KiBera
     if (!activeBeratung) return
     setEskalationsModal(false)
 
-    const email = 'beratung@xcare.de' // TODO: konfigurierbarer Pflegeberater-Kontakt
+    const email = process.env.NEXT_PUBLIC_PFLEGEBERATER_EMAIL ?? 'beratung@xcare.de'
     await fetch(`/api/ki-beratung/${activeBeratung.id}/chat`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

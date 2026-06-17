@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 // MDK §115 SGB XI Bewertungsbereiche + Prüfkriterien
 const MDK_BEREICHE = {
@@ -204,7 +205,7 @@ export async function GET(req: NextRequest) {
       })),
     });
   } catch (err) {
-    console.error("[qualitaetsbericht GET]", err);
+    logger.error("[qualitaetsbericht GET]", { error: err });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }
@@ -254,7 +255,7 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ bericht: data });
   } catch (err) {
-    console.error("[qualitaetsbericht POST]", err);
+    logger.error("[qualitaetsbericht POST]", { error: err });
     return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }

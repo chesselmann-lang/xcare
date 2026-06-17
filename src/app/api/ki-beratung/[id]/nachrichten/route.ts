@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from "@/lib/logger";
 
 export async function GET(
   _request: NextRequest,
@@ -42,7 +43,7 @@ export async function GET(
     .limit(50)
 
   if (error) {
-    console.error('[ki-beratung nachrichten GET]', error)
+    logger.error('[ki-beratung nachrichten GET]', { error: error })
     return NextResponse.json({ error: 'Datenbankfehler' }, { status: 500 })
   }
 
