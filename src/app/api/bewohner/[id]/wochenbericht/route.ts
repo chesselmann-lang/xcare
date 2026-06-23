@@ -5,8 +5,8 @@ import { logger } from "@/lib/logger";
 type Params = { params: Promise<{ id: string }> };
 
 async function getAnbieter(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const { data: prof } = await (supabase as any).from("profiles").select("id").eq("user_id", userId).single();
-  const { data } = await (supabase as any).from("anbieter").select("id").eq("profile_id", prof?.id ?? "").single();
+  const { data: prof } = await supabase.from("profiles").select("id").eq("user_id", userId).single();
+  const { data } = await supabase.from("anbieter").select("id").eq("profile_id", prof?.id ?? "").single();
   return data?.id ?? null;
 }
 
@@ -48,42 +48,42 @@ export async function GET(req: NextRequest, { params }: Params) {
       { data: bestehendesBericht },
       { data: frühereBerichteListe },
     ] = await Promise.all([
-      ((supabase as any).from("vitalzeichen_eintraege") as any)
+      supabase.from("vitalzeichen_eintraege")
         .select("messung_datum, systolisch, diastolisch, puls, temperatur, sauerstoffsaettigung, blutzucker")
         .eq("bewohner_id", bewohnerId)
         .gte("messung_datum", von).lte("messung_datum", bis),
-      ((supabase as any).from("medikamentengaben") as any)
+      supabase.from("medikamentengaben")
         .select("gegeben_am, status, medikament:medikamentenplaene(bezeichnung)")
         .eq("bewohner_id", bewohnerId)
         .gte("gegeben_am", von).lte("gegeben_am", bis),
-      ((supabase as any).from("bewohner_tagesupdates") as any)
+      supabase.from("bewohner_tagesupdates")
         .select("datum, aktivitaeten, allgemeinzustand, stimmung")
         .eq("bewohner_id", bewohnerId)
         .gte("datum", von).lte("datum", bis),
-      ((supabase as any).from("schlaf_protokolle") as any)
+      supabase.from("schlaf_protokolle")
         .select("datum, schlafdauer_h, schlafqualitaet, besonderheiten")
         .eq("bewohner_id", bewohnerId)
         .gte("datum", von).lte("datum", bis)
         .limit(7),
-      ((supabase as any).from("ernaehrungs_protokolle") as any)
+      supabase.from("ernaehrungs_protokolle")
         .select("datum, fluessigkeit_ml, mahlzeiten_anzahl, appetit")
         .eq("bewohner_id", bewohnerId)
         .gte("datum", von).lte("datum", bis)
         .limit(7),
-      ((supabase as any).from("wohlbefinden_eintraege") as any)
+      supabase.from("wohlbefinden_eintraege")
         .select("datum, gesamtwert, stimmung, schmerzen, erschoepfung, notizen")
         .eq("bewohner_id", bewohnerId)
         .gte("datum", von).lte("datum", bis),
-      ((supabase as any).from("bewohner_tagesupdates") as any)
+      supabase.from("bewohner_tagesupdates")
         .select("datum, allgemeinzustand, aktivitaeten, notizen, sichtbar_fuer_angehoerige")
         .eq("bewohner_id", bewohnerId)
         .gte("datum", von).lte("datum", bis),
-      ((supabase as any).from("bewohner_wochenberichte") as any)
+      supabase.from("bewohner_wochenberichte")
         .select("*")
         .eq("bewohner_id", bewohnerId)
         .eq("woche_von", von)
         .maybeSingle(),
-      ((supabase as any).from("bewohner_wochenberichte") as any)
+      supabase.from("bewohner_wochenberichte")
         .select("id, woche_von, woche_bis, status, allgemeinzustand, highlights, erstellt_am")
         .eq("bewohner_id", bewohnerId)
         .eq("anbieter_id", anbieterId)
@@ -94,30 +94,30 @@ export async function GET(req: NextRequest, { params }: Params) {
     // Vitalwerte-Summary
     const vitalSummary = vitalzeichen?.length ? {
       anzahl_messungen: vitalzeichen.length,
-      avg_systolisch: Math.round((vitalzeichen.reduce((s: number, v: any) => s + (v.systolisch || 0), 0)) / vitalzeichen.filter((v: any) => v.systolisch).length) || null,
-      avg_puls: Math.round((vitalzeichen.reduce((s: number, v: any) => s + (v.puls || 0), 0)) / vitalzeichen.filter((v: any) => v.puls).length) || null,
-      avg_temp: (vitalzeichen.reduce((s: number, v: any) => s + (v.temperatur || 0), 0) / vitalzeichen.filter((v: any) => v.temperatur).length).toFixed(1) || null,
+      avg_systolisch: Math.round((vitalzeichen.reduce((s: number, v) => s + (v.systolisch || 0), 0)) / vitalzeichen.filter((v) => v.systolisch).length) || null,
+      avg_puls: Math.round((vitalzeichen.reduce((s: number, v) => s + (v.puls || 0), 0)) / vitalzeichen.filter((v) => v.puls).length) || null,
+      avg_temp: (vitalzeichen.reduce((s: number, v) => s + (v.temperatur || 0), 0) / vitalzeichen.filter((v) => v.temperatur).length).toFixed(1) || null,
     } : {};
 
     // Medikamente-Summary
     const medGesamt = medikamente?.length ?? 0;
-    const medGegeben = medikamente?.filter((m: any) => m.status === "gegeben").length ?? 0;
+    const medGegeben = medikamente?.filter((m) => m.status === "gegeben").length ?? 0;
     const medSummary = { gesamt: medGesamt, gegeben: medGegeben, compliance_pct: medGesamt ? Math.round((medGegeben / medGesamt) * 100) : null };
 
     // Schlaf-Summary
     const schlafMittel = schlaf?.length
-      ? (schlaf.reduce((s: number, x: any) => s + (x.schlafdauer_h || 0), 0) / schlaf.length).toFixed(1)
+      ? (schlaf.reduce((s: number, x) => s + (x.schlafdauer_h || 0), 0) / schlaf.length).toFixed(1)
       : null;
     const schlafSummary = { avg_dauer_h: schlafMittel, eintraege: schlaf?.length ?? 0 };
 
     // Wohlbefinden-Summary
     const wbMittel = wohlbefinden?.length
-      ? Math.round(wohlbefinden.reduce((s: number, x: any) => s + (x.gesamtwert || 0), 0) / wohlbefinden.length)
+      ? Math.round(wohlbefinden.reduce((s: number, x) => s + (x.gesamtwert || 0), 0) / wohlbefinden.length)
       : null;
     const wbSummary = { avg_gesamtwert: wbMittel, eintraege: wohlbefinden?.length ?? 0 };
 
     // Aktivitäten sammeln
-    const alleAktivitaeten = (aktivitaeten ?? []).flatMap((a: any) => a.aktivitaeten ?? []);
+    const alleAktivitaeten = (aktivitaeten ?? []).flatMap((a) => a.aktivitaeten ?? []);
     const aktUniq = [...new Set(alleAktivitaeten)];
 
     return NextResponse.json({
@@ -150,7 +150,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     const anbieterId = await getAnbieter(supabase, user.id);
     if (!anbieterId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const body = await req.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try { body = await req.json() } catch { return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 }) }
     const { von, bis, allgemeinzustand, highlights, besonderheiten, hinweise_angehoerige,
             termine_naechste_woche, status, vitalwerte_summary, medikamente_summary,
             aktivitaeten_summary, schlaf_summary, wohlbefinden_summary } = body;
@@ -175,7 +177,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     };
     if (status === "freigegeben") upsertData.freigegeben_am = new Date().toISOString();
 
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("bewohner_wochenberichte")
       .upsert(upsertData, { onConflict: "bewohner_id,woche_von" })
       .select()

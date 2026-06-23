@@ -24,7 +24,10 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 });
 
-  const { typ, daten } = await req.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let body: any
+  try { body = await req.json() } catch { return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 }) }
+  const { typ, daten } = body;
 
   if (typ === 'patientenverfuegung') {
     const { data, error } = await supabase.from('patientenverfuegung')

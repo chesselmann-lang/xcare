@@ -104,7 +104,9 @@ export async function POST(
       .single();
     if (!bewohner) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const body = await req.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try { body = await req.json() } catch { return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 }) }
     const { datum, uhrzeit, menge_ml, bilanz_typ, art, besonderheiten } = body;
 
     if (!menge_ml || menge_ml <= 0) {

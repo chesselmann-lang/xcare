@@ -126,7 +126,9 @@ export async function POST(
       .single();
     if (!bewohner) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const body = await req.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try { body = await req.json() } catch { return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 }) }
 
     if (body.update_ziele === true) {
       const {

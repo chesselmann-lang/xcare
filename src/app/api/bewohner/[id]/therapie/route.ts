@@ -57,7 +57,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     const anbieterId = await getAnbieter(supabase, user.id);
     if (!anbieterId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const body = await req.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try { body = await req.json() } catch { return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 }) }
     const { therapieart, therapeut_name, ziel, frequenz, beginn_datum, ende_datum, notizen } = body;
 
     if (!therapieart) return NextResponse.json({ error: "Therapieart ist Pflichtfeld" }, { status: 400 });

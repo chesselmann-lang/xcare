@@ -5,9 +5,9 @@ import { logger } from "@/lib/logger";
 type Params = { params: Promise<{ id: string }> };
 
 async function getAnbieter(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const { data: prof } = await (supabase as any).from("profiles").select("id").eq("user_id", userId).single();
-  const { data } = await (supabase as any).from("anbieter").select("id").eq("profile_id", prof?.id ?? "").single();
-  return (data as any)?.id ?? null;
+  const { data: prof } = await supabase.from("profiles").select("id").eq("user_id", userId).single();
+  const { data } = await supabase.from("anbieter").select("id").eq("profile_id", prof?.id ?? "").single();
+  return data?.id ?? null;
 }
 
 // GET /api/therapie/[id]/einheiten
@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     if (!anbieterId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     // Verify ownership
-    const { data: therapie } = await (supabase as any)
+    const { data: therapie } = await supabase
       .from("therapien")
       .select("id, therapieart, bewohner_id")
       .eq("id", therapieId)
@@ -30,20 +30,20 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .single();
     if (!therapie) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const { data: rawEinheiten, error } = await (supabase as any)
+    const { data: rawEinheiten, error } = await supabase
       .from("therapie_einheiten")
       .select("*")
       .eq("therapie_id", therapieId)
       .order("datum", { ascending: false });
 
     if (error) throw error;
-    const einheiten = (rawEinheiten ?? []) as any[];
+    const einheiten = rawEinheiten ?? [];
 
     const stats = {
       gesamt: einheiten.length,
-      durchgefuehrt: einheiten.filter((e: any) => !e.abgesagt).length,
-      abgesagt: einheiten.filter((e: any) => e.abgesagt).length,
-      abgerechnet: einheiten.filter((e: any) => e.abgerechnet).length,
+      durchgefuehrt: einheiten.filter((e) => !e.abgesagt).length,
+      abgesagt: einheiten.filter((e) => e.abgesagt).length,
+      abgerechnet: einheiten.filter((e) => e.abgerechnet).length,
     };
 
     return NextResponse.json({ therapie, einheiten, stats });
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const anbieterId = await getAnbieter(supabase, user.id);
     if (!anbieterId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const { data: therapie } = await (supabase as any)
+    const { data: therapie } = await supabase
       .from("therapien")
       .select("id, bewohner_id")
       .eq("id", therapieId)
@@ -72,14 +72,16 @@ export async function POST(req: NextRequest, { params }: Params) {
       .single();
     if (!therapie) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const body = await req.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try { body = await req.json() } catch { return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 }) }
     const { datum, dauer_min, inhalt, verlauf, kooperation, zielfortschritt, abgesagt, abgesagt_grund, abgerechnet } = body;
 
-    const { data: raw, error } = await (supabase as any)
+    const { data: raw, error } = await supabase
       .from("therapie_einheiten")
       .insert({
         therapie_id: therapieId,
-        bewohner_id: (therapie as any).bewohner_id,
+        bewohner_id: therapie?.bewohner_id,
         anbieter_id: anbieterId,
         datum: datum || new Date().toISOString().slice(0, 10),
         dauer_min: dauer_min ?? 45,
@@ -96,7 +98,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       .single();
 
     if (error) throw error;
-    return NextResponse.json({ einheit: raw as any }, { status: 201 });
+    return NextResponse.json({ einheit: raw }, { status: 201 });
   } catch (err) {
     logger.error("POST /api/therapie/[id]/einheiten", { error: err });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

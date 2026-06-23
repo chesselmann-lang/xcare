@@ -69,7 +69,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const { data: bewohner } = await (supabase as any).from("bewohner").select("id").eq("id", id).eq("anbieter_id", (anbieter as any).id).single();
     if (!bewohner) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const body = await req.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try { body = await req.json() } catch { return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 }) }
 
     if (body.update_lagerungsplan === true) {
       const { intervall_min, positionen, hilfsmittel, besonderheiten } = body;

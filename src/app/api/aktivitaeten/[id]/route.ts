@@ -50,7 +50,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const anbieterId = await getAnbieter(supabase, user.id);
     if (!anbieterId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const body = await req.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try { body = await req.json() } catch { return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 }) }
     const { data, error } = await (supabase as any)
       .from("aktivitaeten_angebote")
       .update(body)

@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
     const anbieterId = await getAnbieter(supabase, user.id);
     if (!anbieterId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const body = await req.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try { body = await req.json() } catch { return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 }) }
     const { kategorie, betreff, beschreibung, bewohner_id, einreicher_name,
             einreicher_typ, frist, vorfall_datum } = body;
 

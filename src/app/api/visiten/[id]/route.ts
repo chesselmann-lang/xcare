@@ -5,9 +5,9 @@ import { logger } from "@/lib/logger";
 type Params = { params: Promise<{ id: string }> };
 
 async function getAnbieter(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const { data: prof } = await (supabase as any).from("profiles").select("id").eq("user_id", userId).single();
-  const { data } = await (supabase as any).from("anbieter").select("id").eq("profile_id", prof?.id ?? "").single();
-  return (data as any)?.id ?? null;
+  const { data: prof } = await supabase.from("profiles").select("id").eq("user_id", userId).single();
+  const { data } = await supabase.from("anbieter").select("id").eq("profile_id", prof?.id ?? "").single();
+  return data?.id ?? null;
 }
 
 // PATCH /api/visiten/[id] â€” Status + Aufgabe erledigen
@@ -20,12 +20,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const anbieterId = await getAnbieter(supabase, user.id);
     if (!anbieterId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const body = await req.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try { body = await req.json() } catch { return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 }) }
     const { status, aufgabe_id, erledigt } = body;
 
     // Aufgabe erledigen
     if (aufgabe_id !== undefined) {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("visite_aufgaben")
         .update({ erledigt: erledigt ?? true, erledigt_am: erledigt ? new Date().toISOString() : null })
         .eq("id", aufgabe_id)
@@ -41,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       if (status === "durchgefuehrt") update.durchgefuehrt_von = user.id;
     }
 
-    const { data: raw, error } = await (supabase as any)
+    const { data: raw, error } = await supabase
       .from("pflegevisiten")
       .update(update)
       .eq("id", id)
@@ -50,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       .single();
 
     if (error) throw error;
-    return NextResponse.json({ visite: raw as any });
+    return NextResponse.json({ visite: raw });
   } catch (err) {
     logger.error("PATCH /api/visiten/[id]", { error: err });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
