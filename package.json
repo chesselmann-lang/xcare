@@ -44,7 +44,7 @@
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-toast": "^1.2.4",
-    "@sentry/nextjs": "^8.0.0",
+    "@sentry/nextjs": "^10.62.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.4",
     "@upstash/ratelimit": "^2.0.8",
